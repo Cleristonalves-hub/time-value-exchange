@@ -124,7 +124,7 @@ export const auctions: Auction[] = [
 
 export const niches = [
   "Todos", "Saúde", "Direito", "Finanças", "Educação",
-  "Artes", "Música", "Tecnologia", "Negócios", "Esporte", "Gastronomia",
+  "Artes", "Música", "Tecnologia", "Negócios", "Esporte",
 ];
 
 export const getAuction = (id: string) => auctions.find((a) => a.id === id);
