@@ -9,38 +9,123 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as LancesRouteImport } from './routes/lances'
+import { Route as HomeRouteImport } from './routes/home'
+import { Route as ExplorarRouteImport } from './routes/explorar'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LeilaoIdRouteImport } from './routes/leilao.$id'
 
+const PerfilRoute = PerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LancesRoute = LancesRouteImport.update({
+  id: '/lances',
+  path: '/lances',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HomeRoute = HomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExplorarRoute = ExplorarRouteImport.update({
+  id: '/explorar',
+  path: '/explorar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LeilaoIdRoute = LeilaoIdRouteImport.update({
+  id: '/leilao/$id',
+  path: '/leilao/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/explorar': typeof ExplorarRoute
+  '/home': typeof HomeRoute
+  '/lances': typeof LancesRoute
+  '/perfil': typeof PerfilRoute
+  '/leilao/$id': typeof LeilaoIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/explorar': typeof ExplorarRoute
+  '/home': typeof HomeRoute
+  '/lances': typeof LancesRoute
+  '/perfil': typeof PerfilRoute
+  '/leilao/$id': typeof LeilaoIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/explorar': typeof ExplorarRoute
+  '/home': typeof HomeRoute
+  '/lances': typeof LancesRoute
+  '/perfil': typeof PerfilRoute
+  '/leilao/$id': typeof LeilaoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/explorar' | '/home' | '/lances' | '/perfil' | '/leilao/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/explorar' | '/home' | '/lances' | '/perfil' | '/leilao/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/explorar'
+    | '/home'
+    | '/lances'
+    | '/perfil'
+    | '/leilao/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ExplorarRoute: typeof ExplorarRoute
+  HomeRoute: typeof HomeRoute
+  LancesRoute: typeof LancesRoute
+  PerfilRoute: typeof PerfilRoute
+  LeilaoIdRoute: typeof LeilaoIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/perfil': {
+      id: '/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof PerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lances': {
+      id: '/lances'
+      path: '/lances'
+      fullPath: '/lances'
+      preLoaderRoute: typeof LancesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/home': {
+      id: '/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof HomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/explorar': {
+      id: '/explorar'
+      path: '/explorar'
+      fullPath: '/explorar'
+      preLoaderRoute: typeof ExplorarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +133,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/leilao/$id': {
+      id: '/leilao/$id'
+      path: '/leilao/$id'
+      fullPath: '/leilao/$id'
+      preLoaderRoute: typeof LeilaoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ExplorarRoute: ExplorarRoute,
+  HomeRoute: HomeRoute,
+  LancesRoute: LancesRoute,
+  PerfilRoute: PerfilRoute,
+  LeilaoIdRoute: LeilaoIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
