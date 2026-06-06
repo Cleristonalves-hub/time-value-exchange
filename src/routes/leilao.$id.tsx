@@ -125,7 +125,7 @@ function AuctionDetail() {
           <h2 className="font-display text-lg">Sobre</h2>
           <p className="mt-2 text-sm leading-relaxed text-foreground/80">{a.bio}</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {a.tags.map((t) => (
+            {a.tags.map((t: string) => (
               <span key={t} className="rounded-full border border-border/60 px-3 py-1 text-[11px] text-muted-foreground">
                 {t}
               </span>
@@ -143,7 +143,7 @@ function AuctionDetail() {
         <section className="mt-6">
           <h3 className="font-display text-lg">Últimos lances</h3>
           <ul className="mt-3 divide-y divide-border/60 rounded-xl border border-border/60 bg-surface">
-            {a.history.map((h, i) => (
+            {a.history.map((h: { value: number; at: string }, i: number) => (
               <li key={i} className="flex items-center justify-between px-4 py-3 text-sm">
                 <span className="text-muted-foreground">Lance anônimo · {h.at}</span>
                 <span className="font-mono tabular-nums text-gold">{formatBRL(h.value)}</span>
