@@ -1,16 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { Users } from "lucide-react";
+import { Users, ArrowRight } from "lucide-react";
 import type { Auction } from "@/lib/auctions";
 import { formatBRL } from "@/lib/auctions";
 import { Countdown } from "./Countdown";
 
 export function AuctionCard({ a }: { a: Auction }) {
   return (
-    <Link
-      to="/leilao/$id"
-      params={{ id: a.id }}
-      className="group block overflow-hidden rounded-xl border border-border/60 bg-surface transition-all hover:border-gold/50 hover:shadow-gold"
-    >
+    <article className="group overflow-hidden rounded-xl border border-border/60 bg-surface transition-all hover:border-gold/50 hover:shadow-gold">
       <div className="flex gap-4 p-4">
         <img
           src={a.photo}
@@ -48,6 +44,15 @@ export function AuctionCard({ a }: { a: Auction }) {
           </div>
         </div>
       </div>
-    </Link>
+
+      <Link
+        to="/leilao/$id"
+        params={{ id: a.id }}
+        className="flex items-center justify-between border-t border-border/60 bg-background/40 px-5 py-3 text-[11px] uppercase tracking-widest text-gold transition-colors hover:bg-gold/5"
+      >
+        <span>Ver leilão e dar lance</span>
+        <ArrowRight className="h-3.5 w-3.5" strokeWidth={1.5} />
+      </Link>
+    </article>
   );
 }
