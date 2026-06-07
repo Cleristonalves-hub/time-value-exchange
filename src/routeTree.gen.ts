@@ -15,6 +15,8 @@ import { Route as HomeRouteImport } from './routes/home'
 import { Route as ExplorarRouteImport } from './routes/explorar'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LeilaoIdRouteImport } from './routes/leilao.$id'
+import { Route as CadastroEspecialistaRouteImport } from './routes/cadastro.especialista'
+import { Route as CadastroClienteRouteImport } from './routes/cadastro.cliente'
 
 const PerfilRoute = PerfilRouteImport.update({
   id: '/perfil',
@@ -46,6 +48,16 @@ const LeilaoIdRoute = LeilaoIdRouteImport.update({
   path: '/leilao/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CadastroEspecialistaRoute = CadastroEspecialistaRouteImport.update({
+  id: '/cadastro/especialista',
+  path: '/cadastro/especialista',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CadastroClienteRoute = CadastroClienteRouteImport.update({
+  id: '/cadastro/cliente',
+  path: '/cadastro/cliente',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,6 +65,8 @@ export interface FileRoutesByFullPath {
   '/home': typeof HomeRoute
   '/lances': typeof LancesRoute
   '/perfil': typeof PerfilRoute
+  '/cadastro/cliente': typeof CadastroClienteRoute
+  '/cadastro/especialista': typeof CadastroEspecialistaRoute
   '/leilao/$id': typeof LeilaoIdRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +75,8 @@ export interface FileRoutesByTo {
   '/home': typeof HomeRoute
   '/lances': typeof LancesRoute
   '/perfil': typeof PerfilRoute
+  '/cadastro/cliente': typeof CadastroClienteRoute
+  '/cadastro/especialista': typeof CadastroEspecialistaRoute
   '/leilao/$id': typeof LeilaoIdRoute
 }
 export interface FileRoutesById {
@@ -70,13 +86,31 @@ export interface FileRoutesById {
   '/home': typeof HomeRoute
   '/lances': typeof LancesRoute
   '/perfil': typeof PerfilRoute
+  '/cadastro/cliente': typeof CadastroClienteRoute
+  '/cadastro/especialista': typeof CadastroEspecialistaRoute
   '/leilao/$id': typeof LeilaoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/explorar' | '/home' | '/lances' | '/perfil' | '/leilao/$id'
+  fullPaths:
+    | '/'
+    | '/explorar'
+    | '/home'
+    | '/lances'
+    | '/perfil'
+    | '/cadastro/cliente'
+    | '/cadastro/especialista'
+    | '/leilao/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/explorar' | '/home' | '/lances' | '/perfil' | '/leilao/$id'
+  to:
+    | '/'
+    | '/explorar'
+    | '/home'
+    | '/lances'
+    | '/perfil'
+    | '/cadastro/cliente'
+    | '/cadastro/especialista'
+    | '/leilao/$id'
   id:
     | '__root__'
     | '/'
@@ -84,6 +118,8 @@ export interface FileRouteTypes {
     | '/home'
     | '/lances'
     | '/perfil'
+    | '/cadastro/cliente'
+    | '/cadastro/especialista'
     | '/leilao/$id'
   fileRoutesById: FileRoutesById
 }
@@ -93,6 +129,8 @@ export interface RootRouteChildren {
   HomeRoute: typeof HomeRoute
   LancesRoute: typeof LancesRoute
   PerfilRoute: typeof PerfilRoute
+  CadastroClienteRoute: typeof CadastroClienteRoute
+  CadastroEspecialistaRoute: typeof CadastroEspecialistaRoute
   LeilaoIdRoute: typeof LeilaoIdRoute
 }
 
@@ -140,6 +178,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeilaoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cadastro/especialista': {
+      id: '/cadastro/especialista'
+      path: '/cadastro/especialista'
+      fullPath: '/cadastro/especialista'
+      preLoaderRoute: typeof CadastroEspecialistaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cadastro/cliente': {
+      id: '/cadastro/cliente'
+      path: '/cadastro/cliente'
+      fullPath: '/cadastro/cliente'
+      preLoaderRoute: typeof CadastroClienteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -149,8 +201,20 @@ const rootRouteChildren: RootRouteChildren = {
   HomeRoute: HomeRoute,
   LancesRoute: LancesRoute,
   PerfilRoute: PerfilRoute,
+  CadastroClienteRoute: CadastroClienteRoute,
+  CadastroEspecialistaRoute: CadastroEspecialistaRoute,
   LeilaoIdRoute: LeilaoIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

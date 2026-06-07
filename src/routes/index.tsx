@@ -47,13 +47,13 @@ function Splash() {
 
       <div className="flex w-full max-w-sm flex-col gap-3">
         <Link
-          to="/home"
+          to="/cadastro/cliente"
           className="group relative overflow-hidden rounded-md bg-gradient-gold px-6 py-4 text-center text-sm font-medium uppercase tracking-[0.2em] text-primary-foreground shadow-gold transition-transform active:scale-[0.98]"
         >
           Quero contratar um especialista
         </Link>
         <Link
-          to="/home"
+          to="/cadastro/especialista"
           className="rounded-md border border-gold/40 px-6 py-4 text-center text-sm font-medium uppercase tracking-[0.2em] text-gold transition-colors hover:bg-gold/5"
         >
           Sou um especialista
