@@ -5,6 +5,7 @@ import { ValoreLogo } from "@/components/ValoreLogo";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { niches as allNiches } from "@/lib/auctions";
+import { ConductPledge } from "@/components/ConductPledge";
 
 export const Route = createFileRoute("/cadastro/especialista")({
   head: () => ({
