@@ -103,7 +103,7 @@ function AuctionDetail() {
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
                 Encerra em
               </div>
-              <Countdown endsAt={a.endsAt} className="text-xl" />
+              <Countdown endsAt={a.endsAt} variant="live" className="text-xl" />
             </div>
           </div>
 
