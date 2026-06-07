@@ -44,6 +44,7 @@ function SpecialistRegistration() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [done, setDone] = useState(false);
+  const [conduct, setConduct] = useState(false);
   const [data, setData] = useState<FormData>({
     fullName: "", email: "", phone: "", city: "",
     bio: "", niche: "", specialty: "", credential: "", experience: "",
@@ -57,7 +58,7 @@ function SpecialistRegistration() {
     if (step === 0) return data.fullName && data.email && data.phone && data.city;
     if (step === 1) return data.niche && data.specialty && data.bio.length > 20;
     if (step === 2) return data.credential && data.experience;
-    if (step === 3) return data.platform;
+    if (step === 3) return data.platform && conduct;
     return false;
   };
 
