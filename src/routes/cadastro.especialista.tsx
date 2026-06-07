@@ -222,6 +222,7 @@ function SpecialistRegistration() {
               <Field label="Idiomas que atende">
                 <Input value={data.languages} onChange={(e) => set("languages", e.target.value)} placeholder="Português, Inglês" />
               </Field>
+              <ConductPledge accepted={conduct} onToggle={() => setConduct(!conduct)} />
             </>
           )}
         </div>
