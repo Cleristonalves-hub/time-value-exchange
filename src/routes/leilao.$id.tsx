@@ -237,6 +237,12 @@ function AuctionDetail() {
               >
                 Voltar aos leilões
               </Link>
+              <div className="mt-2 border-t border-border/60 pt-3">
+                <p className="mb-2 text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Após a sessão
+                </p>
+                <ReportButton target={a.expert} variant="outline" />
+              </div>
             </div>
           </div>
         </div>
