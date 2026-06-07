@@ -3,6 +3,7 @@ import { ChevronLeft, Users, Video, Globe2, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Countdown } from "@/components/Countdown";
 import { getAuction, formatBRL } from "@/lib/auctions";
+import { ReportButton } from "@/components/ReportDialog";
 
 export const Route = createFileRoute("/leilao/$id")({
   loader: ({ params }) => {
@@ -195,6 +196,13 @@ function AuctionDetail() {
             Ao vencer, você tem 24h para confirmar o agendamento. Comissão de 20% retida
             pela plataforma. Sessão realizada 100% online por videochamada.
           </p>
+
+          <div className="mt-6 flex items-center justify-between rounded-md border border-border/60 bg-background/40 px-4 py-3">
+            <p className="text-[11px] text-muted-foreground">
+              Algo errado com este especialista?
+            </p>
+            <ReportButton target={a.expert} />
+          </div>
         </section>
       </div>
 
@@ -229,6 +237,12 @@ function AuctionDetail() {
               >
                 Voltar aos leilões
               </Link>
+              <div className="mt-2 border-t border-border/60 pt-3">
+                <p className="mb-2 text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Após a sessão
+                </p>
+                <ReportButton target={a.expert} variant="outline" />
+              </div>
             </div>
           </div>
         </div>

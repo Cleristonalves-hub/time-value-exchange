@@ -3,6 +3,7 @@ import { useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { ValoreLogo } from "@/components/ValoreLogo";
 import { Input } from "@/components/ui/input";
+import { ConductPledge } from "@/components/ConductPledge";
 
 export const Route = createFileRoute("/cadastro/cliente")({
   head: () => ({
@@ -81,20 +82,7 @@ function ClientRegistration() {
             <Input type="password" value={d.password} onChange={(e) => set("password", e.target.value)} placeholder="Mínimo 6 caracteres" />
           </Field>
 
-          <label className="flex cursor-pointer items-start gap-3 pt-2">
-            <span
-              className={`mt-0.5 flex size-4 items-center justify-center rounded border transition-colors ${
-                d.accept ? "border-gold bg-gold" : "border-border"
-              }`}
-              onClick={() => set("accept", !d.accept)}
-            >
-              {d.accept && <Check className="size-3 text-primary-foreground" />}
-            </span>
-            <span className="text-xs leading-relaxed text-muted-foreground">
-              Aceito os <span className="text-gold underline-offset-4 hover:underline">Termos de Uso</span> e a{" "}
-              <span className="text-gold underline-offset-4 hover:underline">Política de Privacidade</span> da Valore.
-            </span>
-          </label>
+          <ConductPledge accepted={d.accept} onToggle={() => set("accept", !d.accept)} />
 
           <button
             type="submit"

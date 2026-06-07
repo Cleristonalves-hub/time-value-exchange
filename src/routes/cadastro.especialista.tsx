@@ -5,6 +5,7 @@ import { ValoreLogo } from "@/components/ValoreLogo";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { niches as allNiches } from "@/lib/auctions";
+import { ConductPledge } from "@/components/ConductPledge";
 
 export const Route = createFileRoute("/cadastro/especialista")({
   head: () => ({
@@ -43,6 +44,7 @@ function SpecialistRegistration() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [done, setDone] = useState(false);
+  const [conduct, setConduct] = useState(false);
   const [data, setData] = useState<FormData>({
     fullName: "", email: "", phone: "", city: "",
     bio: "", niche: "", specialty: "", credential: "", experience: "",
@@ -56,7 +58,7 @@ function SpecialistRegistration() {
     if (step === 0) return data.fullName && data.email && data.phone && data.city;
     if (step === 1) return data.niche && data.specialty && data.bio.length > 20;
     if (step === 2) return data.credential && data.experience;
-    if (step === 3) return data.platform;
+    if (step === 3) return data.platform && conduct;
     return false;
   };
 
@@ -220,6 +222,7 @@ function SpecialistRegistration() {
               <Field label="Idiomas que atende">
                 <Input value={data.languages} onChange={(e) => set("languages", e.target.value)} placeholder="Português, Inglês" />
               </Field>
+              <ConductPledge accepted={conduct} onToggle={() => setConduct(!conduct)} />
             </>
           )}
         </div>
