@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { ValoreLogo } from "@/components/ValoreLogo";
 import { Input } from "@/components/ui/input";
@@ -130,7 +130,7 @@ function ClientRegistration() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
       <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-muted-foreground">{label}</label>
