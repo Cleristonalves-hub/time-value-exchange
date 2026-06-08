@@ -18,9 +18,9 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VitoriaIdRouteImport } from './routes/vitoria.$id'
 import { Route as LeilaoIdRouteImport } from './routes/leilao.$id'
-import { Route as AvaliarIdRouteImport } from './routes/avaliar.$id'
 import { Route as CadastroEspecialistaRouteImport } from './routes/cadastro.especialista'
 import { Route as CadastroClienteRouteImport } from './routes/cadastro.cliente'
+import { Route as AvaliarIdRouteImport } from './routes/avaliar.$id'
 
 const PerfilRoute = PerfilRouteImport.update({
   id: '/perfil',
@@ -67,11 +67,6 @@ const LeilaoIdRoute = LeilaoIdRouteImport.update({
   path: '/leilao/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AvaliarIdRoute = AvaliarIdRouteImport.update({
-  id: '/avaliar/$id',
-  path: '/avaliar/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CadastroEspecialistaRoute = CadastroEspecialistaRouteImport.update({
   id: '/cadastro/especialista',
   path: '/cadastro/especialista',
@@ -80,6 +75,11 @@ const CadastroEspecialistaRoute = CadastroEspecialistaRouteImport.update({
 const CadastroClienteRoute = CadastroClienteRouteImport.update({
   id: '/cadastro/cliente',
   path: '/cadastro/cliente',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AvaliarIdRoute = AvaliarIdRouteImport.update({
+  id: '/avaliar/$id',
+  path: '/avaliar/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -91,9 +91,9 @@ export interface FileRoutesByFullPath {
   '/home': typeof HomeRoute
   '/lances': typeof LancesRoute
   '/perfil': typeof PerfilRoute
+  '/avaliar/$id': typeof AvaliarIdRoute
   '/cadastro/cliente': typeof CadastroClienteRoute
   '/cadastro/especialista': typeof CadastroEspecialistaRoute
-  '/avaliar/$id': typeof AvaliarIdRoute
   '/leilao/$id': typeof LeilaoIdRoute
   '/vitoria/$id': typeof VitoriaIdRoute
 }
@@ -105,9 +105,9 @@ export interface FileRoutesByTo {
   '/home': typeof HomeRoute
   '/lances': typeof LancesRoute
   '/perfil': typeof PerfilRoute
+  '/avaliar/$id': typeof AvaliarIdRoute
   '/cadastro/cliente': typeof CadastroClienteRoute
   '/cadastro/especialista': typeof CadastroEspecialistaRoute
-  '/avaliar/$id': typeof AvaliarIdRoute
   '/leilao/$id': typeof LeilaoIdRoute
   '/vitoria/$id': typeof VitoriaIdRoute
 }
@@ -120,9 +120,9 @@ export interface FileRoutesById {
   '/home': typeof HomeRoute
   '/lances': typeof LancesRoute
   '/perfil': typeof PerfilRoute
+  '/avaliar/$id': typeof AvaliarIdRoute
   '/cadastro/cliente': typeof CadastroClienteRoute
   '/cadastro/especialista': typeof CadastroEspecialistaRoute
-  '/avaliar/$id': typeof AvaliarIdRoute
   '/leilao/$id': typeof LeilaoIdRoute
   '/vitoria/$id': typeof VitoriaIdRoute
 }
@@ -136,9 +136,9 @@ export interface FileRouteTypes {
     | '/home'
     | '/lances'
     | '/perfil'
+    | '/avaliar/$id'
     | '/cadastro/cliente'
     | '/cadastro/especialista'
-    | '/avaliar/$id'
     | '/leilao/$id'
     | '/vitoria/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -150,9 +150,9 @@ export interface FileRouteTypes {
     | '/home'
     | '/lances'
     | '/perfil'
+    | '/avaliar/$id'
     | '/cadastro/cliente'
     | '/cadastro/especialista'
-    | '/avaliar/$id'
     | '/leilao/$id'
     | '/vitoria/$id'
   id:
@@ -164,9 +164,9 @@ export interface FileRouteTypes {
     | '/home'
     | '/lances'
     | '/perfil'
+    | '/avaliar/$id'
     | '/cadastro/cliente'
     | '/cadastro/especialista'
-    | '/avaliar/$id'
     | '/leilao/$id'
     | '/vitoria/$id'
   fileRoutesById: FileRoutesById
@@ -179,9 +179,9 @@ export interface RootRouteChildren {
   HomeRoute: typeof HomeRoute
   LancesRoute: typeof LancesRoute
   PerfilRoute: typeof PerfilRoute
+  AvaliarIdRoute: typeof AvaliarIdRoute
   CadastroClienteRoute: typeof CadastroClienteRoute
   CadastroEspecialistaRoute: typeof CadastroEspecialistaRoute
-  AvaliarIdRoute: typeof AvaliarIdRoute
   LeilaoIdRoute: typeof LeilaoIdRoute
   VitoriaIdRoute: typeof VitoriaIdRoute
 }
@@ -251,13 +251,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeilaoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/avaliar/$id': {
-      id: '/avaliar/$id'
-      path: '/avaliar/$id'
-      fullPath: '/avaliar/$id'
-      preLoaderRoute: typeof AvaliarIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/cadastro/especialista': {
       id: '/cadastro/especialista'
       path: '/cadastro/especialista'
@@ -272,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CadastroClienteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/avaliar/$id': {
+      id: '/avaliar/$id'
+      path: '/avaliar/$id'
+      fullPath: '/avaliar/$id'
+      preLoaderRoute: typeof AvaliarIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -283,9 +283,9 @@ const rootRouteChildren: RootRouteChildren = {
   HomeRoute: HomeRoute,
   LancesRoute: LancesRoute,
   PerfilRoute: PerfilRoute,
+  AvaliarIdRoute: AvaliarIdRoute,
   CadastroClienteRoute: CadastroClienteRoute,
   CadastroEspecialistaRoute: CadastroEspecialistaRoute,
-  AvaliarIdRoute: AvaliarIdRoute,
   LeilaoIdRoute: LeilaoIdRoute,
   VitoriaIdRoute: VitoriaIdRoute,
 }
