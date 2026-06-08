@@ -64,6 +64,22 @@ function Splash() {
         >
           Já tenho conta — entrar
         </Link>
+
+        <div className="mt-6 flex items-center justify-center gap-4">
+          <Link
+            to="/termos"
+            className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground underline-offset-4 transition-colors hover:text-gold hover:underline"
+          >
+            Termos de Uso
+          </Link>
+          <span className="text-muted-foreground/30">·</span>
+          <Link
+            to="/privacidade"
+            className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground underline-offset-4 transition-colors hover:text-gold hover:underline"
+          >
+            Privacidade
+          </Link>
+        </div>
       </div>
     </main>
   );
