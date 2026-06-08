@@ -12,11 +12,15 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as LancesRouteImport } from './routes/lances'
 import { Route as HomeRouteImport } from './routes/home'
+import { Route as GanhosRouteImport } from './routes/ganhos'
 import { Route as ExplorarRouteImport } from './routes/explorar'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VitoriaIdRouteImport } from './routes/vitoria.$id'
 import { Route as LeilaoIdRouteImport } from './routes/leilao.$id'
 import { Route as CadastroEspecialistaRouteImport } from './routes/cadastro.especialista'
 import { Route as CadastroClienteRouteImport } from './routes/cadastro.cliente'
+import { Route as AvaliarIdRouteImport } from './routes/avaliar.$id'
 
 const PerfilRoute = PerfilRouteImport.update({
   id: '/perfil',
@@ -33,14 +37,29 @@ const HomeRoute = HomeRouteImport.update({
   path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GanhosRoute = GanhosRouteImport.update({
+  id: '/ganhos',
+  path: '/ganhos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ExplorarRoute = ExplorarRouteImport.update({
   id: '/explorar',
   path: '/explorar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VitoriaIdRoute = VitoriaIdRouteImport.update({
+  id: '/vitoria/$id',
+  path: '/vitoria/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LeilaoIdRoute = LeilaoIdRouteImport.update({
@@ -58,80 +77,113 @@ const CadastroClienteRoute = CadastroClienteRouteImport.update({
   path: '/cadastro/cliente',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AvaliarIdRoute = AvaliarIdRouteImport.update({
+  id: '/avaliar/$id',
+  path: '/avaliar/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/explorar': typeof ExplorarRoute
+  '/ganhos': typeof GanhosRoute
   '/home': typeof HomeRoute
   '/lances': typeof LancesRoute
   '/perfil': typeof PerfilRoute
+  '/avaliar/$id': typeof AvaliarIdRoute
   '/cadastro/cliente': typeof CadastroClienteRoute
   '/cadastro/especialista': typeof CadastroEspecialistaRoute
   '/leilao/$id': typeof LeilaoIdRoute
+  '/vitoria/$id': typeof VitoriaIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/explorar': typeof ExplorarRoute
+  '/ganhos': typeof GanhosRoute
   '/home': typeof HomeRoute
   '/lances': typeof LancesRoute
   '/perfil': typeof PerfilRoute
+  '/avaliar/$id': typeof AvaliarIdRoute
   '/cadastro/cliente': typeof CadastroClienteRoute
   '/cadastro/especialista': typeof CadastroEspecialistaRoute
   '/leilao/$id': typeof LeilaoIdRoute
+  '/vitoria/$id': typeof VitoriaIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/explorar': typeof ExplorarRoute
+  '/ganhos': typeof GanhosRoute
   '/home': typeof HomeRoute
   '/lances': typeof LancesRoute
   '/perfil': typeof PerfilRoute
+  '/avaliar/$id': typeof AvaliarIdRoute
   '/cadastro/cliente': typeof CadastroClienteRoute
   '/cadastro/especialista': typeof CadastroEspecialistaRoute
   '/leilao/$id': typeof LeilaoIdRoute
+  '/vitoria/$id': typeof VitoriaIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/explorar'
+    | '/ganhos'
     | '/home'
     | '/lances'
     | '/perfil'
+    | '/avaliar/$id'
     | '/cadastro/cliente'
     | '/cadastro/especialista'
     | '/leilao/$id'
+    | '/vitoria/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin'
     | '/explorar'
+    | '/ganhos'
     | '/home'
     | '/lances'
     | '/perfil'
+    | '/avaliar/$id'
     | '/cadastro/cliente'
     | '/cadastro/especialista'
     | '/leilao/$id'
+    | '/vitoria/$id'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/explorar'
+    | '/ganhos'
     | '/home'
     | '/lances'
     | '/perfil'
+    | '/avaliar/$id'
     | '/cadastro/cliente'
     | '/cadastro/especialista'
     | '/leilao/$id'
+    | '/vitoria/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   ExplorarRoute: typeof ExplorarRoute
+  GanhosRoute: typeof GanhosRoute
   HomeRoute: typeof HomeRoute
   LancesRoute: typeof LancesRoute
   PerfilRoute: typeof PerfilRoute
+  AvaliarIdRoute: typeof AvaliarIdRoute
   CadastroClienteRoute: typeof CadastroClienteRoute
   CadastroEspecialistaRoute: typeof CadastroEspecialistaRoute
   LeilaoIdRoute: typeof LeilaoIdRoute
+  VitoriaIdRoute: typeof VitoriaIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -157,6 +209,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ganhos': {
+      id: '/ganhos'
+      path: '/ganhos'
+      fullPath: '/ganhos'
+      preLoaderRoute: typeof GanhosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/explorar': {
       id: '/explorar'
       path: '/explorar'
@@ -164,11 +223,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ExplorarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vitoria/$id': {
+      id: '/vitoria/$id'
+      path: '/vitoria/$id'
+      fullPath: '/vitoria/$id'
+      preLoaderRoute: typeof VitoriaIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/leilao/$id': {
@@ -192,18 +265,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CadastroClienteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/avaliar/$id': {
+      id: '/avaliar/$id'
+      path: '/avaliar/$id'
+      fullPath: '/avaliar/$id'
+      preLoaderRoute: typeof AvaliarIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   ExplorarRoute: ExplorarRoute,
+  GanhosRoute: GanhosRoute,
   HomeRoute: HomeRoute,
   LancesRoute: LancesRoute,
   PerfilRoute: PerfilRoute,
+  AvaliarIdRoute: AvaliarIdRoute,
   CadastroClienteRoute: CadastroClienteRoute,
   CadastroEspecialistaRoute: CadastroEspecialistaRoute,
   LeilaoIdRoute: LeilaoIdRoute,
+  VitoriaIdRoute: VitoriaIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
