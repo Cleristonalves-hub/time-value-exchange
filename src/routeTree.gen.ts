@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermosRouteImport } from './routes/termos'
+import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as LancesRouteImport } from './routes/lances'
 import { Route as HomeRouteImport } from './routes/home'
@@ -22,6 +24,16 @@ import { Route as CadastroEspecialistaRouteImport } from './routes/cadastro.espe
 import { Route as CadastroClienteRouteImport } from './routes/cadastro.cliente'
 import { Route as AvaliarIdRouteImport } from './routes/avaliar.$id'
 
+const TermosRoute = TermosRouteImport.update({
+  id: '/termos',
+  path: '/termos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacidadeRoute = PrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PerfilRoute = PerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
@@ -91,6 +103,8 @@ export interface FileRoutesByFullPath {
   '/home': typeof HomeRoute
   '/lances': typeof LancesRoute
   '/perfil': typeof PerfilRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/termos': typeof TermosRoute
   '/avaliar/$id': typeof AvaliarIdRoute
   '/cadastro/cliente': typeof CadastroClienteRoute
   '/cadastro/especialista': typeof CadastroEspecialistaRoute
@@ -105,6 +119,8 @@ export interface FileRoutesByTo {
   '/home': typeof HomeRoute
   '/lances': typeof LancesRoute
   '/perfil': typeof PerfilRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/termos': typeof TermosRoute
   '/avaliar/$id': typeof AvaliarIdRoute
   '/cadastro/cliente': typeof CadastroClienteRoute
   '/cadastro/especialista': typeof CadastroEspecialistaRoute
@@ -120,6 +136,8 @@ export interface FileRoutesById {
   '/home': typeof HomeRoute
   '/lances': typeof LancesRoute
   '/perfil': typeof PerfilRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/termos': typeof TermosRoute
   '/avaliar/$id': typeof AvaliarIdRoute
   '/cadastro/cliente': typeof CadastroClienteRoute
   '/cadastro/especialista': typeof CadastroEspecialistaRoute
@@ -136,6 +154,8 @@ export interface FileRouteTypes {
     | '/home'
     | '/lances'
     | '/perfil'
+    | '/privacidade'
+    | '/termos'
     | '/avaliar/$id'
     | '/cadastro/cliente'
     | '/cadastro/especialista'
@@ -150,6 +170,8 @@ export interface FileRouteTypes {
     | '/home'
     | '/lances'
     | '/perfil'
+    | '/privacidade'
+    | '/termos'
     | '/avaliar/$id'
     | '/cadastro/cliente'
     | '/cadastro/especialista'
@@ -164,6 +186,8 @@ export interface FileRouteTypes {
     | '/home'
     | '/lances'
     | '/perfil'
+    | '/privacidade'
+    | '/termos'
     | '/avaliar/$id'
     | '/cadastro/cliente'
     | '/cadastro/especialista'
@@ -179,6 +203,8 @@ export interface RootRouteChildren {
   HomeRoute: typeof HomeRoute
   LancesRoute: typeof LancesRoute
   PerfilRoute: typeof PerfilRoute
+  PrivacidadeRoute: typeof PrivacidadeRoute
+  TermosRoute: typeof TermosRoute
   AvaliarIdRoute: typeof AvaliarIdRoute
   CadastroClienteRoute: typeof CadastroClienteRoute
   CadastroEspecialistaRoute: typeof CadastroEspecialistaRoute
@@ -188,6 +214,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/termos': {
+      id: '/termos'
+      path: '/termos'
+      fullPath: '/termos'
+      preLoaderRoute: typeof TermosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacidade': {
+      id: '/privacidade'
+      path: '/privacidade'
+      fullPath: '/privacidade'
+      preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/perfil': {
       id: '/perfil'
       path: '/perfil'
@@ -283,6 +323,8 @@ const rootRouteChildren: RootRouteChildren = {
   HomeRoute: HomeRoute,
   LancesRoute: LancesRoute,
   PerfilRoute: PerfilRoute,
+  PrivacidadeRoute: PrivacidadeRoute,
+  TermosRoute: TermosRoute,
   AvaliarIdRoute: AvaliarIdRoute,
   CadastroClienteRoute: CadastroClienteRoute,
   CadastroEspecialistaRoute: CadastroEspecialistaRoute,
