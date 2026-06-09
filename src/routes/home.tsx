@@ -5,6 +5,8 @@ import { ValoreLogo } from "@/components/ValoreLogo";
 import { BottomNav } from "@/components/BottomNav";
 import { AuctionCard } from "@/components/AuctionCard";
 import { Countdown } from "@/components/Countdown";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { useT } from "@/lib/i18n";
 import { auctions, niches, formatBRL } from "@/lib/auctions";
 
 export const Route = createFileRoute("/home")({
