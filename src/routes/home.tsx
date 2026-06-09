@@ -5,6 +5,8 @@ import { ValoreLogo } from "@/components/ValoreLogo";
 import { BottomNav } from "@/components/BottomNav";
 import { AuctionCard } from "@/components/AuctionCard";
 import { Countdown } from "@/components/Countdown";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { useT } from "@/lib/i18n";
 import { auctions, niches, formatBRL } from "@/lib/auctions";
 
 export const Route = createFileRoute("/home")({
@@ -18,6 +20,7 @@ export const Route = createFileRoute("/home")({
 });
 
 function Home() {
+  const { t } = useT();
   const [query, setQuery] = useState("");
   const [niche, setNiche] = useState("Todos");
 
@@ -45,19 +48,22 @@ function Home() {
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-4">
           <ValoreLogo className="text-xl" />
-          <button
-            aria-label="Notificações"
-            className="rounded-full border border-border/60 p-2 text-muted-foreground transition-colors hover:border-gold/40 hover:text-gold"
-          >
-            <Bell className="h-4 w-4" strokeWidth={1.5} />
-          </button>
+          <div className="flex items-center gap-2">
+            <LanguageSelector />
+            <button
+              aria-label="Notificações"
+              className="rounded-full border border-border/60 p-2 text-muted-foreground transition-colors hover:border-gold/40 hover:text-gold"
+            >
+              <Bell className="h-4 w-4" strokeWidth={1.5} />
+            </button>
+          </div>
         </div>
       </header>
 
       <div className="mx-auto max-w-2xl px-5 pt-6">
-        <p className="font-display text-2xl text-foreground">Boa noite.</p>
+        <p className="font-display text-2xl text-foreground">{t("home.greeting")}</p>
         <p className="text-sm text-muted-foreground">
-          Quatro leilões aguardam seus lances esta noite.
+          {t("home.subgreeting")}
         </p>
 
         {/* Featured */}
@@ -76,7 +82,7 @@ function Home() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
             <div className="absolute left-5 top-5 inline-flex items-center gap-2 rounded-sm border border-gold/40 bg-background/60 px-3 py-1 text-[10px] uppercase tracking-widest text-gold backdrop-blur">
-              ◆ Leilão em destaque
+              {t("home.featured")}
             </div>
             <div className="absolute bottom-5 left-5 right-5">
               <div className="text-[10px] uppercase tracking-widest text-gold/80">
@@ -89,7 +95,7 @@ function Home() {
               <div className="mt-3 flex items-end justify-between">
                 <div>
                   <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                    Lance atual
+                    {t("home.currentBid")}
                   </div>
                   <div className="font-display text-3xl text-gradient-gold">
                     {formatBRL(featured.currentBid)}
@@ -97,7 +103,7 @@ function Home() {
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                    Encerra em
+                    {t("home.endsIn")}
                   </div>
                   <Countdown endsAt={featured.endsAt} className="text-lg" />
                 </div>
@@ -112,7 +118,7 @@ function Home() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por especialidade ou nome"
+            placeholder={t("home.search")}
             className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
         </div>
@@ -142,9 +148,9 @@ function Home() {
         {/* Auction list */}
         <section className="mt-6 space-y-3">
           <div className="flex items-baseline justify-between">
-            <h3 className="font-display text-lg">Leilões ativos</h3>
+            <h3 className="font-display text-lg">{t("home.activeAuctions")}</h3>
             <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
-              {filtered.length} resultados
+              {filtered.length} {t("home.results")}
             </span>
           </div>
           {filtered.map((a) => (
@@ -152,7 +158,7 @@ function Home() {
           ))}
           {filtered.length === 0 && (
             <p className="rounded-md border border-border/60 bg-surface p-8 text-center text-sm text-muted-foreground">
-              Nenhum leilão para esta combinação.
+              {t("home.empty")}
             </p>
           )}
         </section>
