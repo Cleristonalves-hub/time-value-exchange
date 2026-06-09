@@ -21,8 +21,8 @@ type Pending = {
 
 const initial: Pending[] = [
   { id: "p1", name: "Dr. Rafael Monteiro", niche: "Saúde", specialty: "Neurocirurgião", credential: "Pós-doc Johns Hopkins", city: "São Paulo", submittedAt: "há 2h", status: "pendente" },
-  { id: "p2", name: "Carla Beneditti", niche: "Direito", specialty: "Direito tributário internacional", credential: "Sócia · Mattos Filho", city: "Rio de Janeiro", submittedAt: "há 5h", status: "pendente" },
-  { id: "p3", name: "Maestro Igor Lessa", niche: "Música", specialty: "Regência orquestral", credential: "Royal College of Music", city: "Curitiba", submittedAt: "há 1d", status: "pendente" },
+  { id: "p2", name: "Dra. Mei-Ling Yamashiro", niche: "Direito", specialty: "Direito tributário internacional", credential: "Sócia · Mattos Filho", city: "Rio de Janeiro", submittedAt: "há 5h", status: "pendente" },
+  { id: "p3", name: "Maestra Sonia Bakari", niche: "Música", specialty: "Regência orquestral", credential: "Royal College of Music", city: "Salvador", submittedAt: "há 1d", status: "pendente" },
   { id: "p4", name: "Tatiana Furlan", niche: "Finanças", specialty: "Wealth management private", credential: "CFA · ex-J.P. Morgan", city: "São Paulo", submittedAt: "há 1d", status: "pendente" },
 ];
 

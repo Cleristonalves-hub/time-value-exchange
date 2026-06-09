@@ -29,7 +29,7 @@ const h = (n: number) => now + n * 3600 * 1000;
 export const auctions: Auction[] = [
   {
     id: "1",
-    expert: "Dra. Helena Vasconcelos",
+    expert: "Dra. Aline Nascimento",
     photo: expert1,
     niche: "Saúde",
     specialty: "Cardiologista — check-up executivo",
@@ -53,7 +53,7 @@ export const auctions: Auction[] = [
   },
   {
     id: "2",
-    expert: "Maestro Ricardo Albano",
+    expert: "Maestro Kenji Tanaka",
     photo: expert2,
     niche: "Música",
     specialty: "Produtor musical — análise de demo",
@@ -76,7 +76,7 @@ export const auctions: Auction[] = [
   },
   {
     id: "3",
-    expert: "Lucas Andrade",
+    expert: "Lucas Andrade dos Santos",
     photo: expert3,
     niche: "Tecnologia",
     specialty: "Arquiteto de software — code review",

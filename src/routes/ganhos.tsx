@@ -11,9 +11,9 @@ export const Route = createFileRoute("/ganhos")({
 
 const sessions = [
   { id: "s1", client: "Marcos R.", date: "02 Jun 2026", gross: 4800 },
-  { id: "s2", client: "Beatriz L.", date: "28 Mai 2026", gross: 3200 },
-  { id: "s3", client: "Henrique P.", date: "21 Mai 2026", gross: 5600 },
-  { id: "s4", client: "Ana C.", date: "14 Mai 2026", gross: 2400 },
+  { id: "s2", client: "Adaeze O.", date: "28 Mai 2026", gross: 3200 },
+  { id: "s3", client: "Hiroshi T.", date: "21 Mai 2026", gross: 5600 },
+  { id: "s4", client: "Amanda C.", date: "14 Mai 2026", gross: 2400 },
   { id: "s5", client: "Júlia M.", date: "07 Mai 2026", gross: 3800 },
 ];
 
