@@ -20,6 +20,7 @@ export const Route = createFileRoute("/home")({
 });
 
 function Home() {
+  const { t } = useT();
   const [query, setQuery] = useState("");
   const [niche, setNiche] = useState("Todos");
 
