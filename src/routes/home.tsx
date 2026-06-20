@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Bell, Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { ValoreLogo } from "@/components/ValoreLogo";
+import { ValoreLogo, ValoreMark } from "@/components/ValoreLogo";
 import { BottomNav } from "@/components/BottomNav";
 import { AuctionCard } from "@/components/AuctionCard";
 import { Countdown } from "@/components/Countdown";
@@ -47,7 +47,10 @@ function Home() {
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-4">
-          <ValoreLogo className="text-xl" />
+          <div className="flex items-center gap-2.5">
+            <ValoreMark size={36} className="h-9 w-9" />
+            <ValoreLogo className="text-xl" />
+          </div>
           <div className="flex items-center gap-2">
             <LanguageSelector />
             <button
