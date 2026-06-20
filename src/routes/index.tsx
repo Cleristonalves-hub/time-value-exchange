@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ValoreLogo } from "@/components/ValoreLogo";
+import { ValoreLogo, ValoreMark } from "@/components/ValoreLogo";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useT } from "@/lib/i18n";
 
