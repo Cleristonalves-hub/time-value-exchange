@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Bell, Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { ValoreLogo } from "@/components/ValoreLogo";
+import { ValoreLogo, ValoreMark } from "@/components/ValoreLogo";
 import { BottomNav } from "@/components/BottomNav";
 import { AuctionCard } from "@/components/AuctionCard";
 import { Countdown } from "@/components/Countdown";
