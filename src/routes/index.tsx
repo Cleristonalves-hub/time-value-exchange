@@ -40,6 +40,10 @@ function Splash() {
       </div>
 
       <div className="flex flex-col items-center text-center">
+        <ValoreMark
+          size={180}
+          className="mb-4 h-40 w-40 md:h-48 md:w-48 animate-in fade-in zoom-in-95 duration-1000"
+        />
         <ValoreLogo className="text-5xl md:text-6xl animate-in fade-in slide-in-from-bottom-4 duration-1000" />
         <div className="mt-6 h-px w-16 hairline-gold opacity-60" />
         <p className="mt-6 max-w-sm font-display text-xl italic text-foreground/80 md:text-2xl">
