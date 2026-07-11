@@ -15,6 +15,7 @@ import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as LancesRouteImport } from './routes/lances'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as GanhosRouteImport } from './routes/ganhos'
+import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as ExplorarRouteImport } from './routes/explorar'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -52,6 +53,11 @@ const HomeRoute = HomeRouteImport.update({
 const GanhosRoute = GanhosRouteImport.update({
   id: '/ganhos',
   path: '/ganhos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedbackRoute = FeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExplorarRoute = ExplorarRouteImport.update({
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/explorar': typeof ExplorarRoute
+  '/feedback': typeof FeedbackRoute
   '/ganhos': typeof GanhosRoute
   '/home': typeof HomeRoute
   '/lances': typeof LancesRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/explorar': typeof ExplorarRoute
+  '/feedback': typeof FeedbackRoute
   '/ganhos': typeof GanhosRoute
   '/home': typeof HomeRoute
   '/lances': typeof LancesRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/explorar': typeof ExplorarRoute
+  '/feedback': typeof FeedbackRoute
   '/ganhos': typeof GanhosRoute
   '/home': typeof HomeRoute
   '/lances': typeof LancesRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/explorar'
+    | '/feedback'
     | '/ganhos'
     | '/home'
     | '/lances'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/explorar'
+    | '/feedback'
     | '/ganhos'
     | '/home'
     | '/lances'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/explorar'
+    | '/feedback'
     | '/ganhos'
     | '/home'
     | '/lances'
@@ -199,6 +211,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   ExplorarRoute: typeof ExplorarRoute
+  FeedbackRoute: typeof FeedbackRoute
   GanhosRoute: typeof GanhosRoute
   HomeRoute: typeof HomeRoute
   LancesRoute: typeof LancesRoute
@@ -254,6 +267,13 @@ declare module '@tanstack/react-router' {
       path: '/ganhos'
       fullPath: '/ganhos'
       preLoaderRoute: typeof GanhosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feedback': {
+      id: '/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof FeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/explorar': {
@@ -319,6 +339,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   ExplorarRoute: ExplorarRoute,
+  FeedbackRoute: FeedbackRoute,
   GanhosRoute: GanhosRoute,
   HomeRoute: HomeRoute,
   LancesRoute: LancesRoute,
@@ -334,13 +355,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

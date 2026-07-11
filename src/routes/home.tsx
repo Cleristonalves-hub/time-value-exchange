@@ -3,6 +3,7 @@ import { Bell, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ValoreLogo, ValoreMark } from "@/components/ValoreLogo";
 import { BottomNav } from "@/components/BottomNav";
+import { Disclaimer } from "@/components/Disclaimer";
 import { AuctionCard } from "@/components/AuctionCard";
 import { Countdown } from "@/components/Countdown";
 import { LanguageSelector } from "@/components/LanguageSelector";
@@ -166,8 +167,9 @@ function Home() {
           )}
         </section>
       </div>
-
+      <Disclaimer />
       <BottomNav />
     </main>
+
   );
 }

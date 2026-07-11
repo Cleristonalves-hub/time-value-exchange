@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { Star, Check } from "lucide-react";
 import { useState } from "react";
 import { auctions } from "@/lib/auctions";
+import { addReview } from "@/lib/store";
 
 export const Route = createFileRoute("/avaliar/$id")({
   head: () => ({ meta: [{ title: "Avaliar sessão — Valore" }] }),
@@ -29,6 +30,17 @@ function ReviewPage() {
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState("");
   const [sent, setSent] = useState(false);
+
+  const handleSend = () => {
+    if (!rating) return;
+    addReview({
+      specialistId: auction.id,
+      auctionId: auction.id,
+      rating,
+      comment,
+    });
+    setSent(true);
+  };
 
   if (sent) {
     return (
@@ -102,7 +114,7 @@ function ReviewPage() {
 
         <button
           disabled={!rating}
-          onClick={() => setSent(true)}
+          onClick={handleSend}
           className="mt-6 w-full rounded-md bg-gradient-gold py-3 text-sm font-semibold uppercase tracking-widest text-background disabled:opacity-40"
         >
           Enviar avaliação

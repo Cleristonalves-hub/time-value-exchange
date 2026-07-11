@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Flag, X, Check } from "lucide-react";
+import { addReport } from "@/lib/store";
 
 const CATEGORIES = [
   "Não compareceu",
   "Comportamento ofensivo",
   "Não efetuou pagamento",
   "Conteúdo inadequado",
+  "Credenciais suspeitas",
   "Outro",
 ] as const;
 
@@ -44,6 +46,7 @@ function ReportDialog({ target, onClose }: { target: string; onClose: () => void
 
   const submit = () => {
     if (!category) return;
+    addReport({ target, category, details });
     setSent(true);
   };
 
@@ -67,7 +70,7 @@ function ReportDialog({ target, onClose }: { target: string; onClose: () => void
             </div>
             <h3 className="mt-4 font-display text-2xl">Denúncia enviada</h3>
             <p className="mt-2 text-xs text-muted-foreground">
-              Nossa curadoria analisará em até 24h. Reincidências geram banimento.
+              Nossa curadoria analisará em até 24h. Um email foi encaminhado para contato@valore.services.
             </p>
             <button
               onClick={onClose}

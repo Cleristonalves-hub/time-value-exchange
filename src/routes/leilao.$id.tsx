@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Countdown } from "@/components/Countdown";
 import { getAuction, formatBRL } from "@/lib/auctions";
 import { ReportButton } from "@/components/ReportDialog";
+import { Disclaimer } from "@/components/Disclaimer";
 
 export const Route = createFileRoute("/leilao/$id")({
   loader: ({ params }) => {
@@ -204,7 +205,11 @@ function AuctionDetail() {
             <ReportButton target={a.expert} />
           </div>
         </section>
+
+        <Disclaimer variant="inline" />
       </div>
+
+
 
       {/* Confirmation modal */}
       {confirmed !== null && (
