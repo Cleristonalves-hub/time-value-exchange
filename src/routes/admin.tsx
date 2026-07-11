@@ -1,123 +1,281 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { ShieldCheck, Check, X, Clock } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ShieldCheck, Check, X, Flag, MessageSquare, Gavel, Users, Lock } from "lucide-react";
+import {
+  useSpecialists,
+  useReports,
+  useReviews,
+  useFeedbacks,
+  setSpecialistStatus,
+  type SpecialistStatus,
+} from "@/lib/store";
+import { auctions, formatBRL } from "@/lib/auctions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — Valore" }] }),
-  component: AdminPage,
+  component: AdminGate,
 });
 
-type Status = "pendente" | "aprovado" | "rejeitado";
-type Pending = {
-  id: string;
-  name: string;
-  niche: string;
-  specialty: string;
-  credential: string;
-  city: string;
-  submittedAt: string;
-  status: Status;
-};
+const ADMIN_PASSWORD = "valore@admin2026";
+const SESSION_KEY = "valore:admin";
 
-const initial: Pending[] = [
-  { id: "p1", name: "Dr. Rafael Monteiro", niche: "Saúde", specialty: "Neurocirurgião", credential: "Pós-doc Johns Hopkins", city: "São Paulo", submittedAt: "há 2h", status: "pendente" },
-  { id: "p2", name: "Dra. Mei-Ling Yamashiro", niche: "Direito", specialty: "Direito tributário internacional", credential: "Sócia · Mattos Filho", city: "Rio de Janeiro", submittedAt: "há 5h", status: "pendente" },
-  { id: "p3", name: "Maestra Sonia Bakari", niche: "Música", specialty: "Regência orquestral", credential: "Royal College of Music", city: "Salvador", submittedAt: "há 1d", status: "pendente" },
-  { id: "p4", name: "Tatiana Furlan", niche: "Finanças", specialty: "Wealth management private", credential: "CFA · ex-J.P. Morgan", city: "São Paulo", submittedAt: "há 1d", status: "pendente" },
-];
+function AdminGate() {
+  const [ok, setOk] = useState(false);
+  const [pw, setPw] = useState("");
+  const [err, setErr] = useState(false);
 
-function AdminPage() {
-  const [items, setItems] = useState(initial);
-  const update = (id: string, status: Status) =>
-    setItems((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)));
+  useEffect(() => {
+    if (typeof window !== "undefined" && sessionStorage.getItem(SESSION_KEY) === "1") {
+      setOk(true);
+    }
+  }, []);
 
-  const pending = items.filter((i) => i.status === "pendente");
-  const decided = items.filter((i) => i.status !== "pendente");
+  if (ok) return <AdminPanel onLogout={() => { sessionStorage.removeItem(SESSION_KEY); setOk(false); }} />;
+
+  return (
+    <main className="grid min-h-screen place-items-center px-5">
+      <div className="w-full max-w-sm rounded-2xl border border-gold/30 bg-surface p-8 shadow-gold">
+        <div className="flex items-center gap-2 text-gold">
+          <Lock className="size-4" />
+          <p className="text-[10px] uppercase tracking-[0.3em]">Acesso restrito</p>
+        </div>
+        <h1 className="mt-2 font-display text-3xl">Painel Valore</h1>
+        <p className="mt-1 text-xs text-muted-foreground">Digite a senha administrativa.</p>
+        <input
+          type="password"
+          value={pw}
+          onChange={(e) => { setPw(e.target.value); setErr(false); }}
+          onKeyDown={(e) => e.key === "Enter" && tryLogin()}
+          autoFocus
+          className="mt-5 w-full rounded-md border border-border bg-background px-3 py-3 text-sm outline-none focus:border-gold"
+          placeholder="Senha"
+        />
+        {err && <p className="mt-2 text-xs text-destructive">Senha incorreta.</p>}
+        <button
+          onClick={tryLogin}
+          className="mt-4 w-full rounded-md bg-gradient-gold py-3 text-xs font-medium uppercase tracking-[0.2em] text-primary-foreground shadow-gold"
+        >
+          Entrar
+        </button>
+      </div>
+    </main>
+  );
+
+  function tryLogin() {
+    if (pw === ADMIN_PASSWORD) {
+      sessionStorage.setItem(SESSION_KEY, "1");
+      setOk(true);
+    } else {
+      setErr(true);
+    }
+  }
+}
+
+type Tab = "especialistas" | "denuncias" | "leiloes" | "feedback";
+
+function AdminPanel({ onLogout }: { onLogout: () => void }) {
+  const specialists = useSpecialists();
+  const reports = useReports();
+  const reviews = useReviews();
+  const feedbacks = useFeedbacks();
+  const [tab, setTab] = useState<Tab>("especialistas");
+
+  const tabs: { id: Tab; label: string; icon: React.ElementType; count: number }[] = [
+    { id: "especialistas", label: "Especialistas", icon: Users, count: specialists.length },
+    { id: "denuncias", label: "Denúncias", icon: Flag, count: reports.length },
+    { id: "leiloes", label: "Leilões", icon: Gavel, count: auctions.length },
+    { id: "feedback", label: "Feedback", icon: MessageSquare, count: feedbacks.length },
+  ];
 
   return (
     <main className="min-h-screen px-5 pt-10 pb-16">
-      <div className="mx-auto max-w-3xl">
-        <div className="flex items-center gap-2 text-gold">
-          <ShieldCheck className="size-4" />
-          <p className="text-[10px] uppercase tracking-[0.3em]">Painel administrativo</p>
+      <div className="mx-auto max-w-4xl">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-gold">
+              <ShieldCheck className="size-4" />
+              <p className="text-[10px] uppercase tracking-[0.3em]">Painel administrativo</p>
+            </div>
+            <h1 className="mt-1 font-display text-3xl">Valore Admin</h1>
+          </div>
+          <button onClick={onLogout} className="text-[10px] uppercase tracking-widest text-muted-foreground hover:text-gold">Sair</button>
         </div>
-        <h1 className="mt-1 font-display text-3xl">Aprovações de especialistas</h1>
 
-        <div className="mt-6 grid grid-cols-3 gap-3 text-center">
-          <Kpi label="Pendentes" value={pending.length} tone="text-gold" />
-          <Kpi label="Aprovados" value={items.filter((i) => i.status === "aprovado").length} tone="text-success" />
-          <Kpi label="Rejeitados" value={items.filter((i) => i.status === "rejeitado").length} tone="text-destructive" />
+        <div className="mt-6 flex gap-2 overflow-x-auto border-b border-border/60 pb-2">
+          {tabs.map((t) => {
+            const active = tab === t.id;
+            const Icon = t.icon;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-xs uppercase tracking-widest transition-colors ${active ? "bg-gold/10 text-gold" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <Icon className="size-3.5" /> {t.label} <span className="rounded-full bg-background/60 px-1.5 text-[10px]">{t.count}</span>
+              </button>
+            );
+          })}
         </div>
 
-        <section className="mt-8">
-          <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Fila de revisão</h2>
-          {pending.length === 0 ? (
-            <p className="mt-4 rounded-xl border border-border/60 bg-surface p-6 text-center text-sm text-muted-foreground">
-              Nenhum cadastro pendente. ✨
-            </p>
-          ) : (
-            <ul className="mt-3 space-y-3">
-              {pending.map((p) => (
-                <li key={p.id} className="rounded-2xl border border-gold/20 bg-surface p-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="font-display text-xl">{p.name}</p>
-                      <p className="text-xs text-gold">{p.niche} · {p.specialty}</p>
-                      <p className="mt-2 text-xs text-muted-foreground">{p.credential}</p>
-                      <p className="text-[11px] text-muted-foreground">{p.city}</p>
-                    </div>
-                    <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-muted-foreground">
-                      <Clock className="size-3" /> {p.submittedAt}
-                    </div>
-                  </div>
-                  <div className="mt-4 flex gap-2">
-                    <button
-                      onClick={() => update(p.id, "aprovado")}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-md bg-gradient-gold py-2 text-xs font-semibold uppercase tracking-widest text-background"
-                    >
-                      <Check className="size-4" /> Aprovar
-                    </button>
-                    <button
-                      onClick={() => update(p.id, "rejeitado")}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-md border border-destructive/40 py-2 text-xs uppercase tracking-widest text-destructive hover:bg-destructive/10"
-                    >
-                      <X className="size-4" /> Rejeitar
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <div className="mt-6">
+          {tab === "especialistas" && <SpecialistsTab items={specialists} reviews={reviews} />}
+          {tab === "denuncias" && <ReportsTab items={reports} />}
+          {tab === "leiloes" && <AuctionsTab />}
+          {tab === "feedback" && <FeedbackTab items={feedbacks} />}
+        </div>
 
-        {decided.length > 0 && (
-          <section className="mt-10">
-            <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Decisões recentes</h2>
-            <ul className="mt-3 space-y-2">
-              {decided.map((p) => (
-                <li key={p.id} className="flex items-center justify-between rounded-md border border-border/50 bg-surface/60 p-3 text-sm">
-                  <span>
-                    <span className="font-medium">{p.name}</span>{" "}
-                    <span className="text-xs text-muted-foreground">· {p.specialty}</span>
-                  </span>
-                  <span className={`text-[10px] uppercase tracking-widest ${p.status === "aprovado" ? "text-success" : "text-destructive"}`}>
-                    {p.status}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+        <p className="mt-8 text-center text-[10px] text-muted-foreground">
+          Dados armazenados localmente neste navegador. Ative Lovable Cloud para persistência real e envio automático de emails para contato@valore.services.
+        </p>
       </div>
     </main>
   );
 }
 
-function Kpi({ label, value, tone }: { label: string; value: number; tone: string }) {
+function StatusBadge({ status }: { status: SpecialistStatus }) {
+  const map: Record<SpecialistStatus, string> = {
+    novo: "border-gold/40 text-gold bg-gold/5",
+    verificado: "border-success/40 text-success bg-success/5",
+    suspenso: "border-destructive/40 text-destructive bg-destructive/5",
+    reprovado: "border-muted-foreground/40 text-muted-foreground bg-background/40",
+  };
   return (
-    <div className="rounded-xl border border-border/60 bg-surface p-4">
-      <p className={`font-display text-3xl ${tone}`}>{value}</p>
-      <p className="mt-1 text-[10px] uppercase tracking-widest text-muted-foreground">{label}</p>
-    </div>
+    <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-widest ${map[status]}`}>
+      {status}
+    </span>
   );
+}
+
+function SpecialistsTab({ items, reviews }: { items: ReturnType<typeof useSpecialists>; reviews: ReturnType<typeof useReviews> }) {
+  if (items.length === 0) return <Empty text="Nenhum especialista cadastrado ainda." />;
+  return (
+    <ul className="space-y-3">
+      {items.map((s) => {
+        const neg = reviews.filter((r) => r.specialistId === s.id && r.rating <= 2).length;
+        return (
+          <li key={s.id} className="rounded-2xl border border-border/60 bg-surface p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-display text-xl">{s.fullName}</p>
+                  <StatusBadge status={s.status} />
+                </div>
+                <p className="mt-1 text-xs text-gold">{s.niche} · {s.specialty}</p>
+                <p className="mt-2 text-xs text-muted-foreground">{s.credential}</p>
+                {s.registrationNumber && (
+                  <p className="text-[11px] text-muted-foreground">Registro: {s.registrationNumber}</p>
+                )}
+                <p className="text-[11px] text-muted-foreground">{s.email} · {s.city}</p>
+                {s.portfolioUrl && (
+                  <a href={s.portfolioUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block truncate text-[11px] text-gold underline-offset-4 hover:underline">
+                    {s.portfolioUrl}
+                  </a>
+                )}
+                {neg > 0 && (
+                  <p className="mt-2 text-[11px] text-destructive">{neg} avaliação(ões) negativa(s)</p>
+                )}
+              </div>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <ActionBtn onClick={() => setSpecialistStatus(s.id, "verificado")} kind="gold">
+                <Check className="size-3.5" /> Aprovar
+              </ActionBtn>
+              <ActionBtn onClick={() => setSpecialistStatus(s.id, "reprovado")} kind="ghost">
+                <X className="size-3.5" /> Reprovar
+              </ActionBtn>
+              <ActionBtn onClick={() => setSpecialistStatus(s.id, "suspenso")} kind="danger">
+                Suspender
+              </ActionBtn>
+              {s.status === "suspenso" && (
+                <ActionBtn onClick={() => setSpecialistStatus(s.id, "verificado")} kind="ghost">
+                  Reativar
+                </ActionBtn>
+              )}
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function ActionBtn({ children, onClick, kind }: { children: React.ReactNode; onClick: () => void; kind: "gold" | "ghost" | "danger" }) {
+  const cls =
+    kind === "gold"
+      ? "bg-gradient-gold text-background"
+      : kind === "danger"
+      ? "border border-destructive/40 text-destructive hover:bg-destructive/5"
+      : "border border-border text-muted-foreground hover:border-gold/40 hover:text-gold";
+  return (
+    <button onClick={onClick} className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] uppercase tracking-widest ${cls}`}>
+      {children}
+    </button>
+  );
+}
+
+function ReportsTab({ items }: { items: ReturnType<typeof useReports> }) {
+  if (items.length === 0) return <Empty text="Nenhuma denúncia até o momento." />;
+  return (
+    <ul className="space-y-3">
+      {items.map((r) => (
+        <li key={r.id} className="rounded-xl border border-destructive/20 bg-surface p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="font-display text-lg">{r.target}</p>
+              <p className="text-xs text-destructive">{r.category}</p>
+              {r.details && <p className="mt-2 text-xs text-muted-foreground">{r.details}</p>}
+            </div>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              {new Date(r.createdAt).toLocaleString("pt-BR")}
+            </p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function AuctionsTab() {
+  return (
+    <ul className="space-y-2">
+      {auctions.map((a) => (
+        <li key={a.id} className="flex items-center justify-between rounded-md border border-border/60 bg-surface p-4">
+          <div>
+            <p className="font-medium text-sm">{a.expert}</p>
+            <p className="text-[11px] text-muted-foreground">{a.specialty}</p>
+          </div>
+          <div className="text-right">
+            <p className="font-display text-lg text-gold">{formatBRL(a.currentBid)}</p>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Lance atual</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function FeedbackTab({ items }: { items: ReturnType<typeof useFeedbacks> }) {
+  if (items.length === 0) return <Empty text="Nenhuma sugestão ou reclamação recebida." />;
+  return (
+    <ul className="space-y-3">
+      {items.map((f) => (
+        <li key={f.id} className="rounded-xl border border-border/60 bg-surface p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium">{f.name} <span className="text-xs text-muted-foreground">· {f.email || "sem email"}</span></p>
+              <p className="mt-1 text-[10px] uppercase tracking-widest text-gold">{f.kind}</p>
+              <p className="mt-2 text-sm text-foreground/80">{f.message}</p>
+            </div>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              {new Date(f.createdAt).toLocaleString("pt-BR")}
+            </p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Empty({ text }: { text: string }) {
+  return <p className="rounded-xl border border-border/60 bg-surface p-6 text-center text-sm text-muted-foreground">{text}</p>;
 }
