@@ -1,4 +1,5 @@
-import { useSyncExternalStore } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export type SpecialistStatus = "novo" | "verificado" | "suspenso" | "reprovado";
 
@@ -48,117 +49,206 @@ export type Feedback = {
   createdAt: number;
 };
 
-type State = {
-  specialists: Specialist[];
-  reports: Report[];
-  reviews: Review[];
-  feedbacks: Feedback[];
+// ------- Row mappers -------
+type SpecialistRow = {
+  id: string;
+  nome: string | null;
+  email: string | null;
+  telefone: string | null;
+  cidade: string | null;
+  nicho: string | null;
+  especialidade: string | null;
+  bio: string | null;
+  credencial: string | null;
+  experiencia: string | null;
+  plataforma: string | null;
+  duracao: string | null;
+  idiomas: string | null;
+  linkedin_url: string | null;
+  registro_profissional: string | null;
+  status: SpecialistStatus;
+  created_at: string;
 };
 
-const KEY = "valore:v1";
+const toSpecialist = (r: SpecialistRow): Specialist => ({
+  id: r.id,
+  fullName: r.nome ?? "",
+  email: r.email ?? "",
+  phone: r.telefone ?? "",
+  city: r.cidade ?? "",
+  niche: r.nicho ?? "",
+  specialty: r.especialidade ?? "",
+  bio: r.bio ?? "",
+  credential: r.credencial ?? "",
+  experience: r.experiencia ?? "",
+  platform: r.plataforma ?? "",
+  duration: r.duracao ?? "",
+  languages: r.idiomas ?? "",
+  portfolioUrl: r.linkedin_url ?? "",
+  registrationNumber: r.registro_profissional ?? undefined,
+  status: r.status,
+  createdAt: new Date(r.created_at).getTime(),
+});
+
+// ------- Query keys -------
+const K = {
+  specialists: ["specialists"] as const,
+  reports: ["reports"] as const,
+  reviews: ["reviews"] as const,
+  feedbacks: ["feedbacks"] as const,
+};
+
+// ------- Hooks -------
+export function useSpecialists(): Specialist[] {
+  const { data } = useQuery({
+    queryKey: K.specialists,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("especialistas")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data as SpecialistRow[]).map(toSpecialist);
+    },
+    staleTime: 30_000,
+  });
+  return data ?? [];
+}
+
+export function useReports(): Report[] {
+  const { data } = useQuery({
+    queryKey: K.reports,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("denuncias")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map((r: any) => ({
+        id: r.id,
+        target: r.alvo_nome ?? r.especialista_id ?? "—",
+        category: r.categoria ?? "",
+        details: r.motivo ?? "",
+        createdAt: new Date(r.created_at).getTime(),
+      })) as Report[];
+    },
+    staleTime: 30_000,
+  });
+  return data ?? [];
+}
+
+export function useReviews(): Review[] {
+  const { data } = useQuery({
+    queryKey: K.reviews,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("avaliacoes")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map((r: any) => ({
+        id: r.id,
+        specialistId: r.especialista_id ?? r.especialista_ref ?? "",
+        auctionId: r.especialista_ref ?? r.especialista_id ?? "",
+        rating: r.estrelas,
+        comment: r.comentario ?? "",
+        createdAt: new Date(r.created_at).getTime(),
+      })) as Review[];
+    },
+    staleTime: 30_000,
+  });
+  return data ?? [];
+}
+
+export function useFeedbacks(): Feedback[] {
+  const { data } = useQuery({
+    queryKey: K.feedbacks,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("feedbacks")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map((r: any) => ({
+        id: r.id,
+        name: r.nome,
+        email: r.email ?? "",
+        kind: r.tipo,
+        message: r.mensagem,
+        createdAt: new Date(r.created_at).getTime(),
+      })) as Feedback[];
+    },
+    staleTime: 30_000,
+  });
+  return data ?? [];
+}
+
+// ------- Cache invalidation helper -------
+let _qc: ReturnType<typeof useQueryClient> | null = null;
+export function useBindQueryClient() {
+  _qc = useQueryClient();
+}
+function invalidate(key: readonly unknown[]) {
+  _qc?.invalidateQueries({ queryKey: key });
+}
+
+// ------- Mutations -------
 const CONTACT_EMAIL = "contato@valore.services";
-
-const empty: State = { specialists: [], reports: [], reviews: [], feedbacks: [] };
-
-function load(): State {
-  if (typeof window === "undefined") return empty;
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return empty;
-    return { ...empty, ...JSON.parse(raw) };
-  } catch {
-    return empty;
-  }
-}
-
-let state: State = load();
-const listeners = new Set<() => void>();
-
-function persist() {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(KEY, JSON.stringify(state));
-  }
-  listeners.forEach((l) => l());
-}
-
-function subscribe(fn: () => void) {
-  listeners.add(fn);
-  return () => listeners.delete(fn);
-}
-
-function getSnapshot() {
-  return state;
-}
-
-function getServerSnapshot() {
-  return empty;
-}
-
-export function useStore<T>(selector: (s: State) => T): T {
-  return useSyncExternalStore(
-    subscribe,
-    () => selector(getSnapshot()),
-    () => selector(getServerSnapshot()),
-  );
-}
-
-export function useSpecialists() {
-  return useStore((s) => s.specialists);
-}
-export function useReports() {
-  return useStore((s) => s.reports);
-}
-export function useReviews() {
-  return useStore((s) => s.reviews);
-}
-export function useFeedbacks() {
-  return useStore((s) => s.feedbacks);
-}
-
-function uid() {
-  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-}
-
 function openMailto(subject: string, body: string) {
   if (typeof window === "undefined") return;
-  const href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(
-    subject,
-  )}&body=${encodeURIComponent(body)}`;
-  // Non-blocking: open in a new tab so it doesn't hijack navigation
+  const href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   window.open(href, "_blank", "noopener");
 }
 
-export function addSpecialist(input: Omit<Specialist, "id" | "status" | "createdAt">) {
-  const s: Specialist = {
-    ...input,
-    id: uid(),
-    status: "novo",
-    createdAt: Date.now(),
-  };
-  state = { ...state, specialists: [s, ...state.specialists] };
-  persist();
-  // Fire-and-forget link verification
-  verifyLink(s.portfolioUrl).then((ok) => {
-    if (ok) setSpecialistStatus(s.id, "verificado");
+export async function addSpecialist(
+  input: Omit<Specialist, "id" | "status" | "createdAt">,
+): Promise<Specialist | null> {
+  const { data, error } = await supabase
+    .from("especialistas")
+    .insert({
+      nome: input.fullName,
+      email: input.email,
+      telefone: input.phone,
+      cidade: input.city,
+      nicho: input.niche,
+      especialidade: input.specialty,
+      bio: input.bio,
+      credencial: input.credential,
+      experiencia: input.experience,
+      plataforma: input.platform,
+      duracao: input.duration,
+      idiomas: input.languages,
+      linkedin_url: input.portfolioUrl,
+      registro_profissional: input.registrationNumber ?? null,
+      status: "novo",
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    console.error("addSpecialist:", error);
+    return null;
+  }
+  const created = toSpecialist(data as SpecialistRow);
+  invalidate(K.specialists);
+
+  // Verificação de link em segundo plano
+  verifyLink(created.portfolioUrl).then((ok) => {
+    if (ok) setSpecialistStatus(created.id, "verificado");
   });
-  return s;
+  return created;
 }
 
-export function setSpecialistStatus(id: string, status: SpecialistStatus) {
-  state = {
-    ...state,
-    specialists: state.specialists.map((s) =>
-      s.id === id ? { ...s, status } : s,
-    ),
-  };
-  persist();
+export async function setSpecialistStatus(id: string, status: SpecialistStatus) {
+  const { error } = await supabase.from("especialistas").update({ status }).eq("id", id);
+  if (error) console.error("setSpecialistStatus:", error);
+  invalidate(K.specialists);
 }
 
 async function verifyLink(url: string): Promise<boolean> {
   try {
     const u = new URL(url);
     if (!/^https?:$/.test(u.protocol)) return false;
-    // no-cors returns opaque response but resolves on reachable hosts
     await fetch(u.toString(), { mode: "no-cors" });
     return true;
   } catch {
@@ -166,46 +256,48 @@ async function verifyLink(url: string): Promise<boolean> {
   }
 }
 
-export function addReport(input: Omit<Report, "id" | "createdAt">) {
-  const r: Report = { ...input, id: uid(), createdAt: Date.now() };
-  state = { ...state, reports: [r, ...state.reports] };
-  persist();
+export async function addReport(input: Omit<Report, "id" | "createdAt">) {
+  const { error } = await supabase.from("denuncias").insert({
+    alvo_nome: input.target,
+    categoria: input.category,
+    motivo: input.details || input.category,
+  });
+  if (error) console.error("addReport:", error);
+  invalidate(K.reports);
   openMailto(
-    `Denúncia — ${r.target}`,
-    `Denunciado: ${r.target}\nCategoria: ${r.category}\nDetalhes: ${r.details || "(sem detalhes)"}\nData: ${new Date(r.createdAt).toLocaleString("pt-BR")}`,
+    `Denúncia — ${input.target}`,
+    `Denunciado: ${input.target}\nCategoria: ${input.category}\nDetalhes: ${input.details || "(sem detalhes)"}`,
   );
-  return r;
 }
 
-export function addReview(input: Omit<Review, "id" | "createdAt">) {
-  const r: Review = { ...input, id: uid(), createdAt: Date.now() };
-  state = { ...state, reviews: [r, ...state.reviews] };
-  persist();
-
-  // Auto-suspend if specialist has >=3 negative reviews
-  const negatives = state.reviews.filter(
-    (rv) => rv.specialistId === r.specialistId && rv.rating <= 2,
+export async function addReview(input: Omit<Review, "id" | "createdAt">) {
+  // Detecta se specialistId é UUID (Supabase) ou id de mock (ex: "1")
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    input.specialistId,
   );
-  if (negatives.length >= 3) {
-    const sp = state.specialists.find((s) => s.id === r.specialistId);
-    if (sp && sp.status !== "suspenso") {
-      setSpecialistStatus(sp.id, "suspenso");
-      openMailto(
-        `Suspensão automática — ${sp.fullName}`,
-        `O especialista ${sp.fullName} (${sp.specialty}) foi suspenso automaticamente após ${negatives.length} avaliações negativas.`,
-      );
-    }
-  }
-  return r;
+  const { error } = await supabase.from("avaliacoes").insert({
+    especialista_id: isUuid ? input.specialistId : null,
+    especialista_ref: isUuid ? null : input.specialistId,
+    estrelas: input.rating,
+    comentario: input.comment,
+  });
+  if (error) console.error("addReview:", error);
+  invalidate(K.reviews);
+  invalidate(K.specialists);
 }
 
-export function addFeedback(input: Omit<Feedback, "id" | "createdAt">) {
-  const f: Feedback = { ...input, id: uid(), createdAt: Date.now() };
-  state = { ...state, feedbacks: [f, ...state.feedbacks] };
-  persist();
-  return f;
+export async function addFeedback(input: Omit<Feedback, "id" | "createdAt">) {
+  const { error } = await supabase.from("feedbacks").insert({
+    nome: input.name,
+    email: input.email,
+    tipo: input.kind,
+    mensagem: input.message,
+  });
+  if (error) console.error("addFeedback:", error);
+  invalidate(K.feedbacks);
 }
 
+// ------- Constantes -------
 export const DISCLAIMER =
   "A Valore é uma plataforma de conexão entre profissionais e clientes. Cada especialista é responsável pela veracidade de suas informações e credenciais. Recomendamos verificar o perfil profissional antes de contratar. A Valore não presta os serviços — apenas facilita a conexão.";
 
