@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { ShieldCheck, Check, X, Flag, MessageSquare, Gavel, Users, Lock } from "lucide-react";
 import {
   useSpecialists,
@@ -10,66 +10,73 @@ import {
   type SpecialistStatus,
 } from "@/lib/store";
 import { auctions, formatBRL } from "@/lib/auctions";
+import { useIsAdmin } from "@/lib/useIsAdmin";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — Valore" }] }),
   component: AdminGate,
 });
 
-const ADMIN_PASSWORD = "valore@admin2026";
-const SESSION_KEY = "valore:admin";
-
 function AdminGate() {
-  const [ok, setOk] = useState(false);
-  const [pw, setPw] = useState("");
-  const [err, setErr] = useState(false);
+  const { isAdmin, loading, user } = useIsAdmin();
+  const { signOut } = useAuth();
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && sessionStorage.getItem(SESSION_KEY) === "1") {
-      setOk(true);
-    }
-  }, []);
-
-  if (ok) return <AdminPanel onLogout={() => { sessionStorage.removeItem(SESSION_KEY); setOk(false); }} />;
-
-  return (
-    <main className="grid min-h-screen place-items-center px-5">
-      <div className="w-full max-w-sm rounded-2xl border border-gold/30 bg-surface p-8 shadow-gold">
-        <div className="flex items-center gap-2 text-gold">
-          <Lock className="size-4" />
-          <p className="text-[10px] uppercase tracking-[0.3em]">Acesso restrito</p>
-        </div>
-        <h1 className="mt-2 font-display text-3xl">Painel Valore</h1>
-        <p className="mt-1 text-xs text-muted-foreground">Digite a senha administrativa.</p>
-        <input
-          type="password"
-          value={pw}
-          onChange={(e) => { setPw(e.target.value); setErr(false); }}
-          onKeyDown={(e) => e.key === "Enter" && tryLogin()}
-          autoFocus
-          className="mt-5 w-full rounded-md border border-border bg-background px-3 py-3 text-sm outline-none focus:border-gold"
-          placeholder="Senha"
-        />
-        {err && <p className="mt-2 text-xs text-destructive">Senha incorreta.</p>}
-        <button
-          onClick={tryLogin}
-          className="mt-4 w-full rounded-md bg-gradient-gold py-3 text-xs font-medium uppercase tracking-[0.2em] text-primary-foreground shadow-gold"
-        >
-          Entrar
-        </button>
-      </div>
-    </main>
-  );
-
-  function tryLogin() {
-    if (pw === ADMIN_PASSWORD) {
-      sessionStorage.setItem(SESSION_KEY, "1");
-      setOk(true);
-    } else {
-      setErr(true);
-    }
+  if (loading) {
+    return (
+      <main className="grid min-h-screen place-items-center px-5">
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">Carregando…</p>
+      </main>
+    );
   }
+
+  if (!user) {
+    return (
+      <main className="grid min-h-screen place-items-center px-5">
+        <div className="w-full max-w-sm rounded-2xl border border-gold/30 bg-surface p-8 text-center shadow-gold">
+          <div className="flex items-center justify-center gap-2 text-gold">
+            <Lock className="size-4" />
+            <p className="text-[10px] uppercase tracking-[0.3em]">Acesso restrito</p>
+          </div>
+          <h1 className="mt-2 font-display text-3xl">Painel Valore</h1>
+          <p className="mt-2 text-xs text-muted-foreground">Faça login para acessar o painel administrativo.</p>
+          <Link
+            to="/auth"
+            className="mt-6 inline-block rounded-md bg-gradient-gold px-6 py-3 text-xs font-medium uppercase tracking-[0.2em] text-primary-foreground shadow-gold"
+          >
+            Entrar
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <main className="grid min-h-screen place-items-center px-5">
+        <div className="w-full max-w-sm rounded-2xl border border-destructive/30 bg-surface p-8 text-center">
+          <div className="flex items-center justify-center gap-2 text-destructive">
+            <Lock className="size-4" />
+            <p className="text-[10px] uppercase tracking-[0.3em]">Sem permissão</p>
+          </div>
+          <h1 className="mt-2 font-display text-2xl">Acesso negado</h1>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Sua conta ({user.email}) não tem a role <code>admin</code>. Peça a um administrador para conceder acesso.
+          </p>
+          <button
+            onClick={() => signOut()}
+            className="mt-6 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-gold"
+          >
+            Sair
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  return <AdminPanel onLogout={() => signOut()} />;
 }
+
 
 type Tab = "especialistas" | "denuncias" | "leiloes" | "feedback";
 
