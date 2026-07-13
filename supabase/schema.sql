@@ -115,7 +115,7 @@ grant all on public.avaliacoes    to service_role;
 grant all on public.denuncias     to service_role;
 grant all on public.feedbacks     to service_role;
 
--- ---------- RLS (permissivo — MVP sem auth) ----------
+-- ---------- RLS ----------
 alter table public.usuarios      enable row level security;
 alter table public.especialistas enable row level security;
 alter table public.leiloes       enable row level security;
@@ -124,6 +124,7 @@ alter table public.avaliacoes    enable row level security;
 alter table public.denuncias     enable row level security;
 alter table public.feedbacks     enable row level security;
 
+-- Drop any legacy policies
 do $$
 declare t text;
 begin
@@ -132,12 +133,57 @@ begin
     execute format('drop policy if exists "public_read"   on public.%I', t);
     execute format('drop policy if exists "public_insert" on public.%I', t);
     execute format('drop policy if exists "public_update" on public.%I', t);
-
-    execute format('create policy "public_read"   on public.%I for select using (true)',      t);
-    execute format('create policy "public_insert" on public.%I for insert with check (true)', t);
-    execute format('create policy "public_update" on public.%I for update using (true) with check (true)', t);
+    execute format('drop policy if exists "read_all"      on public.%I', t);
+    execute format('drop policy if exists "auth_insert"   on public.%I', t);
+    execute format('drop policy if exists "auth_update"   on public.%I', t);
+    execute format('drop policy if exists "admin_all"     on public.%I', t);
   end loop;
 end $$;
+
+-- LEITURA pública: qualquer visitante pode navegar
+create policy "read_all" on public.especialistas for select using (true);
+create policy "read_all" on public.leiloes       for select using (true);
+create policy "read_all" on public.lances        for select using (true);
+create policy "read_all" on public.avaliacoes    for select using (true);
+
+-- ESCRITA exige autenticação
+create policy "auth_insert" on public.especialistas
+  for insert to authenticated with check (auth.uid() is not null);
+create policy "auth_insert" on public.lances
+  for insert to authenticated with check (auth.uid() is not null);
+create policy "auth_insert" on public.denuncias
+  for insert to authenticated with check (auth.uid() is not null);
+create policy "auth_insert" on public.avaliacoes
+  for insert to authenticated with check (auth.uid() is not null);
+create policy "auth_insert" on public.leiloes
+  for insert to authenticated with check (auth.uid() is not null);
+
+-- Denúncias e usuários: só admin lê
+create policy "admin_read" on public.denuncias
+  for select to authenticated using (public.has_role(auth.uid(), 'admin'));
+create policy "admin_read" on public.usuarios
+  for select to authenticated using (public.has_role(auth.uid(), 'admin') or id = auth.uid());
+
+-- Feedback: qualquer um pode enviar; só admin lê
+create policy "any_insert" on public.feedbacks for insert with check (true);
+create policy "admin_read" on public.feedbacks
+  for select to authenticated using (public.has_role(auth.uid(), 'admin'));
+
+-- ATUALIZAÇÃO: apenas admin (aprovar/suspender especialistas etc.)
+create policy "admin_update" on public.especialistas
+  for update to authenticated
+  using (public.has_role(auth.uid(), 'admin'))
+  with check (public.has_role(auth.uid(), 'admin'));
+create policy "admin_update" on public.leiloes
+  for update to authenticated
+  using (public.has_role(auth.uid(), 'admin'))
+  with check (public.has_role(auth.uid(), 'admin'));
+
+-- Usuário pode ler/atualizar o próprio perfil
+create policy "self_update" on public.usuarios
+  for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
+create policy "self_insert" on public.usuarios
+  for insert to authenticated with check (id = auth.uid());
 
 -- ---------- TRIGGER: auto-suspensão após 3 avaliações <= 2 ----------
 create or replace function public.auto_suspend_specialist()
