@@ -78,10 +78,14 @@ function Home() {
       </header>
 
       <div className="mx-auto max-w-2xl px-5 pt-6">
-        <p className="font-display text-2xl text-foreground">{t("home.greeting")}</p>
+        <p className="font-display text-2xl text-foreground">{greeting}</p>
         <p className="text-sm text-muted-foreground">
-          {t("home.subgreeting")}
+          {auctionsCount} leilões aguardam seus lances {period}.
         </p>
+
+        <LiveActivity />
+
+
 
         {/* Featured */}
         <Link
