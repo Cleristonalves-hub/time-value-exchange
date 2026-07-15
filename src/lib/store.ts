@@ -19,6 +19,7 @@ export type Specialist = {
   languages: string;
   portfolioUrl: string;
   registrationNumber?: string;
+  photoUrl?: string;
   status: SpecialistStatus;
   createdAt: number;
 };
@@ -66,6 +67,7 @@ type SpecialistRow = {
   idiomas: string | null;
   linkedin_url: string | null;
   registro_profissional: string | null;
+  avatar_url: string | null;
   status: SpecialistStatus;
   created_at: string;
 };
@@ -86,6 +88,7 @@ const toSpecialist = (r: SpecialistRow): Specialist => ({
   languages: r.idiomas ?? "",
   portfolioUrl: r.linkedin_url ?? "",
   registrationNumber: r.registro_profissional ?? undefined,
+  photoUrl: r.avatar_url ?? undefined,
   status: r.status,
   createdAt: new Date(r.created_at).getTime(),
 });
@@ -106,11 +109,12 @@ export function useSpecialists(): Specialist[] {
       const { data, error } = await supabase
         .from("especialistas")
         .select("*")
+        .in("status", ["novo", "verificado"])
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data as SpecialistRow[]).map(toSpecialist);
     },
-    staleTime: 30_000,
+    staleTime: 15_000,
   });
   return data ?? [];
 }
@@ -200,6 +204,21 @@ function openMailto(subject: string, body: string) {
   window.open(href, "_blank", "noopener");
 }
 
+export async function uploadAvatar(file: File, prefix = "user"): Promise<string | null> {
+  const ext = file.name.split(".").pop() || "jpg";
+  const path = `${prefix}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from("avatars").upload(path, file, {
+    upsert: true,
+    contentType: file.type || "image/jpeg",
+  });
+  if (error) {
+    console.error("uploadAvatar:", error);
+    return null;
+  }
+  const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+  return data.publicUrl;
+}
+
 export async function addSpecialist(
   input: Omit<Specialist, "id" | "status" | "createdAt">,
 ): Promise<Specialist | null> {
@@ -220,6 +239,7 @@ export async function addSpecialist(
       idiomas: input.languages,
       linkedin_url: input.portfolioUrl,
       registro_profissional: input.registrationNumber ?? null,
+      avatar_url: input.photoUrl ?? null,
       status: "novo",
     })
     .select("*")
@@ -232,7 +252,6 @@ export async function addSpecialist(
   const created = toSpecialist(data as SpecialistRow);
   invalidate(K.specialists);
 
-  // Verificação de link em segundo plano
   verifyLink(created.portfolioUrl).then((ok) => {
     if (ok) setSpecialistStatus(created.id, "verificado");
   });
@@ -271,7 +290,6 @@ export async function addReport(input: Omit<Report, "id" | "createdAt">) {
 }
 
 export async function addReview(input: Omit<Review, "id" | "createdAt">) {
-  // Detecta se specialistId é UUID (Supabase) ou id de mock (ex: "1")
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
     input.specialistId,
   );
@@ -295,6 +313,25 @@ export async function addFeedback(input: Omit<Feedback, "id" | "createdAt">) {
   });
   if (error) console.error("addFeedback:", error);
   invalidate(K.feedbacks);
+}
+
+export async function updateUserAvatar(userId: string, url: string) {
+  const { error } = await supabase.from("usuarios").update({ avatar_url: url }).eq("id", userId);
+  if (error) console.error("updateUserAvatar:", error);
+}
+
+export async function deleteMyAccount(userId: string): Promise<boolean> {
+  // Remove especialistas ligados a este usuário
+  await supabase.from("especialistas").delete().eq("usuario_id", userId);
+  // Remove linha em usuarios (cascade cuida do restante quando aplicável)
+  const { error } = await supabase.from("usuarios").delete().eq("id", userId);
+  if (error) {
+    console.error("deleteMyAccount:", error);
+    return false;
+  }
+  await supabase.auth.signOut();
+  invalidate(K.specialists);
+  return true;
 }
 
 // ------- Constantes -------

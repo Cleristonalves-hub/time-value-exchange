@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, Check, Video } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Video, Camera } from "lucide-react";
 import { ValoreLogo } from "@/components/ValoreLogo";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { niches as allNiches } from "@/lib/auctions";
 import { ConductPledge } from "@/components/ConductPledge";
-import { addSpecialist, registrationLabel } from "@/lib/store";
+import { addSpecialist, registrationLabel, uploadAvatar } from "@/lib/store";
+
 
 export const Route = createFileRoute("/cadastro/especialista")({
   head: () => ({
@@ -58,12 +59,24 @@ function SpecialistRegistration() {
   const [done, setDone] = useState(false);
   const [conduct, setConduct] = useState(false);
   const [truthPledge, setTruthPledge] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
   const [data, setData] = useState<FormData>({
     fullName: "", email: "", phone: "", city: "",
     bio: "", niche: "", specialty: "", credential: "", experience: "",
     portfolioUrl: "", registrationNumber: "",
     platform: "", duration: "60", languages: "Português",
   });
+
+  async function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const url = await uploadAvatar(file, "specialist");
+    setUploading(false);
+    if (url) setPhotoUrl(url);
+  }
+
 
   const set = <K extends keyof FormData>(k: K, v: FormData[K]) =>
     setData((d) => ({ ...d, [k]: v }));
@@ -102,6 +115,8 @@ function SpecialistRegistration() {
         languages: data.languages,
         portfolioUrl: data.portfolioUrl,
         registrationNumber: data.registrationNumber || undefined,
+        photoUrl: photoUrl || undefined,
+
       });
       setDone(true);
     }
@@ -145,9 +160,26 @@ function SpecialistRegistration() {
         <div className="mt-8 space-y-5">
           {step === 0 && (
             <>
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative">
+                  {photoUrl ? (
+                    <img src={photoUrl} alt="" className="h-24 w-24 rounded-full object-cover ring-2 ring-gold/40" />
+                  ) : (
+                    <div className="h-24 w-24 rounded-full border border-dashed border-gold/40 bg-gold/5" />
+                  )}
+                  <label className="absolute -bottom-1 -right-1 flex size-8 cursor-pointer items-center justify-center rounded-full border border-gold/50 bg-background text-gold hover:bg-gold/10">
+                    <Camera className="size-4" />
+                    <input type="file" accept="image/*" className="hidden" onChange={onPickPhoto} disabled={uploading} />
+                  </label>
+                </div>
+                <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                  {uploading ? "Enviando…" : "Foto de perfil (opcional)"}
+                </p>
+              </div>
               <Field label="Nome completo">
                 <Input value={data.fullName} onChange={(e) => set("fullName", e.target.value)} placeholder="Como deseja ser chamado" />
               </Field>
+
               <Field label="E-mail">
                 <Input type="email" value={data.email} onChange={(e) => set("email", e.target.value)} placeholder="voce@dominio.com" />
               </Field>

@@ -7,8 +7,18 @@ import { Disclaimer } from "@/components/Disclaimer";
 import { AuctionCard } from "@/components/AuctionCard";
 import { Countdown } from "@/components/Countdown";
 import { LanguageSelector } from "@/components/LanguageSelector";
+import { LiveActivity } from "@/components/LiveActivity";
 import { useT } from "@/lib/i18n";
 import { auctions, niches, formatBRL } from "@/lib/auctions";
+
+function getTimeOfDay() {
+  const h = new Date().getHours();
+  if (h < 12) return { greeting: "Bom dia.", period: "esta manhã" };
+  if (h < 18) return { greeting: "Boa tarde.", period: "esta tarde" };
+  return { greeting: "Boa noite.", period: "esta noite" };
+}
+
+
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -24,6 +34,9 @@ function Home() {
   const { t } = useT();
   const [query, setQuery] = useState("");
   const [niche, setNiche] = useState("Todos");
+  const { greeting, period } = useMemo(getTimeOfDay, []);
+  const auctionsCount = auctions.length;
+
 
   const featured = useMemo(
     () => [...auctions].sort((a, b) => a.endsAt - b.endsAt)[0],
@@ -65,10 +78,14 @@ function Home() {
       </header>
 
       <div className="mx-auto max-w-2xl px-5 pt-6">
-        <p className="font-display text-2xl text-foreground">{t("home.greeting")}</p>
+        <p className="font-display text-2xl text-foreground">{greeting}</p>
         <p className="text-sm text-muted-foreground">
-          {t("home.subgreeting")}
+          {auctionsCount} leilões aguardam seus lances {period}.
         </p>
+
+        <LiveActivity />
+
+
 
         {/* Featured */}
         <Link

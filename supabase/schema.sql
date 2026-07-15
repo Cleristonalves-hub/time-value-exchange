@@ -27,9 +27,11 @@ create table if not exists public.usuarios (
   id uuid primary key default gen_random_uuid(),
   nome text not null,
   email text unique,
+  avatar_url text,
   tipo public.usuario_tipo not null default 'cliente',
   created_at timestamptz not null default now()
 );
+alter table public.usuarios add column if not exists avatar_url text;
 
 create table if not exists public.especialistas (
   id uuid primary key default gen_random_uuid(),
@@ -48,9 +50,12 @@ create table if not exists public.especialistas (
   idiomas text,
   linkedin_url text,
   registro_profissional text,
+  avatar_url text,
   status public.especialista_status not null default 'novo',
   created_at timestamptz not null default now()
 );
+alter table public.especialistas add column if not exists avatar_url text;
+
 
 create table if not exists public.leiloes (
   id uuid primary key default gen_random_uuid(),
@@ -281,3 +286,30 @@ for each row execute function public.handle_new_user();
 --   insert into public.user_roles (user_id, role)
 --   values ('<uuid-do-usuario>', 'admin');
 -- =====================================================================
+
+-- =====================================================================
+-- STORAGE: bucket público "avatars" para fotos de perfil
+-- =====================================================================
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do update set public = excluded.public;
+
+drop policy if exists "avatars_public_read" on storage.objects;
+drop policy if exists "avatars_auth_upload" on storage.objects;
+drop policy if exists "avatars_auth_update" on storage.objects;
+drop policy if exists "avatars_auth_delete" on storage.objects;
+
+create policy "avatars_public_read" on storage.objects
+  for select using (bucket_id = 'avatars');
+
+create policy "avatars_auth_upload" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'avatars');
+
+create policy "avatars_auth_update" on storage.objects
+  for update to authenticated
+  using (bucket_id = 'avatars');
+
+create policy "avatars_auth_delete" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'avatars');
