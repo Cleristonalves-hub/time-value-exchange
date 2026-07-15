@@ -102,8 +102,13 @@ function SpecialistCard({ s }: { s: Specialist }) {
   const verified = s.status === "verificado";
   return (
     <li className="rounded-xl border border-border/60 bg-surface p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+      <div className="flex items-start gap-3">
+        {s.photoUrl ? (
+          <img src={s.photoUrl} alt="" className="size-12 shrink-0 rounded-full object-cover ring-1 ring-gold/30" />
+        ) : (
+          <div className="size-12 shrink-0 rounded-full bg-gradient-gold" />
+        )}
+        <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-display text-lg leading-tight">{s.fullName}</h3>
             {verified ? (
@@ -119,15 +124,8 @@ function SpecialistCard({ s }: { s: Specialist }) {
           <p className="mt-1 text-xs text-gold">{s.niche} · {s.specialty}</p>
           <p className="mt-1 truncate text-[11px] text-muted-foreground">{s.credential}</p>
         </div>
-        {s.portfolioUrl && (
-          <Link
-            to="/feedback"
-            className="shrink-0 rounded-md border border-border/60 px-3 py-1.5 text-[10px] uppercase tracking-widest text-muted-foreground hover:border-gold/40 hover:text-gold"
-          >
-            Perfil
-          </Link>
-        )}
       </div>
     </li>
   );
 }
+
