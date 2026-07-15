@@ -160,9 +160,26 @@ function SpecialistRegistration() {
         <div className="mt-8 space-y-5">
           {step === 0 && (
             <>
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative">
+                  {photoUrl ? (
+                    <img src={photoUrl} alt="" className="h-24 w-24 rounded-full object-cover ring-2 ring-gold/40" />
+                  ) : (
+                    <div className="h-24 w-24 rounded-full border border-dashed border-gold/40 bg-gold/5" />
+                  )}
+                  <label className="absolute -bottom-1 -right-1 flex size-8 cursor-pointer items-center justify-center rounded-full border border-gold/50 bg-background text-gold hover:bg-gold/10">
+                    <Camera className="size-4" />
+                    <input type="file" accept="image/*" className="hidden" onChange={onPickPhoto} disabled={uploading} />
+                  </label>
+                </div>
+                <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                  {uploading ? "Enviando…" : "Foto de perfil (opcional)"}
+                </p>
+              </div>
               <Field label="Nome completo">
                 <Input value={data.fullName} onChange={(e) => set("fullName", e.target.value)} placeholder="Como deseja ser chamado" />
               </Field>
+
               <Field label="E-mail">
                 <Input type="email" value={data.email} onChange={(e) => set("email", e.target.value)} placeholder="voce@dominio.com" />
               </Field>
