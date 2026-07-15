@@ -115,6 +115,8 @@ function SpecialistRegistration() {
         languages: data.languages,
         portfolioUrl: data.portfolioUrl,
         registrationNumber: data.registrationNumber || undefined,
+        photoUrl: photoUrl || undefined,
+
       });
       setDone(true);
     }
