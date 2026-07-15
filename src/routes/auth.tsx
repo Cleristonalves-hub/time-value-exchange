@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
@@ -13,66 +14,87 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [nome, setNome] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function onSubmit(e: React.FormEvent) {
+  // Sign in
+  const [siEmail, setSiEmail] = useState("");
+  const [siPass, setSiPass] = useState("");
+  // Sign up
+  const [suNome, setSuNome] = useState("");
+  const [suEmail, setSuEmail] = useState("");
+  const [suPass, setSuPass] = useState("");
+
+  async function onSignIn(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const { error } =
-      mode === "signin"
-        ? await signIn(email, password)
-        : await signUp(email, password, nome);
+    const { error } = await signIn(siEmail, siPass);
     setBusy(false);
-    if (error) {
-      toast.error(error);
-      return;
-    }
-    if (mode === "signup") {
-      toast.success("Conta criada. Verifique seu e-mail se a confirmação estiver ativada.");
-    } else {
-      toast.success("Bem-vindo(a) de volta.");
-    }
+    if (error) return toast.error(error);
+    toast.success("Bem-vindo(a) de volta.");
+    navigate({ to: "/home" });
+  }
+
+  async function onSignUp(e: React.FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    const { error } = await signUp(suEmail, suPass, suNome);
+    setBusy(false);
+    if (error) return toast.error(error);
+    toast.success("Conta criada.");
     navigate({ to: "/home" });
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <form onSubmit={onSubmit} className="w-full max-w-sm space-y-4 rounded-lg border p-6">
-        <h1 className="text-2xl font-semibold">
-          {mode === "signin" ? "Entrar" : "Criar conta"}
-        </h1>
-        {mode === "signup" && (
-          <div className="space-y-1">
-            <Label htmlFor="nome">Nome</Label>
-            <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} required />
-          </div>
-        )}
-        <div className="space-y-1">
-          <Label htmlFor="email">E-mail</Label>
-          <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </div>
-        <div className="space-y-1">
-          <Label htmlFor="password">Senha</Label>
-          <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={6} required />
-        </div>
-        <Button type="submit" className="w-full" disabled={busy}>
-          {busy ? "Aguarde…" : mode === "signin" ? "Entrar" : "Criar conta"}
-        </Button>
-        <button
-          type="button"
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className="text-sm text-muted-foreground underline w-full text-center"
-        >
-          {mode === "signin" ? "Não tenho conta — criar" : "Já tenho conta — entrar"}
-        </button>
-        <div className="text-center">
+      <div className="w-full max-w-sm rounded-lg border p-6">
+        <h1 className="text-2xl font-semibold mb-4 text-center">Valore</h1>
+        <Tabs defaultValue="signin" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="signin">Já tenho conta</TabsTrigger>
+            <TabsTrigger value="signup">Criar conta</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="signin">
+            <form onSubmit={onSignIn} className="space-y-4">
+              <div className="space-y-1">
+                <Label htmlFor="si-email">E-mail</Label>
+                <Input id="si-email" type="email" value={siEmail} onChange={(e) => setSiEmail(e.target.value)} required autoComplete="email" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="si-pass">Senha</Label>
+                <Input id="si-pass" type="password" value={siPass} onChange={(e) => setSiPass(e.target.value)} required autoComplete="current-password" />
+              </div>
+              <Button type="submit" className="w-full" disabled={busy}>
+                {busy ? "Aguarde…" : "Entrar"}
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="signup">
+            <form onSubmit={onSignUp} className="space-y-4">
+              <div className="space-y-1">
+                <Label htmlFor="su-nome">Nome</Label>
+                <Input id="su-nome" value={suNome} onChange={(e) => setSuNome(e.target.value)} required />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="su-email">E-mail</Label>
+                <Input id="su-email" type="email" value={suEmail} onChange={(e) => setSuEmail(e.target.value)} required autoComplete="email" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="su-pass">Senha</Label>
+                <Input id="su-pass" type="password" value={suPass} onChange={(e) => setSuPass(e.target.value)} minLength={6} required autoComplete="new-password" />
+              </div>
+              <Button type="submit" className="w-full" disabled={busy}>
+                {busy ? "Aguarde…" : "Criar conta"}
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
+
+        <div className="text-center mt-4">
           <Link to="/" className="text-xs text-muted-foreground">Voltar</Link>
         </div>
-      </form>
+      </div>
     </div>
   );
 }
