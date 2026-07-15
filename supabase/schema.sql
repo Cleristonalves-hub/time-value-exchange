@@ -27,9 +27,11 @@ create table if not exists public.usuarios (
   id uuid primary key default gen_random_uuid(),
   nome text not null,
   email text unique,
+  avatar_url text,
   tipo public.usuario_tipo not null default 'cliente',
   created_at timestamptz not null default now()
 );
+alter table public.usuarios add column if not exists avatar_url text;
 
 create table if not exists public.especialistas (
   id uuid primary key default gen_random_uuid(),
@@ -48,9 +50,12 @@ create table if not exists public.especialistas (
   idiomas text,
   linkedin_url text,
   registro_profissional text,
+  avatar_url text,
   status public.especialista_status not null default 'novo',
   created_at timestamptz not null default now()
 );
+alter table public.especialistas add column if not exists avatar_url text;
+
 
 create table if not exists public.leiloes (
   id uuid primary key default gen_random_uuid(),
