@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, Check, Video } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Video, Camera } from "lucide-react";
 import { ValoreLogo } from "@/components/ValoreLogo";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { niches as allNiches } from "@/lib/auctions";
 import { ConductPledge } from "@/components/ConductPledge";
-import { addSpecialist, registrationLabel } from "@/lib/store";
+import { addSpecialist, registrationLabel, uploadAvatar } from "@/lib/store";
+
 
 export const Route = createFileRoute("/cadastro/especialista")({
   head: () => ({
