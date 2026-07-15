@@ -59,12 +59,24 @@ function SpecialistRegistration() {
   const [done, setDone] = useState(false);
   const [conduct, setConduct] = useState(false);
   const [truthPledge, setTruthPledge] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
   const [data, setData] = useState<FormData>({
     fullName: "", email: "", phone: "", city: "",
     bio: "", niche: "", specialty: "", credential: "", experience: "",
     portfolioUrl: "", registrationNumber: "",
     platform: "", duration: "60", languages: "Português",
   });
+
+  async function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const url = await uploadAvatar(file, "specialist");
+    setUploading(false);
+    if (url) setPhotoUrl(url);
+  }
+
 
   const set = <K extends keyof FormData>(k: K, v: FormData[K]) =>
     setData((d) => ({ ...d, [k]: v }));
