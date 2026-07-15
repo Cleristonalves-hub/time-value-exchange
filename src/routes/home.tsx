@@ -34,6 +34,9 @@ function Home() {
   const { t } = useT();
   const [query, setQuery] = useState("");
   const [niche, setNiche] = useState("Todos");
+  const { greeting, period } = useMemo(getTimeOfDay, []);
+  const auctionsCount = auctions.length;
+
 
   const featured = useMemo(
     () => [...auctions].sort((a, b) => a.endsAt - b.endsAt)[0],
