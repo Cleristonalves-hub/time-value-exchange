@@ -93,12 +93,20 @@ const toSpecialist = (r: SpecialistRow): Specialist => ({
   createdAt: new Date(r.created_at).getTime(),
 });
 
+export type RejectionCriterion = {
+  criterio: string;
+  passou: boolean;
+  detalhe: string;
+};
+
 // ------- Query keys -------
 const K = {
   specialists: ["specialists"] as const,
   reports: ["reports"] as const,
   reviews: ["reviews"] as const,
   feedbacks: ["feedbacks"] as const,
+  mySpecialist: ["my-specialist"] as const,
+  rejectionReasons: ["rejection-reasons"] as const,
 };
 
 // ------- Hooks -------
@@ -115,6 +123,53 @@ export function useSpecialists(): Specialist[] {
       return (data as SpecialistRow[]).map(toSpecialist);
     },
     staleTime: 15_000,
+  });
+  return data ?? [];
+}
+
+// Busca o cadastro de especialista do usuário logado (por usuario_id ou, como
+// fallback, pelo e-mail — nem todo fluxo de insert popula usuario_id hoje).
+export function useMySpecialist(usuarioId: string | undefined, email: string | undefined) {
+  const { data } = useQuery({
+    queryKey: [...K.mySpecialist, usuarioId ?? "", email ?? ""],
+    enabled: !!usuarioId || !!email,
+    staleTime: 15_000,
+    queryFn: async () => {
+      let query = supabase.from("especialistas").select("*").order("created_at", { ascending: false }).limit(1);
+      if (usuarioId && email) {
+        query = query.or(`usuario_id.eq.${usuarioId},email.eq.${email}`);
+      } else if (usuarioId) {
+        query = query.eq("usuario_id", usuarioId);
+      } else if (email) {
+        query = query.eq("email", email);
+      }
+      const { data, error } = await query.maybeSingle();
+      if (error) throw error;
+      return data ? toSpecialist(data as SpecialistRow) : null;
+    },
+  });
+  return data ?? null;
+}
+
+// Busca os critérios que reprovaram um especialista, gravados pelo Trust Engine
+// na tabela admin_notifications.
+export function useRejectionReasons(especialistaId: string | null): RejectionCriterion[] {
+  const { data } = useQuery({
+    queryKey: [...K.rejectionReasons, especialistaId ?? ""],
+    enabled: !!especialistaId,
+    staleTime: 15_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_notifications")
+        .select("criterios")
+        .eq("especialista_id", especialistaId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      const criterios = (data?.criterios ?? []) as RejectionCriterion[];
+      return criterios.filter((c) => !c.passou);
+    },
   });
   return data ?? [];
 }
@@ -251,28 +306,58 @@ export async function addSpecialist(
   }
   const created = toSpecialist(data as SpecialistRow);
   invalidate(K.specialists);
-
-  verifyLink(created.portfolioUrl).then((ok) => {
-    if (ok) setSpecialistStatus(created.id, "verificado");
-  });
+  invalidate(K.mySpecialist);
+  // Status permanece "novo" — quem decide verificado/reprovado é o Trust Engine
+  // (Edge Function acionada pelo Database Webhook no INSERT desta linha).
   return created;
+}
+
+export async function updateSpecialist(
+  id: string,
+  input: Omit<Specialist, "id" | "status" | "createdAt">,
+): Promise<Specialist | null> {
+  const { data, error } = await supabase
+    .from("especialistas")
+    .update({
+      nome: input.fullName,
+      email: input.email,
+      telefone: input.phone,
+      cidade: input.city,
+      nicho: input.niche,
+      especialidade: input.specialty,
+      bio: input.bio,
+      credencial: input.credential,
+      experiencia: input.experience,
+      plataforma: input.platform,
+      duracao: input.duration,
+      idiomas: input.languages,
+      linkedin_url: input.portfolioUrl,
+      registro_profissional: input.registrationNumber ?? null,
+      avatar_url: input.photoUrl ?? null,
+      // Volta para "novo" para deixar claro que precisa ser reavaliado — o
+      // Trust Engine só reavalia automaticamente se o Database Webhook também
+      // estiver configurado para o evento Update (hoje só dispara no Insert).
+      status: "novo",
+    })
+    .eq("id", id)
+    .select("*")
+    .single();
+
+  if (error) {
+    console.error("updateSpecialist:", error);
+    return null;
+  }
+  const updated = toSpecialist(data as SpecialistRow);
+  invalidate(K.specialists);
+  invalidate(K.mySpecialist);
+  invalidate(K.rejectionReasons);
+  return updated;
 }
 
 export async function setSpecialistStatus(id: string, status: SpecialistStatus) {
   const { error } = await supabase.from("especialistas").update({ status }).eq("id", id);
   if (error) console.error("setSpecialistStatus:", error);
   invalidate(K.specialists);
-}
-
-async function verifyLink(url: string): Promise<boolean> {
-  try {
-    const u = new URL(url);
-    if (!/^https?:$/.test(u.protocol)) return false;
-    await fetch(u.toString(), { mode: "no-cors" });
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 export async function addReport(input: Omit<Report, "id" | "createdAt">) {

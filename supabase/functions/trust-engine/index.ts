@@ -28,6 +28,9 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+// Configure com: supabase secrets set RESEND_API_KEY=re_... — nunca hardcode a chave no código.
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const RESEND_FROM = "contato@valore.services";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -36,6 +39,7 @@ const USER_AGENT = "Mozilla/5.0 (compatible; ValoreTrustEngine/1.0)";
 
 interface EspecialistaRecord {
   id: string;
+  email: string | null;
   linkedin_url: string | null;
   registro_profissional: string | null;
   status?: string | null;
@@ -215,6 +219,77 @@ async function notificarAdmin(especialistaId: string, resultados: CriterioResult
   if (error) console.error("Falha ao criar notificação para o admin:", error.message);
 }
 
+const EXPLICACAO_CRITERIO: Record<string, string> = {
+  link: "Não conseguimos acessar o link (LinkedIn/site/portfólio) informado no seu cadastro. Confira se a URL está correta e se a página está publicamente acessível (sem exigir login).",
+  registro_profissional:
+    "Não conseguimos confirmar seu registro profissional (OAB, CRM ou CREA) no órgão oficial correspondente. Confira se o número e a UF estão corretos, no formato \"OAB/UF número\", \"CRM-UF número\" ou \"CREA-UF número\".",
+};
+
+function montarCorpoEmail(resultados: CriterioResultado[]): { html: string; text: string } {
+  const falhas = resultados.filter((r) => !r.passou);
+  const itens = falhas.map(
+    (f) => EXPLICACAO_CRITERIO[f.criterio] ?? `${f.criterio}: ${f.detalhe}`,
+  );
+
+  const text = [
+    "Olá,",
+    "",
+    "Analisamos seu cadastro como especialista na Valore e, no momento, não conseguimos aprová-lo automaticamente pelos seguintes motivos:",
+    "",
+    ...itens.map((i) => `- ${i}`),
+    "",
+    "Para corrigir, acesse seu perfil no app Valore e clique em \"Atualizar informações\" para revisar e reenviar seus dados. Assim que atualizar, faremos uma nova verificação.",
+    "",
+    "Equipe Valore",
+  ].join("\n");
+
+  const html = `
+    <p>Olá,</p>
+    <p>Analisamos seu cadastro como especialista na Valore e, no momento, não conseguimos aprová-lo automaticamente pelos seguintes motivos:</p>
+    <ul>${itens.map((i) => `<li>${i}</li>`).join("")}</ul>
+    <p>Para corrigir, acesse seu perfil no app Valore e clique em <strong>"Atualizar informações"</strong> para revisar e reenviar seus dados. Assim que atualizar, faremos uma nova verificação.</p>
+    <p>Equipe Valore</p>
+  `;
+
+  return { html, text };
+}
+
+async function enviarEmailReprovacao(email: string | null, resultados: CriterioResultado[]) {
+  if (!RESEND_API_KEY) {
+    console.error("RESEND_API_KEY não configurada — pulando envio de e-mail de reprovação.");
+    return;
+  }
+  if (!email) {
+    console.error("Especialista sem e-mail cadastrado — não foi possível enviar aviso de reprovação.");
+    return;
+  }
+
+  const { html, text } = montarCorpoEmail(resultados);
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: RESEND_FROM,
+        to: [email],
+        subject: "Sobre seu cadastro na Valore",
+        html,
+        text,
+      }),
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      console.error(`Falha ao enviar e-mail via Resend (HTTP ${res.status}):`, await res.text());
+    }
+  } catch (err) {
+    console.error("Erro ao chamar a API do Resend:", err);
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
     return jsonResponse({ error: "method not allowed" }, 405);
@@ -258,7 +333,10 @@ Deno.serve(async (req: Request) => {
   }
 
   if (!aprovado) {
-    await notificarAdmin(record.id, resultados);
+    await Promise.all([
+      notificarAdmin(record.id, resultados),
+      enviarEmailReprovacao(record.email, resultados),
+    ]);
   }
 
   return jsonResponse({ status: novoStatus, resultados });

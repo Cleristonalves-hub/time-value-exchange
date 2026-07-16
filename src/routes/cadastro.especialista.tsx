@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, Video, Camera } from "lucide-react";
 import { ValoreLogo } from "@/components/ValoreLogo";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { niches as allNiches } from "@/lib/auctions";
 import { ConductPledge } from "@/components/ConductPledge";
-import { addSpecialist, registrationLabel, uploadAvatar } from "@/lib/store";
+import { addSpecialist, updateSpecialist, registrationLabel, uploadAvatar, useMySpecialist } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
 
 
 export const Route = createFileRoute("/cadastro/especialista")({
@@ -55,18 +56,45 @@ const isUrl = (s: string) => {
 
 function SpecialistRegistration() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const existing = useMySpecialist(user?.id, user?.email ?? undefined);
   const [step, setStep] = useState(0);
   const [done, setDone] = useState(false);
   const [conduct, setConduct] = useState(false);
   const [truthPledge, setTruthPledge] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [uploading, setUploading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [data, setData] = useState<FormData>({
     fullName: "", email: "", phone: "", city: "",
     bio: "", niche: "", specialty: "", credential: "", experience: "",
     portfolioUrl: "", registrationNumber: "",
     platform: "", duration: "60", languages: "Português",
   });
+
+  // Se o usuário já tem um cadastro de especialista, entra em modo de edição:
+  // pré-preenche o formulário e o envio final vira UPDATE em vez de INSERT.
+  useEffect(() => {
+    if (!existing || editingId) return;
+    setEditingId(existing.id);
+    setPhotoUrl(existing.photoUrl ?? "");
+    setData({
+      fullName: existing.fullName,
+      email: existing.email,
+      phone: existing.phone,
+      city: existing.city,
+      bio: existing.bio,
+      niche: existing.niche,
+      specialty: existing.specialty,
+      credential: existing.credential,
+      experience: existing.experience,
+      portfolioUrl: existing.portfolioUrl,
+      registrationNumber: existing.registrationNumber ?? "",
+      platform: (existing.platform as FormData["platform"]) || "",
+      duration: existing.duration,
+      languages: existing.languages,
+    });
+  }, [existing, editingId]);
 
   async function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -100,7 +128,7 @@ function SpecialistRegistration() {
     if (step < STEPS.length - 1) {
       setStep(step + 1);
     } else {
-      addSpecialist({
+      const payload = {
         fullName: data.fullName,
         email: data.email,
         phone: data.phone,
@@ -116,14 +144,18 @@ function SpecialistRegistration() {
         portfolioUrl: data.portfolioUrl,
         registrationNumber: data.registrationNumber || undefined,
         photoUrl: photoUrl || undefined,
-
-      });
+      };
+      if (editingId) {
+        updateSpecialist(editingId, payload);
+      } else {
+        addSpecialist(payload);
+      }
       setDone(true);
     }
   };
   const back = () => (step === 0 ? navigate({ to: "/" }) : setStep(step - 1));
 
-  if (done) return <SuccessScreen />;
+  if (done) return <SuccessScreen isEdit={!!editingId} />;
 
   return (
     <main className="min-h-screen px-6 pb-24 pt-10">
@@ -328,7 +360,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function SuccessScreen() {
+function SuccessScreen({ isEdit }: { isEdit: boolean }) {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
       <div className="relative">
@@ -337,12 +369,16 @@ function SuccessScreen() {
           <Check className="size-10 text-gold" />
         </div>
       </div>
-      <h1 className="mt-8 font-display text-4xl text-gradient-gold">Perfil publicado</h1>
+      <h1 className="mt-8 font-display text-4xl text-gradient-gold">
+        {isEdit ? "Cadastro atualizado" : "Perfil publicado"}
+      </h1>
       <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-        Seu perfil já está visível com selo <strong className="text-gold">Novo</strong>. Estamos verificando seu link — se estiver acessível, o selo será elevado para <strong className="text-success">Verificado</strong> automaticamente.
+        {isEdit
+          ? "Suas informações foram enviadas para uma nova verificação. Você verá o resultado no seu perfil em instantes."
+          : <>Seu perfil já está visível com selo <strong className="text-gold">Novo</strong>. Estamos verificando seu link e registro profissional — se ambos forem confirmados, o selo será elevado para <strong className="text-success">Verificado</strong> automaticamente.</>}
       </p>
-      <Link to="/explorar" className="mt-10 rounded-md border border-gold/40 px-8 py-3 text-xs uppercase tracking-[0.2em] text-gold hover:bg-gold/5">
-        Ver na plataforma
+      <Link to="/perfil" className="mt-10 rounded-md border border-gold/40 px-8 py-3 text-xs uppercase tracking-[0.2em] text-gold hover:bg-gold/5">
+        {isEdit ? "Ver meu perfil" : "Ver na plataforma"}
       </Link>
     </main>
   );

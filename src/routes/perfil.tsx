@@ -2,10 +2,10 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { BottomNav } from "@/components/BottomNav";
 import { WarningBadge } from "@/components/ConductPledge";
-import { ShieldAlert, Camera, LogOut, Trash2 } from "lucide-react";
+import { ShieldAlert, Camera, LogOut, Trash2, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
-import { uploadAvatar, updateUserAvatar, deleteMyAccount } from "@/lib/store";
+import { uploadAvatar, updateUserAvatar, deleteMyAccount, useMySpecialist, useRejectionReasons } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -25,6 +25,11 @@ export const Route = createFileRoute("/perfil")({
   component: ProfilePage,
 });
 
+const CRITERIO_LABELS: Record<string, string> = {
+  link: "LinkedIn não acessível",
+  registro_profissional: "Registro profissional não confirmado",
+};
+
 function ProfilePage() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -32,6 +37,10 @@ function ProfilePage() {
   const [nome, setNome] = useState<string>("");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const especialista = useMySpecialist(user?.id, user?.email ?? undefined);
+  const reprovado = especialista?.status === "reprovado";
+  const motivos = useRejectionReasons(reprovado ? especialista?.id ?? null : null);
 
   useEffect(() => {
     if (!user) return;
@@ -122,6 +131,29 @@ function ProfilePage() {
             <WarningBadge tier={tier} />
           </div>
         </div>
+
+        {reprovado && (
+          <div className="mt-6 rounded-2xl border border-destructive/40 bg-destructive/10 p-5">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="size-4" />
+              <h2 className="text-[10px] uppercase tracking-[0.3em]">Cadastro reprovado</h2>
+            </div>
+            <p className="mt-3 text-sm text-destructive">
+              {motivos.length > 0
+                ? motivos.map((m) => CRITERIO_LABELS[m.criterio] ?? m.detalhe).join(" e ")
+                : "Não foi possível confirmar suas credenciais na verificação automática."}
+            </p>
+            <p className="mt-2 text-xs text-destructive/80">
+              Corrija as informações abaixo e reenvie para uma nova análise.
+            </p>
+            <button
+              onClick={() => navigate({ to: "/cadastro/especialista" })}
+              className="mt-4 w-full rounded-md border border-destructive/50 bg-destructive/10 py-2 text-xs font-semibold uppercase tracking-widest text-destructive hover:bg-destructive/20"
+            >
+              Atualizar informações
+            </button>
+          </div>
+        )}
 
         <section className="mt-6 space-y-3">
           <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Configurações</h2>
