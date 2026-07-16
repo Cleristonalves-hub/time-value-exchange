@@ -25,7 +25,7 @@ const ESPERA_MS = 10_000;
 
 const ESPECIALISTA_TESTE = {
   nome: "Dr. João Silva Teste",
-  email: "teste@valore.services",
+  email: "kleriston.alves@gmail.com",
   nicho: "Saúde",
   linkedin_url: "https://www.linkedin.com/in/joaosilva",
   registro_profissional: "CRM-RJ 123456",
