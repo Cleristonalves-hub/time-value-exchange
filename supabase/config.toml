@@ -1,0 +1,6 @@
+project_id = "sapuvozigtbxowuzwgqq"
+
+[functions.trust-engine]
+# O Database Webhook do Supabase autentica a chamada com o service_role key
+# (um JWT válido), então mantemos a verificação de JWT padrão ativada.
+verify_jwt = true
