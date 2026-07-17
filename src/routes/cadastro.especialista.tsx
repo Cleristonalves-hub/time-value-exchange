@@ -37,6 +37,8 @@ type FormData = {
   languages: string;
   minBid: string;
   weeklyAvailability: string;
+  document: string;
+  pixKey: string;
 };
 
 const STEPS = ["Dados pessoais", "Nicho", "Credenciais", "Videochamada"] as const;
@@ -56,6 +58,11 @@ const isUrl = (s: string) => {
   }
 };
 
+const isValidCpfCnpj = (s: string) => {
+  const digits = s.replace(/\D/g, "");
+  return digits.length === 11 || digits.length === 14;
+};
+
 function SpecialistRegistration() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -73,6 +80,7 @@ function SpecialistRegistration() {
     portfolioUrl: "", registrationNumber: "",
     platform: "", duration: "60", languages: "Português",
     minBid: "", weeklyAvailability: "",
+    document: "", pixKey: "",
   });
 
   // Se o usuário já tem um cadastro de especialista, entra em modo de edição:
@@ -98,6 +106,8 @@ function SpecialistRegistration() {
       languages: existing.languages,
       minBid: existing.minBid,
       weeklyAvailability: existing.weeklyAvailability,
+      document: existing.document,
+      pixKey: existing.pixKey,
     });
   }, [existing, editingId]);
 
@@ -117,7 +127,7 @@ function SpecialistRegistration() {
   const regLabel = registrationLabel(data.niche);
 
   const canProceed = () => {
-    if (step === 0) return data.fullName && data.email && data.phone && data.city;
+    if (step === 0) return data.fullName && data.email && data.phone && data.city && isValidCpfCnpj(data.document);
     if (step === 1) return data.niche && data.specialty && data.bio.length > 20;
     if (step === 2) {
       if (!data.credential || !data.experience) return false;
@@ -125,7 +135,7 @@ function SpecialistRegistration() {
       if (regLabel && !data.registrationNumber.trim()) return false;
       return true;
     }
-    if (step === 3) return data.platform && Number(data.minBid) > 0 && data.weeklyAvailability.trim() && conduct && truthPledge;
+    if (step === 3) return data.platform && Number(data.minBid) > 0 && data.weeklyAvailability.trim() && data.pixKey.trim() && conduct && truthPledge;
     return false;
   };
 
@@ -151,6 +161,8 @@ function SpecialistRegistration() {
         photoUrl: photoUrl || undefined,
         minBid: data.minBid,
         weeklyAvailability: data.weeklyAvailability,
+        document: data.document,
+        pixKey: data.pixKey,
       };
       if (editingId) {
         updateSpecialist(editingId, payload);
@@ -227,6 +239,12 @@ function SpecialistRegistration() {
               </Field>
               <Field label="Cidade">
                 <Input value={data.city} onChange={(e) => set("city", e.target.value)} placeholder="Rio de Janeiro, RJ" />
+              </Field>
+              <Field label="CPF ou CNPJ">
+                <Input value={data.document} onChange={(e) => set("document", e.target.value)} placeholder="000.000.000-00" />
+                {data.document && !isValidCpfCnpj(data.document) && (
+                  <p className="mt-1 text-[11px] text-destructive">Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.</p>
+                )}
               </Field>
             </>
           )}
@@ -335,6 +353,13 @@ function SpecialistRegistration() {
                   value={data.weeklyAvailability}
                   onChange={(e) => set("weeklyAvailability", e.target.value)}
                   placeholder="Ex: Seg a sex, 18h-21h"
+                />
+              </Field>
+              <Field label="Chave PIX (para repasse dos seus ganhos)">
+                <Input
+                  value={data.pixKey}
+                  onChange={(e) => set("pixKey", e.target.value)}
+                  placeholder="CPF, e-mail, telefone ou chave aleatória"
                 />
               </Field>
 
