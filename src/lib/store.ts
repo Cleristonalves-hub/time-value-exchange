@@ -139,6 +139,20 @@ export function useSpecialists(): Specialist[] {
   return data ?? [];
 }
 
+// Verifica se já existe um especialista cadastrado com este e-mail (usado para
+// bloquear cadastro duplicado). `excludeId` permite ignorar o próprio registro
+// ao validar uma edição.
+export async function specialistEmailExists(email: string, excludeId?: string): Promise<boolean> {
+  let query = supabase.from("especialistas").select("id").eq("email", email).limit(1);
+  if (excludeId) query = query.neq("id", excludeId);
+  const { data, error } = await query;
+  if (error) {
+    console.error("specialistEmailExists:", error);
+    return false;
+  }
+  return (data?.length ?? 0) > 0;
+}
+
 // Busca o cadastro de especialista do usuário logado (por usuario_id ou, como
 // fallback, pelo e-mail — nem todo fluxo de insert popula usuario_id hoje).
 export function useMySpecialist(usuarioId: string | undefined, email: string | undefined) {

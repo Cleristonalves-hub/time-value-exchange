@@ -131,3 +131,11 @@ export const getAuction = (id: string) => auctions.find((a) => a.id === id);
 
 export const formatBRL = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+
+export const formatEndsAt = (endsAt: number) =>
+  new Date(endsAt).toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });

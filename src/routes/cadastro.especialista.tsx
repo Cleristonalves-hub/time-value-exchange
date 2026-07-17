@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { niches as allNiches } from "@/lib/auctions";
 import { ConductPledge } from "@/components/ConductPledge";
-import { addSpecialist, updateSpecialist, registrationLabel, uploadAvatar, useMySpecialist } from "@/lib/store";
+import { addSpecialist, updateSpecialist, registrationLabel, uploadAvatar, useMySpecialist, specialistEmailExists } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
 
 
 export const Route = createFileRoute("/cadastro/especialista")({
@@ -74,6 +75,8 @@ function SpecialistRegistration() {
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [data, setData] = useState<FormData>({
     fullName: "", email: "", phone: "", city: "",
     bio: "", niche: "", specialty: "", credential: "", experience: "",
@@ -139,10 +142,21 @@ function SpecialistRegistration() {
     return false;
   };
 
-  const next = () => {
+  const next = async () => {
+    setEmailError(null);
     if (step < STEPS.length - 1) {
       setStep(step + 1);
     } else {
+      setSubmitting(true);
+      const emailTaken = await specialistEmailExists(data.email, editingId ?? undefined);
+      if (emailTaken) {
+        setSubmitting(false);
+        setEmailError("Já existe um perfil cadastrado com este email");
+        toast.error("Já existe um perfil cadastrado com este email");
+        setStep(0);
+        return;
+      }
+
       const payload = {
         fullName: data.fullName,
         email: data.email,
@@ -165,10 +179,11 @@ function SpecialistRegistration() {
         pixKey: data.pixKey,
       };
       if (editingId) {
-        updateSpecialist(editingId, payload);
+        await updateSpecialist(editingId, payload);
       } else {
-        addSpecialist(payload);
+        await addSpecialist(payload);
       }
+      setSubmitting(false);
       setDone(true);
     }
   };
@@ -232,7 +247,16 @@ function SpecialistRegistration() {
               </Field>
 
               <Field label="E-mail">
-                <Input type="email" value={data.email} onChange={(e) => set("email", e.target.value)} placeholder="voce@dominio.com" />
+                <Input
+                  type="email"
+                  value={data.email}
+                  onChange={(e) => {
+                    set("email", e.target.value);
+                    setEmailError(null);
+                  }}
+                  placeholder="voce@dominio.com"
+                />
+                {emailError && <p className="mt-1 text-[11px] text-destructive">{emailError}</p>}
               </Field>
               <Field label="Telefone / WhatsApp">
                 <Input value={data.phone} onChange={(e) => set("phone", e.target.value)} placeholder="(21) 9 0000-0000" />
@@ -382,10 +406,10 @@ function SpecialistRegistration() {
 
         <button
           onClick={next}
-          disabled={!canProceed()}
+          disabled={!canProceed() || submitting}
           className="group mt-10 flex w-full items-center justify-center gap-2 rounded-md bg-gradient-gold px-6 py-4 text-sm font-medium uppercase tracking-[0.2em] text-primary-foreground shadow-gold transition-transform active:scale-[0.98] disabled:opacity-30 disabled:shadow-none"
         >
-          {step === STEPS.length - 1 ? "Finalizar cadastro" : "Continuar"}
+          {submitting ? "Enviando…" : step === STEPS.length - 1 ? "Finalizar cadastro" : "Continuar"}
           <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
         </button>
 

@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Users, ArrowRight } from "lucide-react";
 import type { Auction } from "@/lib/auctions";
-import { formatBRL } from "@/lib/auctions";
+import { formatBRL, formatEndsAt } from "@/lib/auctions";
 import { Countdown } from "./Countdown";
 
 export function AuctionCard({ a }: { a: Auction }) {
@@ -37,6 +37,9 @@ export function AuctionCard({ a }: { a: Auction }) {
             </div>
             <div className="text-right">
               <Countdown endsAt={a.endsAt} className="text-sm" />
+              <div className="mt-0.5 text-[10px] text-muted-foreground">
+                Encerra {formatEndsAt(a.endsAt)}
+              </div>
               <div className="mt-1 flex items-center justify-end gap-1 text-[10px] text-muted-foreground">
                 <Users className="h-3 w-3" /> {a.seats} {a.seats === 1 ? "vaga" : "vagas"}
               </div>

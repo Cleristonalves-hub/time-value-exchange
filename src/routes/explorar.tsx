@@ -2,8 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Search, BadgeCheck, Sparkles } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
-import { AuctionCard } from "@/components/AuctionCard";
-import { auctions, niches } from "@/lib/auctions";
+import { niches } from "@/lib/auctions";
 import { useSpecialists, type Specialist } from "@/lib/store";
 import { Disclaimer } from "@/components/Disclaimer";
 
@@ -19,25 +18,19 @@ function ExplorePage() {
 
   const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-  const filteredAuctions = useMemo(() => {
-    return auctions.filter((a) => {
-      if (niche !== "Todos" && a.niche !== niche) return false;
-      if (!query) return true;
-      const q = norm(query);
-      return norm(a.expert).includes(q) || norm(a.specialty).includes(q) || norm(a.niche).includes(q);
-    });
-  }, [query, niche]);
+  const availableSpecialists = useMemo(
+    () => specialists.filter((s) => s.status !== "suspenso" && s.status !== "reprovado"),
+    [specialists],
+  );
 
   const filteredSpecialists = useMemo(() => {
-    return specialists
-      .filter((s) => s.status !== "suspenso" && s.status !== "reprovado")
-      .filter((s) => {
-        if (niche !== "Todos" && s.niche !== niche) return false;
-        if (!query) return true;
-        const q = norm(query);
-        return norm(s.fullName).includes(q) || norm(s.specialty).includes(q) || norm(s.niche).includes(q);
-      });
-  }, [specialists, query, niche]);
+    return availableSpecialists.filter((s) => {
+      if (niche !== "Todos" && s.niche !== niche) return false;
+      if (!query) return true;
+      const q = norm(query);
+      return norm(s.fullName).includes(q) || norm(s.specialty).includes(q) || norm(s.niche).includes(q);
+    });
+  }, [availableSpecialists, query, niche]);
 
   return (
     <main className="min-h-screen pb-24">
@@ -70,26 +63,21 @@ function ExplorePage() {
           })}
         </div>
 
-        {filteredSpecialists.length > 0 && (
-          <section className="mt-6">
-            <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Novos especialistas</h2>
+        <section className="mt-6">
+          <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Especialistas</h2>
+          {availableSpecialists.length === 0 ? (
+            <p className="mt-3 rounded-xl border border-border/60 bg-surface p-6 text-center text-sm text-muted-foreground">
+              Nenhum especialista disponível no momento.
+            </p>
+          ) : filteredSpecialists.length === 0 ? (
+            <p className="mt-3 rounded-xl border border-border/60 bg-surface p-6 text-center text-sm text-muted-foreground">
+              Nenhum especialista encontrado.
+            </p>
+          ) : (
             <ul className="mt-3 space-y-2">
               {filteredSpecialists.map((s) => <SpecialistCard key={s.id} s={s} />)}
             </ul>
-          </section>
-        )}
-
-        <section className="mt-6">
-          <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Leilões ativos</h2>
-          <div className="mt-3 space-y-3">
-            {filteredAuctions.length === 0 ? (
-              <p className="rounded-xl border border-border/60 bg-surface p-6 text-center text-sm text-muted-foreground">
-                Nenhum resultado para sua busca.
-              </p>
-            ) : (
-              filteredAuctions.map((a) => <AuctionCard key={a.id} a={a} />)
-            )}
-          </div>
+          )}
         </section>
       </div>
       <Disclaimer />

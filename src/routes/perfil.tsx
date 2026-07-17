@@ -132,6 +132,25 @@ function ProfilePage() {
           </div>
         </div>
 
+        {especialista && !reprovado && (
+          <div className="mt-6 rounded-2xl border border-gold/30 bg-surface p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Cadastro de especialista</h2>
+                <p className="mt-1 text-sm text-foreground">
+                  Status: <span className="text-gold">{especialista.status === "verificado" ? "Verificado" : especialista.status === "suspenso" ? "Suspenso" : "Novo"}</span>
+                </p>
+              </div>
+              <button
+                onClick={() => navigate({ to: "/cadastro/especialista" })}
+                className="shrink-0 rounded-md border border-gold/40 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-gold hover:bg-gold/5"
+              >
+                Editar perfil
+              </button>
+            </div>
+          </div>
+        )}
+
         {reprovado && (
           <div className="mt-6 rounded-2xl border border-destructive/40 bg-destructive/10 p-5">
             <div className="flex items-center gap-2 text-destructive">

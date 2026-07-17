@@ -48,10 +48,10 @@ function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rounded-lg border p-6">
         <h1 className="text-2xl font-semibold mb-4 text-center">Valore</h1>
-        <Tabs defaultValue="signin" className="w-full">
+        <Tabs defaultValue="signup" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="signin">Já tenho conta</TabsTrigger>
             <TabsTrigger value="signup">Criar conta</TabsTrigger>
+            <TabsTrigger value="signin">Já tenho conta</TabsTrigger>
           </TabsList>
 
           <TabsContent value="signin">

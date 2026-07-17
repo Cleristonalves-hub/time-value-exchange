@@ -9,7 +9,7 @@ import { Countdown } from "@/components/Countdown";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { LiveActivity } from "@/components/LiveActivity";
 import { useT } from "@/lib/i18n";
-import { auctions, niches, formatBRL } from "@/lib/auctions";
+import { auctions, niches, formatBRL, formatEndsAt } from "@/lib/auctions";
 
 function getTimeOfDay() {
   const h = new Date().getHours();
@@ -127,6 +127,9 @@ function Home() {
                     {t("home.endsIn")}
                   </div>
                   <Countdown endsAt={featured.endsAt} className="text-lg" />
+                  <div className="mt-0.5 text-[10px] text-foreground/60">
+                    {formatEndsAt(featured.endsAt)}
+                  </div>
                 </div>
               </div>
             </div>
