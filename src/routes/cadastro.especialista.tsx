@@ -35,6 +35,8 @@ type FormData = {
   platform: "Google Meet" | "Zoom" | "Microsoft Teams" | "";
   duration: string;
   languages: string;
+  minBid: string;
+  weeklyAvailability: string;
 };
 
 const STEPS = ["Dados pessoais", "Nicho", "Credenciais", "Videochamada"] as const;
@@ -70,6 +72,7 @@ function SpecialistRegistration() {
     bio: "", niche: "", specialty: "", credential: "", experience: "",
     portfolioUrl: "", registrationNumber: "",
     platform: "", duration: "60", languages: "Português",
+    minBid: "", weeklyAvailability: "",
   });
 
   // Se o usuário já tem um cadastro de especialista, entra em modo de edição:
@@ -93,6 +96,8 @@ function SpecialistRegistration() {
       platform: (existing.platform as FormData["platform"]) || "",
       duration: existing.duration,
       languages: existing.languages,
+      minBid: existing.minBid,
+      weeklyAvailability: existing.weeklyAvailability,
     });
   }, [existing, editingId]);
 
@@ -120,7 +125,7 @@ function SpecialistRegistration() {
       if (regLabel && !data.registrationNumber.trim()) return false;
       return true;
     }
-    if (step === 3) return data.platform && conduct && truthPledge;
+    if (step === 3) return data.platform && Number(data.minBid) > 0 && data.weeklyAvailability.trim() && conduct && truthPledge;
     return false;
   };
 
@@ -144,6 +149,8 @@ function SpecialistRegistration() {
         portfolioUrl: data.portfolioUrl,
         registrationNumber: data.registrationNumber || undefined,
         photoUrl: photoUrl || undefined,
+        minBid: data.minBid,
+        weeklyAvailability: data.weeklyAvailability,
       };
       if (editingId) {
         updateSpecialist(editingId, payload);
@@ -313,6 +320,22 @@ function SpecialistRegistration() {
               </Field>
               <Field label="Idiomas que atende">
                 <Input value={data.languages} onChange={(e) => set("languages", e.target.value)} placeholder="Português, Inglês" />
+              </Field>
+              <Field label="Valor mínimo do lance (R$)">
+                <Input
+                  type="number"
+                  min="0"
+                  value={data.minBid}
+                  onChange={(e) => set("minBid", e.target.value)}
+                  placeholder="500"
+                />
+              </Field>
+              <Field label="Disponibilidade semanal">
+                <Input
+                  value={data.weeklyAvailability}
+                  onChange={(e) => set("weeklyAvailability", e.target.value)}
+                  placeholder="Ex: Seg a sex, 18h-21h"
+                />
               </Field>
 
               <label className="flex cursor-pointer items-start gap-3 rounded-md border border-gold/30 bg-gold/5 p-4 text-[12px] leading-relaxed text-foreground/80">

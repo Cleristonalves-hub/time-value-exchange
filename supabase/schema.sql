@@ -51,10 +51,14 @@ create table if not exists public.especialistas (
   linkedin_url text,
   registro_profissional text,
   avatar_url text,
+  lance_minimo text,
+  disponibilidade_semanal text,
   status public.especialista_status not null default 'novo',
   created_at timestamptz not null default now()
 );
 alter table public.especialistas add column if not exists avatar_url text;
+alter table public.especialistas add column if not exists lance_minimo text;
+alter table public.especialistas add column if not exists disponibilidade_semanal text;
 
 
 create table if not exists public.leiloes (

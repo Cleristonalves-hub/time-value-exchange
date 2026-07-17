@@ -20,6 +20,8 @@ export type Specialist = {
   portfolioUrl: string;
   registrationNumber?: string;
   photoUrl?: string;
+  minBid: string;
+  weeklyAvailability: string;
   status: SpecialistStatus;
   createdAt: number;
 };
@@ -68,6 +70,8 @@ type SpecialistRow = {
   linkedin_url: string | null;
   registro_profissional: string | null;
   avatar_url: string | null;
+  lance_minimo: string | null;
+  disponibilidade_semanal: string | null;
   status: SpecialistStatus;
   created_at: string;
 };
@@ -89,6 +93,8 @@ const toSpecialist = (r: SpecialistRow): Specialist => ({
   portfolioUrl: r.linkedin_url ?? "",
   registrationNumber: r.registro_profissional ?? undefined,
   photoUrl: r.avatar_url ?? undefined,
+  minBid: r.lance_minimo ?? "",
+  weeklyAvailability: r.disponibilidade_semanal ?? "",
   status: r.status,
   createdAt: new Date(r.created_at).getTime(),
 });
@@ -295,6 +301,8 @@ export async function addSpecialist(
       linkedin_url: input.portfolioUrl,
       registro_profissional: input.registrationNumber ?? null,
       avatar_url: input.photoUrl ?? null,
+      lance_minimo: input.minBid || null,
+      disponibilidade_semanal: input.weeklyAvailability || null,
       status: "novo",
     })
     .select("*")
@@ -334,6 +342,8 @@ export async function updateSpecialist(
       linkedin_url: input.portfolioUrl,
       registro_profissional: input.registrationNumber ?? null,
       avatar_url: input.photoUrl ?? null,
+      lance_minimo: input.minBid || null,
+      disponibilidade_semanal: input.weeklyAvailability || null,
       // Volta para "novo" para deixar claro que precisa ser reavaliado — o
       // Trust Engine só reavalia automaticamente se o Database Webhook também
       // estiver configurado para o evento Update (hoje só dispara no Insert).
