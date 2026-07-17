@@ -37,7 +37,9 @@ type FormData = {
   duration: string;
   languages: string;
   minBid: string;
-  weeklyAvailability: string;
+  availableDays: string[];
+  startTime: string;
+  endTime: string;
   document: string;
   pixKey: string;
 };
@@ -49,6 +51,28 @@ const platforms: { id: FormData["platform"]; label: string; sub: string }[] = [
   { id: "Google Meet", label: "Google Meet", sub: "Integração com Google Workspace" },
   { id: "Microsoft Teams", label: "Microsoft Teams", sub: "Integração com Microsoft 365" },
 ];
+
+const WEEKDAYS: { code: string; label: string }[] = [
+  { code: "seg", label: "Seg" },
+  { code: "ter", label: "Ter" },
+  { code: "qua", label: "Qua" },
+  { code: "qui", label: "Qui" },
+  { code: "sex", label: "Sex" },
+  { code: "sab", label: "Sáb" },
+  { code: "dom", label: "Dom" },
+];
+
+const TIME_OPTIONS: string[] = (() => {
+  const out: string[] = [];
+  for (let mins = 6 * 60; mins <= 23 * 60; mins += 30) {
+    const h = Math.floor(mins / 60)
+      .toString()
+      .padStart(2, "0");
+    const m = (mins % 60).toString().padStart(2, "0");
+    out.push(`${h}:${m}`);
+  }
+  return out;
+})();
 
 const isUrl = (s: string) => {
   try {
@@ -82,7 +106,7 @@ function SpecialistRegistration() {
     bio: "", niche: "", specialty: "", credential: "", experience: "",
     portfolioUrl: "", registrationNumber: "",
     platform: "", duration: "60", languages: "Português",
-    minBid: "", weeklyAvailability: "",
+    minBid: "", availableDays: [], startTime: "09:00", endTime: "18:00",
     document: "", pixKey: "",
   });
 
@@ -108,7 +132,9 @@ function SpecialistRegistration() {
       duration: existing.duration,
       languages: existing.languages,
       minBid: existing.minBid,
-      weeklyAvailability: existing.weeklyAvailability,
+      availableDays: existing.availableDays,
+      startTime: existing.startTime || "09:00",
+      endTime: existing.endTime || "18:00",
       document: existing.document,
       pixKey: existing.pixKey,
     });
@@ -127,6 +153,14 @@ function SpecialistRegistration() {
   const set = <K extends keyof FormData>(k: K, v: FormData[K]) =>
     setData((d) => ({ ...d, [k]: v }));
 
+  const toggleDay = (code: string) =>
+    setData((d) => ({
+      ...d,
+      availableDays: d.availableDays.includes(code)
+        ? d.availableDays.filter((c) => c !== code)
+        : [...d.availableDays, code],
+    }));
+
   const regLabel = registrationLabel(data.niche);
 
   const canProceed = () => {
@@ -138,7 +172,16 @@ function SpecialistRegistration() {
       if (regLabel && !data.registrationNumber.trim()) return false;
       return true;
     }
-    if (step === 3) return data.platform && Number(data.minBid) > 0 && data.weeklyAvailability.trim() && data.pixKey.trim() && conduct && truthPledge;
+    if (step === 3)
+      return (
+        data.platform &&
+        Number(data.minBid) > 0 &&
+        data.availableDays.length > 0 &&
+        data.startTime < data.endTime &&
+        data.pixKey.trim() &&
+        conduct &&
+        truthPledge
+      );
     return false;
   };
 
@@ -174,7 +217,9 @@ function SpecialistRegistration() {
         registrationNumber: data.registrationNumber || undefined,
         photoUrl: photoUrl || undefined,
         minBid: data.minBid,
-        weeklyAvailability: data.weeklyAvailability,
+        availableDays: data.availableDays,
+        startTime: data.startTime,
+        endTime: data.endTime,
         document: data.document,
         pixKey: data.pixKey,
       };
@@ -372,13 +417,51 @@ function SpecialistRegistration() {
                   placeholder="500"
                 />
               </Field>
-              <Field label="Disponibilidade semanal">
-                <Input
-                  value={data.weeklyAvailability}
-                  onChange={(e) => set("weeklyAvailability", e.target.value)}
-                  placeholder="Ex: Seg a sex, 18h-21h"
-                />
-              </Field>
+              <div>
+                <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">Dias disponíveis</label>
+                <div className="flex flex-wrap gap-2">
+                  {WEEKDAYS.map((d) => {
+                    const active = data.availableDays.includes(d.code);
+                    return (
+                      <button
+                        key={d.code}
+                        type="button"
+                        onClick={() => toggleDay(d.code)}
+                        className={`rounded-md border px-3 py-2 text-xs transition-all ${active ? "border-gold bg-gold/10 text-gold shadow-gold" : "border-border text-foreground/80 hover:border-gold/40"}`}
+                      >
+                        {d.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Horário de início">
+                  <select
+                    value={data.startTime}
+                    onChange={(e) => set("startTime", e.target.value)}
+                    className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
+                  >
+                    {TIME_OPTIONS.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Horário de fim">
+                  <select
+                    value={data.endTime}
+                    onChange={(e) => set("endTime", e.target.value)}
+                    className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
+                  >
+                    {TIME_OPTIONS.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+              {data.startTime >= data.endTime && (
+                <p className="text-[11px] text-destructive">O horário de fim precisa ser depois do horário de início.</p>
+              )}
               <Field label="Chave PIX (para repasse dos seus ganhos)">
                 <Input
                   value={data.pixKey}

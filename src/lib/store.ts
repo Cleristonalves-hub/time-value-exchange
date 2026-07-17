@@ -21,10 +21,26 @@ export type Specialist = {
   registrationNumber?: string;
   photoUrl?: string;
   minBid: string;
-  weeklyAvailability: string;
+  availableDays: string[];
+  startTime: string;
+  endTime: string;
   document: string;
   pixKey: string;
   status: SpecialistStatus;
+  createdAt: number;
+};
+
+export type LeilaoStatus = "ativo" | "encerrado" | "cancelado";
+
+export type Leilao = {
+  id: string;
+  especialistaId: string;
+  titulo: string;
+  descricao: string;
+  lanceMinimo: number;
+  dataInicio: number;
+  dataFim: number;
+  status: LeilaoStatus;
   createdAt: number;
 };
 
@@ -74,11 +90,38 @@ type SpecialistRow = {
   avatar_url: string | null;
   lance_minimo: string | null;
   disponibilidade_semanal: string | null;
+  dias_disponibilidade: string[] | null;
+  horario_inicio: string | null;
+  horario_fim: string | null;
   cpf_cnpj: string | null;
   chave_pix: string | null;
   status: SpecialistStatus;
   created_at: string;
 };
+
+type LeilaoRow = {
+  id: string;
+  especialista_id: string;
+  titulo: string;
+  descricao: string | null;
+  lance_minimo: number;
+  data_inicio: string;
+  data_fim: string;
+  status: LeilaoStatus;
+  created_at: string;
+};
+
+const toLeilao = (r: LeilaoRow): Leilao => ({
+  id: r.id,
+  especialistaId: r.especialista_id,
+  titulo: r.titulo,
+  descricao: r.descricao ?? "",
+  lanceMinimo: r.lance_minimo,
+  dataInicio: new Date(r.data_inicio).getTime(),
+  dataFim: new Date(r.data_fim).getTime(),
+  status: r.status,
+  createdAt: new Date(r.created_at).getTime(),
+});
 
 const toSpecialist = (r: SpecialistRow): Specialist => ({
   id: r.id,
@@ -98,7 +141,9 @@ const toSpecialist = (r: SpecialistRow): Specialist => ({
   registrationNumber: r.registro_profissional ?? undefined,
   photoUrl: r.avatar_url ?? undefined,
   minBid: r.lance_minimo ?? "",
-  weeklyAvailability: r.disponibilidade_semanal ?? "",
+  availableDays: r.dias_disponibilidade ?? [],
+  startTime: r.horario_inicio ?? "",
+  endTime: r.horario_fim ?? "",
   document: r.cpf_cnpj ?? "",
   pixKey: r.chave_pix ?? "",
   status: r.status,
@@ -322,7 +367,9 @@ export async function addSpecialist(
       registro_profissional: input.registrationNumber ?? null,
       avatar_url: input.photoUrl ?? null,
       lance_minimo: input.minBid || null,
-      disponibilidade_semanal: input.weeklyAvailability || null,
+      dias_disponibilidade: input.availableDays.length ? input.availableDays : null,
+      horario_inicio: input.startTime || null,
+      horario_fim: input.endTime || null,
       cpf_cnpj: input.document || null,
       chave_pix: input.pixKey || null,
       status: "novo",
@@ -365,7 +412,9 @@ export async function updateSpecialist(
       registro_profissional: input.registrationNumber ?? null,
       avatar_url: input.photoUrl ?? null,
       lance_minimo: input.minBid || null,
-      disponibilidade_semanal: input.weeklyAvailability || null,
+      dias_disponibilidade: input.availableDays.length ? input.availableDays : null,
+      horario_inicio: input.startTime || null,
+      horario_fim: input.endTime || null,
       cpf_cnpj: input.document || null,
       chave_pix: input.pixKey || null,
       // Volta para "novo" para deixar claro que precisa ser reavaliado — o
@@ -392,6 +441,30 @@ export async function setSpecialistStatus(id: string, status: SpecialistStatus) 
   const { error } = await supabase.from("especialistas").update({ status }).eq("id", id);
   if (error) console.error("setSpecialistStatus:", error);
   invalidate(K.specialists);
+}
+
+export async function createLeilao(
+  input: Omit<Leilao, "id" | "status" | "createdAt">,
+): Promise<Leilao | null> {
+  const { data, error } = await supabase
+    .from("leiloes")
+    .insert({
+      especialista_id: input.especialistaId,
+      titulo: input.titulo,
+      descricao: input.descricao || null,
+      lance_minimo: input.lanceMinimo,
+      data_inicio: new Date(input.dataInicio).toISOString(),
+      data_fim: new Date(input.dataFim).toISOString(),
+      status: "ativo",
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    console.error("createLeilao:", error);
+    return null;
+  }
+  return toLeilao(data as LeilaoRow);
 }
 
 export async function addReport(input: Omit<Report, "id" | "createdAt">) {

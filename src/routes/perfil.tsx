@@ -148,6 +148,14 @@ function ProfilePage() {
                 Editar perfil
               </button>
             </div>
+            {(especialista.status === "novo" || especialista.status === "verificado") && (
+              <button
+                onClick={() => navigate({ to: "/criar-leilao" })}
+                className="mt-3 w-full rounded-md bg-gradient-gold py-2 text-xs font-semibold uppercase tracking-widest text-primary-foreground shadow-gold hover:opacity-90"
+              >
+                Criar leilão
+              </button>
+            )}
           </div>
         )}
 

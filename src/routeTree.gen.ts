@@ -17,6 +17,7 @@ import { Route as HomeRouteImport } from './routes/home'
 import { Route as GanhosRouteImport } from './routes/ganhos'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as ExplorarRouteImport } from './routes/explorar'
+import { Route as CriarLeilaoRouteImport } from './routes/criar-leilao'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -66,6 +67,11 @@ const ExplorarRoute = ExplorarRouteImport.update({
   path: '/explorar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CriarLeilaoRoute = CriarLeilaoRouteImport.update({
+  id: '/criar-leilao',
+  path: '/criar-leilao',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/criar-leilao': typeof CriarLeilaoRoute
   '/explorar': typeof ExplorarRoute
   '/feedback': typeof FeedbackRoute
   '/ganhos': typeof GanhosRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/criar-leilao': typeof CriarLeilaoRoute
   '/explorar': typeof ExplorarRoute
   '/feedback': typeof FeedbackRoute
   '/ganhos': typeof GanhosRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/criar-leilao': typeof CriarLeilaoRoute
   '/explorar': typeof ExplorarRoute
   '/feedback': typeof FeedbackRoute
   '/ganhos': typeof GanhosRoute
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/criar-leilao'
     | '/explorar'
     | '/feedback'
     | '/ganhos'
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/criar-leilao'
     | '/explorar'
     | '/feedback'
     | '/ganhos'
@@ -204,6 +215,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/criar-leilao'
     | '/explorar'
     | '/feedback'
     | '/ganhos'
@@ -223,6 +235,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  CriarLeilaoRoute: typeof CriarLeilaoRoute
   ExplorarRoute: typeof ExplorarRoute
   FeedbackRoute: typeof FeedbackRoute
   GanhosRoute: typeof GanhosRoute
@@ -296,6 +309,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ExplorarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/criar-leilao': {
+      id: '/criar-leilao'
+      path: '/criar-leilao'
+      fullPath: '/criar-leilao'
+      preLoaderRoute: typeof CriarLeilaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -359,6 +379,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  CriarLeilaoRoute: CriarLeilaoRoute,
   ExplorarRoute: ExplorarRoute,
   FeedbackRoute: FeedbackRoute,
   GanhosRoute: GanhosRoute,
