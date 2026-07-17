@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, Check } from "lucide-react";
 import { addFeedback } from "@/lib/store";
+import { RequireAuth } from "@/components/RequireAuth";
 
 export const Route = createFileRoute("/feedback")({
   head: () => ({ meta: [{ title: "Sugestões e reclamações — Valore" }] }),
@@ -23,6 +24,7 @@ function FeedbackPage() {
 
   if (sent) {
     return (
+      <RequireAuth>
       <main className="grid min-h-screen place-items-center px-5">
         <div className="max-w-sm text-center">
           <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-gradient-gold shadow-gold">
@@ -40,10 +42,12 @@ function FeedbackPage() {
           </Link>
         </div>
       </main>
+      </RequireAuth>
     );
   }
 
   return (
+    <RequireAuth>
     <main className="min-h-screen px-5 pt-10 pb-16">
       <div className="mx-auto max-w-md">
         <Link to="/home" className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground">
@@ -88,6 +92,7 @@ function FeedbackPage() {
         </button>
       </div>
     </main>
+    </RequireAuth>
   );
 }
 

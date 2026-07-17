@@ -70,7 +70,8 @@ function Splash() {
           {t("splash.cta.expert")}
         </Link>
         <Link
-          to="/home"
+          to="/auth"
+          search={{ tab: "signin" }}
           className="mt-2 text-center text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
           {t("splash.login")}

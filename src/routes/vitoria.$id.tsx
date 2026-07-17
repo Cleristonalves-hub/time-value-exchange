@@ -2,6 +2,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { Trophy, Video, Copy, CalendarCheck, Check } from "lucide-react";
 import { useMemo, useState } from "react";
 import { auctions, formatBRL } from "@/lib/auctions";
+import { RequireAuth } from "@/components/RequireAuth";
 
 export const Route = createFileRoute("/vitoria/$id")({
   head: () => ({ meta: [{ title: "Você venceu — Valore" }] }),
@@ -54,6 +55,7 @@ function WinPage() {
 
   if (confirmed) {
     return (
+      <RequireAuth>
       <main className="min-h-screen px-5 pt-12">
         <div className="mx-auto max-w-md text-center">
           <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-gradient-gold shadow-gold">
@@ -87,10 +89,12 @@ function WinPage() {
           </Link>
         </div>
       </main>
+      </RequireAuth>
     );
   }
 
   return (
+    <RequireAuth>
     <main className="min-h-screen px-5 pt-10 pb-12">
       <div className="mx-auto max-w-md">
         <div className="text-center">
@@ -161,5 +165,6 @@ function WinPage() {
         </button>
       </div>
     </main>
+    </RequireAuth>
   );
 }

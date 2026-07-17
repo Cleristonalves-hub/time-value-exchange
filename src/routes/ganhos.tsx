@@ -3,6 +3,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { formatBRL } from "@/lib/auctions";
 import { ArrowDownToLine, TrendingUp } from "lucide-react";
 import { useState } from "react";
+import { RequireAuth } from "@/components/RequireAuth";
 
 export const Route = createFileRoute("/ganhos")({
   head: () => ({ meta: [{ title: "Ganhos — Valore" }] }),
@@ -31,6 +32,7 @@ function EarningsPage() {
   const monthFee = monthGross - monthNet;
 
   return (
+    <RequireAuth>
     <main className="min-h-screen pb-28">
       <div className="mx-auto max-w-2xl px-5 pt-10">
         <p className="text-[10px] uppercase tracking-[0.3em] text-gold">Junho · 2026</p>
@@ -84,6 +86,7 @@ function EarningsPage() {
       </div>
       <BottomNav />
     </main>
+    </RequireAuth>
   );
 }
 

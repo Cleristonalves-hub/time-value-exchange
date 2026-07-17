@@ -5,6 +5,7 @@ import { Countdown } from "@/components/Countdown";
 import { getAuction, formatBRL } from "@/lib/auctions";
 import { ReportButton } from "@/components/ReportDialog";
 import { Disclaimer } from "@/components/Disclaimer";
+import { RequireAuth } from "@/components/RequireAuth";
 
 export const Route = createFileRoute("/leilao/$id")({
   loader: ({ params }) => {
@@ -53,6 +54,7 @@ function AuctionDetail() {
   };
 
   return (
+    <RequireAuth>
     <main className="min-h-screen pb-24">
       {/* Hero */}
       <div className="relative">
@@ -253,5 +255,6 @@ function AuctionDetail() {
         </div>
       )}
     </main>
+    </RequireAuth>
   );
 }

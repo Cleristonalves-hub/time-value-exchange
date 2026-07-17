@@ -10,6 +10,7 @@ import { LanguageSelector } from "@/components/LanguageSelector";
 import { LiveActivity } from "@/components/LiveActivity";
 import { useT } from "@/lib/i18n";
 import { auctions, niches, formatBRL, formatEndsAt } from "@/lib/auctions";
+import { RequireAuth } from "@/components/RequireAuth";
 
 function getTimeOfDay() {
   const h = new Date().getHours();
@@ -57,6 +58,7 @@ function Home() {
   }, [query, niche]);
 
   return (
+    <RequireAuth>
     <main className="min-h-screen pb-24">
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl">
@@ -190,6 +192,6 @@ function Home() {
       <Disclaimer />
       <BottomNav />
     </main>
-
+    </RequireAuth>
   );
 }

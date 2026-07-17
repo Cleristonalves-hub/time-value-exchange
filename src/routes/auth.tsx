@@ -8,12 +8,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>): { tab?: "signin" | "signup" } => ({
+    tab: search.tab === "signin" ? "signin" : search.tab === "signup" ? "signup" : undefined,
+  }),
   component: AuthPage,
 });
 
 function AuthPage() {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+  const { tab } = Route.useSearch();
   const [busy, setBusy] = useState(false);
 
   // Sign in
@@ -37,9 +41,13 @@ function AuthPage() {
   async function onSignUp(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const { error } = await signUp(suEmail, suPass, suNome);
+    const { error, needsEmailConfirmation } = await signUp(suEmail, suPass, suNome);
     setBusy(false);
     if (error) return toast.error(error);
+    if (needsEmailConfirmation) {
+      toast.success("Conta criada. Confirme seu e-mail para poder entrar.");
+      return; // ainda não há sessão — permanece em /auth
+    }
     toast.success("Conta criada.");
     navigate({ to: "/home" });
   }
@@ -48,7 +56,7 @@ function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rounded-lg border p-6">
         <h1 className="text-2xl font-semibold mb-4 text-center">Valore</h1>
-        <Tabs defaultValue="signup" className="w-full">
+        <Tabs defaultValue={tab === "signin" ? "signin" : "signup"} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="signup">Criar conta</TabsTrigger>
             <TabsTrigger value="signin">Já tenho conta</TabsTrigger>

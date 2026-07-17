@@ -5,6 +5,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { niches } from "@/lib/auctions";
 import { useSpecialists, type Specialist } from "@/lib/store";
 import { Disclaimer } from "@/components/Disclaimer";
+import { RequireAuth } from "@/components/RequireAuth";
 
 export const Route = createFileRoute("/explorar")({
   head: () => ({ meta: [{ title: "Explorar — Valore" }] }),
@@ -33,6 +34,7 @@ function ExplorePage() {
   }, [availableSpecialists, query, niche]);
 
   return (
+    <RequireAuth>
     <main className="min-h-screen pb-24">
       <div className="mx-auto max-w-2xl px-5 pt-10">
         <h1 className="font-display text-3xl">Explorar</h1>
@@ -83,6 +85,7 @@ function ExplorePage() {
       <Disclaimer />
       <BottomNav />
     </main>
+    </RequireAuth>
   );
 }
 

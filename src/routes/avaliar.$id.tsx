@@ -3,6 +3,7 @@ import { Star, Check } from "lucide-react";
 import { useState } from "react";
 import { auctions } from "@/lib/auctions";
 import { addReview } from "@/lib/store";
+import { RequireAuth } from "@/components/RequireAuth";
 
 export const Route = createFileRoute("/avaliar/$id")({
   head: () => ({ meta: [{ title: "Avaliar sessão — Valore" }] }),
@@ -44,6 +45,7 @@ function ReviewPage() {
 
   if (sent) {
     return (
+      <RequireAuth>
       <main className="grid min-h-screen place-items-center px-5">
         <div className="max-w-sm text-center">
           <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-gradient-gold shadow-gold">
@@ -61,10 +63,12 @@ function ReviewPage() {
           </Link>
         </div>
       </main>
+      </RequireAuth>
     );
   }
 
   return (
+    <RequireAuth>
     <main className="min-h-screen px-5 pt-12 pb-16">
       <div className="mx-auto max-w-md text-center">
         <p className="text-[10px] uppercase tracking-[0.3em] text-gold">Sessão concluída</p>
@@ -121,5 +125,6 @@ function ReviewPage() {
         </button>
       </div>
     </main>
+    </RequireAuth>
   );
 }

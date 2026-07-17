@@ -109,7 +109,7 @@ function ClientRegistration() {
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
           Já tem conta?{" "}
-          <Link to="/home" className="text-gold underline-offset-4 hover:underline">
+          <Link to="/auth" search={{ tab: "signin" }} className="text-gold underline-offset-4 hover:underline">
             Entrar
           </Link>
         </p>
