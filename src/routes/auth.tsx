@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { Mail } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): { tab?: "signin" | "signup" } => ({
@@ -15,10 +16,15 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, resendConfirmation } = useAuth();
   const navigate = useNavigate();
   const { tab } = Route.useSearch();
   const [busy, setBusy] = useState(false);
+  const [resending, setResending] = useState(false);
+
+  // E-mail pendente de confirmação — enquanto setado, mostramos a tela de espera
+  // em vez do formulário, e nenhuma navegação para /home acontece.
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   // Sign in
   const [siEmail, setSiEmail] = useState("");
@@ -31,25 +37,85 @@ function AuthPage() {
   async function onSignIn(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const { error } = await signIn(siEmail, siPass);
-    setBusy(false);
-    if (error) return toast.error(error);
-    toast.success("Bem-vindo(a) de volta.");
-    navigate({ to: "/home" });
+    try {
+      const { error } = await signIn(siEmail, siPass);
+      if (error) {
+        if (/email not confirmed/i.test(error)) {
+          setPendingEmail(siEmail);
+          return;
+        }
+        toast.error(error);
+        return;
+      }
+      toast.success("Bem-vindo(a) de volta.");
+      navigate({ to: "/home" });
+    } catch {
+      toast.error("Não foi possível entrar. Tente novamente em instantes.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function onSignUp(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const { error, needsEmailConfirmation } = await signUp(suEmail, suPass, suNome);
-    setBusy(false);
-    if (error) return toast.error(error);
-    if (needsEmailConfirmation) {
-      toast.success("Conta criada. Confirme seu e-mail para poder entrar.");
-      return; // ainda não há sessão — permanece em /auth
+    try {
+      const { error, needsEmailConfirmation } = await signUp(suEmail, suPass, suNome);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+      if (needsEmailConfirmation) {
+        setPendingEmail(suEmail);
+        return; // ainda não há sessão — não navega para /home
+      }
+      toast.success("Conta criada.");
+      navigate({ to: "/home" });
+    } catch {
+      toast.error("Não foi possível criar a conta. Tente novamente em instantes.");
+    } finally {
+      setBusy(false);
     }
-    toast.success("Conta criada.");
-    navigate({ to: "/home" });
+  }
+
+  async function onResend() {
+    if (!pendingEmail) return;
+    setResending(true);
+    try {
+      const { error } = await resendConfirmation(pendingEmail);
+      if (error) toast.error(error);
+      else toast.success("E-mail de confirmação reenviado.");
+    } catch {
+      toast.error("Não foi possível reenviar o e-mail. Tente novamente em instantes.");
+    } finally {
+      setResending(false);
+    }
+  }
+
+  if (pendingEmail) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm rounded-lg border p-6 text-center">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-gold/10 text-gold">
+            <Mail className="size-6" />
+          </div>
+          <h1 className="mt-4 text-xl font-semibold">Confirme seu email</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Confirme seu email para continuar. Verifique sua caixa de entrada e spam.
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">{pendingEmail}</p>
+          <Button onClick={onResend} disabled={resending} className="mt-6 w-full">
+            {resending ? "Reenviando…" : "Reenviar email de confirmação"}
+          </Button>
+          <button
+            onClick={() => setPendingEmail(null)}
+            className="mt-4 text-xs text-muted-foreground underline-offset-4 hover:underline"
+          >
+            Usar outro e-mail
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -98,10 +164,6 @@ function AuthPage() {
             </form>
           </TabsContent>
         </Tabs>
-
-        <div className="text-center mt-4">
-          <Link to="/" className="text-xs text-muted-foreground">Voltar</Link>
-        </div>
       </div>
     </div>
   );

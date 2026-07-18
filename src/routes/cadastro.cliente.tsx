@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { ValoreLogo } from "@/components/ValoreLogo";
 import { Input } from "@/components/ui/input";
 import { ConductPledge } from "@/components/ConductPledge";
+import { RequireAuth } from "@/components/RequireAuth";
 
 export const Route = createFileRoute("/cadastro/cliente")({
   head: () => ({
@@ -25,6 +26,7 @@ function ClientRegistration() {
 
   if (done) {
     return (
+      <RequireAuth>
       <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
         <div className="relative">
           <div className="absolute inset-0 -z-10 rounded-full bg-gold/20 blur-3xl" />
@@ -43,10 +45,12 @@ function ClientRegistration() {
           Entrar na plataforma
         </Link>
       </main>
+      </RequireAuth>
     );
   }
 
   return (
+    <RequireAuth>
     <main className="min-h-screen px-6 pb-24 pt-10">
       <div className="mx-auto max-w-md">
         <div className="flex items-center justify-between">
@@ -131,6 +135,7 @@ function ClientRegistration() {
         </div>
       </div>
     </main>
+    </RequireAuth>
   );
 }
 

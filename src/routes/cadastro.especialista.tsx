@@ -9,6 +9,7 @@ import { ConductPledge } from "@/components/ConductPledge";
 import { addSpecialist, updateSpecialist, registrationLabel, uploadAvatar, useMySpecialist, specialistEmailExists } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
+import { RequireAuth } from "@/components/RequireAuth";
 
 
 export const Route = createFileRoute("/cadastro/especialista")({
@@ -232,11 +233,12 @@ function SpecialistRegistration() {
       setDone(true);
     }
   };
-  const back = () => (step === 0 ? navigate({ to: "/" }) : setStep(step - 1));
+  const back = () => (step === 0 ? navigate({ to: "/perfil" }) : setStep(step - 1));
 
-  if (done) return <SuccessScreen isEdit={!!editingId} />;
+  if (done) return <RequireAuth><SuccessScreen isEdit={!!editingId} /></RequireAuth>;
 
   return (
+    <RequireAuth>
     <main className="min-h-screen px-6 pb-24 pt-10">
       <div className="mx-auto max-w-md">
         <div className="flex items-center justify-between">
@@ -503,6 +505,7 @@ function SpecialistRegistration() {
         </div>
       </div>
     </main>
+    </RequireAuth>
   );
 }
 
