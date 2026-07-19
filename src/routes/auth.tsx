@@ -25,6 +25,10 @@ function AuthPage() {
   // E-mail pendente de confirmação — enquanto setado, mostramos a tela de espera
   // em vez do formulário, e nenhuma navegação para /home acontece.
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  // Distingue as duas origens possíveis, que têm mensagens diferentes:
+  // "signup" = acabou de criar a conta; "signin" = tentou entrar mas o email
+  // dessa conta (já existente) ainda não foi confirmado.
+  const [pendingReason, setPendingReason] = useState<"signin" | "signup">("signup");
 
   // Sign in
   const [siEmail, setSiEmail] = useState("");
@@ -41,6 +45,7 @@ function AuthPage() {
       const { error } = await signIn(siEmail, siPass);
       if (error) {
         if (/email not confirmed/i.test(error)) {
+          setPendingReason("signin");
           setPendingEmail(siEmail);
           return;
         }
@@ -66,6 +71,7 @@ function AuthPage() {
         return;
       }
       if (needsEmailConfirmation) {
+        setPendingReason("signup");
         setPendingEmail(suEmail);
         return; // ainda não há sessão — não navega para /home
       }
@@ -101,8 +107,11 @@ function AuthPage() {
           </div>
           <h1 className="mt-4 text-xl font-semibold">Confirme seu email</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Confirme seu email para continuar. Verifique sua caixa de entrada e spam.
+            {pendingReason === "signup"
+              ? "Verifique seu email para confirmar o cadastro."
+              : "Confirme seu email para continuar."}
           </p>
+          <p className="mt-1 text-xs text-muted-foreground">Verifique sua caixa de entrada e spam.</p>
           <p className="mt-2 text-xs text-muted-foreground">{pendingEmail}</p>
           <Button onClick={onResend} disabled={resending} className="mt-6 w-full">
             {resending ? "Reenviando…" : "Reenviar email de confirmação"}
@@ -122,10 +131,10 @@ function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rounded-lg border p-6">
         <h1 className="text-2xl font-semibold mb-4 text-center">Valore</h1>
-        <Tabs defaultValue={tab === "signin" ? "signin" : "signup"} className="w-full">
+        <Tabs defaultValue={tab === "signup" ? "signup" : "signin"} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="signup">Criar conta</TabsTrigger>
             <TabsTrigger value="signin">Já tenho conta</TabsTrigger>
+            <TabsTrigger value="signup">Criar conta</TabsTrigger>
           </TabsList>
 
           <TabsContent value="signin">

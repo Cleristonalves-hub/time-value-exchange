@@ -4,3 +4,15 @@ project_id = "sapuvozigtbxowuzwgqq"
 # O Database Webhook do Supabase autentica a chamada com o service_role key
 # (um JWT válido), então mantemos a verificação de JWT padrão ativada.
 verify_jwt = true
+
+[functions.send-auth-email]
+# Quem chama essa função é o Auth Hook do Supabase, não um usuário logado — não
+# existe JWT de usuário para verificar aqui. A autenticidade da chamada é
+# garantida pela verificação de assinatura (Standard Webhooks) dentro da função,
+# usando o secret gerado ao habilitar o hook no Dashboard.
+verify_jwt = false
+
+[auth.hook.send_email]
+enabled = true
+uri = "https://sapuvozigtbxowuzwgqq.supabase.co/functions/v1/send-auth-email"
+secrets = "env(SEND_EMAIL_HOOK_SECRET)"

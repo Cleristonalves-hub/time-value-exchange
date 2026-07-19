@@ -18,6 +18,13 @@ type AuthCtx = {
 
 const Ctx = createContext<AuthCtx | null>(null);
 
+// Fixo por instrução do produto: depois de confirmar o email, o usuário deve
+// cair sempre em https://valore.services/home, independente do ambiente em
+// que o cadastro foi feito. Precisa estar também na allowlist de Redirect URLs
+// do Supabase (Authentication > URL Configuration), senão o Supabase ignora
+// esse valor e usa o Site URL padrão.
+const EMAIL_REDIRECT_TO = "https://valore.services/home";
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,11 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: error?.message ?? null };
     },
     async signUp(email, password, nome) {
-      const redirectTo = typeof window !== "undefined" ? window.location.origin : undefined;
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: redirectTo, data: { nome } },
+        options: { emailRedirectTo: EMAIL_REDIRECT_TO, data: { nome } },
       });
       if (error) return { error: error.message };
       // Cria linha em usuarios (best-effort; RLS permite pelo próprio id)
@@ -65,11 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await supabase.auth.signOut();
     },
     async resendConfirmation(email) {
-      const redirectTo = typeof window !== "undefined" ? window.location.origin : undefined;
       const { error } = await supabase.auth.resend({
         type: "signup",
         email,
-        options: { emailRedirectTo: redirectTo },
+        options: { emailRedirectTo: EMAIL_REDIRECT_TO },
       });
       return { error: error?.message ?? null };
     },
