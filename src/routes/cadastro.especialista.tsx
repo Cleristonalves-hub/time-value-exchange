@@ -114,6 +114,17 @@ function SpecialistRegistration() {
     document: "", pixKey: "",
   });
 
+  // Assim que a sessão aparece (confirmou o email — inclusive detectado numa
+  // outra aba, o supabase-js sincroniza a sessão entre abas do mesmo navegador
+  // via localStorage) e ainda estávamos na tela de espera, retoma o formulário
+  // automaticamente na etapa 2 — sem pedir login de novo.
+  useEffect(() => {
+    if (pendingEmail && user) {
+      setPendingEmail(null);
+      setStep(1);
+    }
+  }, [pendingEmail, user]);
+
   // Se o usuário já tem um cadastro de especialista, entra em modo de edição:
   // pré-preenche o formulário e o envio final vira UPDATE em vez de INSERT.
   useEffect(() => {
@@ -173,7 +184,7 @@ function SpecialistRegistration() {
       return (
         data.fullName &&
         data.email &&
-        (editingId || data.password.length >= 6) &&
+        (!!user || data.password.length >= 6) &&
         data.phone &&
         data.city &&
         isValidCpfCnpj(data.document)
@@ -200,70 +211,74 @@ function SpecialistRegistration() {
 
   const next = async () => {
     setEmailError(null);
-    if (step < STEPS.length - 1) {
-      setStep(step + 1);
-    } else {
+
+    // Etapa 1 (Dados pessoais): se ainda não há sessão, cria a conta agora —
+    // antes de deixar avançar para a etapa 2 — e trava o formulário na tela de
+    // confirmação de email. Só quando `user` aparecer (email confirmado) o
+    // efeito acima libera a etapa 2 automaticamente.
+    if (step === 0 && !user) {
       setSubmitting(true);
-      const emailTaken = await specialistEmailExists(data.email, editingId ?? undefined);
+      const emailTaken = await specialistEmailExists(data.email);
       if (emailTaken) {
         setSubmitting(false);
         setEmailError("Já existe um perfil cadastrado com este email");
         toast.error("Já existe um perfil cadastrado com este email");
-        setStep(0);
         return;
       }
-
-      // Cadastro novo: cria a conta real no Supabase Auth antes de salvar o
-      // perfil — login e senha fazem parte deste mesmo formulário, nunca uma
-      // tela separada depois.
-      let needsEmailConfirmation = false;
-      if (!editingId) {
-        const result = await signUp(data.email, data.password, data.fullName, { telefone: data.phone });
-        if (result.error) {
-          setSubmitting(false);
-          toast.error(result.error);
-          setStep(0);
-          return;
-        }
-        needsEmailConfirmation = !!result.needsEmailConfirmation;
-      }
-
-      const payload = {
-        fullName: data.fullName,
-        email: data.email,
-        phone: data.phone,
-        city: data.city,
-        niche: data.niche,
-        specialty: data.specialty,
-        bio: data.bio,
-        credential: data.credential,
-        experience: data.experience,
-        platform: data.platform || "",
-        duration: data.duration,
-        languages: data.languages,
-        portfolioUrl: data.portfolioUrl,
-        registrationNumber: data.registrationNumber || undefined,
-        photoUrl: photoUrl || undefined,
-        minBid: data.minBid,
-        availableDays: data.availableDays,
-        startTime: data.startTime,
-        endTime: data.endTime,
-        document: data.document,
-        pixKey: data.pixKey,
-      };
-      // O perfil é salvo agora independente de precisar confirmar o email —
-      // a confirmação só é necessária para depois logar e acessar o app.
-      if (editingId) {
-        await updateSpecialist(editingId, payload);
-      } else {
-        await addSpecialist(payload);
-      }
+      const result = await signUp(data.email, data.password, data.fullName, { telefone: data.phone });
       setSubmitting(false);
-      if (needsEmailConfirmation) {
-        setPendingEmail(data.email);
-      } else {
-        setDone(true);
+      if (result.error) {
+        toast.error(result.error);
+        return;
       }
+      if (result.needsEmailConfirmation) {
+        setPendingEmail(data.email);
+        return; // não avança para a etapa 2 sem confirmar o email
+      }
+      setStep(1);
+      return;
+    }
+
+    if (step < STEPS.length - 1) {
+      setStep(step + 1);
+      return;
+    }
+
+    // Última etapa: salva o perfil (a conta já foi criada na etapa 1) e manda
+    // direto para /home.
+    setSubmitting(true);
+    const payload = {
+      fullName: data.fullName,
+      email: data.email,
+      phone: data.phone,
+      city: data.city,
+      niche: data.niche,
+      specialty: data.specialty,
+      bio: data.bio,
+      credential: data.credential,
+      experience: data.experience,
+      platform: data.platform || "",
+      duration: data.duration,
+      languages: data.languages,
+      portfolioUrl: data.portfolioUrl,
+      registrationNumber: data.registrationNumber || undefined,
+      photoUrl: photoUrl || undefined,
+      minBid: data.minBid,
+      availableDays: data.availableDays,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      document: data.document,
+      pixKey: data.pixKey,
+    };
+    if (editingId) {
+      await updateSpecialist(editingId, payload);
+      setSubmitting(false);
+      setDone(true);
+    } else {
+      await addSpecialist(payload);
+      setSubmitting(false);
+      toast.success("Perfil publicado.");
+      navigate({ to: "/home" });
     }
   };
 
@@ -290,13 +305,12 @@ function SpecialistRegistration() {
         </div>
         <h1 className="mt-4 font-display text-3xl">Confirme seu email</h1>
         <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-          Verifique seu email para confirmar o cadastro.
+          Verifique seu email para continuar o cadastro. Clique no link que enviamos para{" "}
+          <strong className="text-foreground">{pendingEmail}</strong>.
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">Verifique sua caixa de entrada e spam.</p>
-        <p className="mt-2 text-xs text-muted-foreground">{pendingEmail}</p>
-        <p className="mt-4 max-w-sm text-xs text-muted-foreground">
-          Seu perfil de especialista já foi salvo com selo <strong className="text-gold">Novo</strong> — assim
-          que confirmar o email, você já pode entrar e acompanhar a verificação.
+        <p className="mt-2 text-xs text-muted-foreground">
+          Assim que confirmar, esta tela avança sozinha para o restante do cadastro — não precisa fazer login de
+          novo.
         </p>
         <Button onClick={onResend} disabled={resending} className="mt-6 w-full max-w-xs">
           {resending ? "Reenviando…" : "Reenviar email de confirmação"}
