@@ -12,7 +12,18 @@ verify_jwt = true
 # usando o secret gerado ao habilitar o hook no Dashboard.
 verify_jwt = false
 
-[auth.hook.send_email]
-enabled = true
-uri = "https://sapuvozigtbxowuzwgqq.supabase.co/functions/v1/send-auth-email"
-secrets = "env(SEND_EMAIL_HOOK_SECRET)"
+[functions.dar-lance]
+# Chamada pelo cliente autenticado (supabase.functions.invoke já envia o JWT
+# do usuário logado).
+verify_jwt = true
+
+[functions.cancelar-leilao]
+verify_jwt = true
+
+[functions.salvar-cartao]
+verify_jwt = true
+
+[functions.processar-inadimplencia]
+# Só o pg_cron chama essa função — não há usuário logado. A autenticidade é
+# garantida pelo header x-cron-secret checado dentro da função.
+verify_jwt = false

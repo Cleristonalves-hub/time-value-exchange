@@ -18,6 +18,7 @@ import { Route as GanhosRouteImport } from './routes/ganhos'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as ExplorarRouteImport } from './routes/explorar'
 import { Route as CriarLeilaoRouteImport } from './routes/criar-leilao'
+import { Route as CartaoRouteImport } from './routes/cartao'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -72,6 +73,11 @@ const CriarLeilaoRoute = CriarLeilaoRouteImport.update({
   path: '/criar-leilao',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CartaoRoute = CartaoRouteImport.update({
+  id: '/cartao',
+  path: '/cartao',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/cartao': typeof CartaoRoute
   '/criar-leilao': typeof CriarLeilaoRoute
   '/explorar': typeof ExplorarRoute
   '/feedback': typeof FeedbackRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/cartao': typeof CartaoRoute
   '/criar-leilao': typeof CriarLeilaoRoute
   '/explorar': typeof ExplorarRoute
   '/feedback': typeof FeedbackRoute
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/cartao': typeof CartaoRoute
   '/criar-leilao': typeof CriarLeilaoRoute
   '/explorar': typeof ExplorarRoute
   '/feedback': typeof FeedbackRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/cartao'
     | '/criar-leilao'
     | '/explorar'
     | '/feedback'
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/cartao'
     | '/criar-leilao'
     | '/explorar'
     | '/feedback'
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/cartao'
     | '/criar-leilao'
     | '/explorar'
     | '/feedback'
@@ -235,6 +247,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  CartaoRoute: typeof CartaoRoute
   CriarLeilaoRoute: typeof CriarLeilaoRoute
   ExplorarRoute: typeof ExplorarRoute
   FeedbackRoute: typeof FeedbackRoute
@@ -316,6 +329,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CriarLeilaoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cartao': {
+      id: '/cartao'
+      path: '/cartao'
+      fullPath: '/cartao'
+      preLoaderRoute: typeof CartaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -379,6 +399,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  CartaoRoute: CartaoRoute,
   CriarLeilaoRoute: CriarLeilaoRoute,
   ExplorarRoute: ExplorarRoute,
   FeedbackRoute: FeedbackRoute,

@@ -1,10 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Mail } from "lucide-react";
 import { ValoreLogo } from "@/components/ValoreLogo";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { ConductPledge } from "@/components/ConductPledge";
-import { RequireAuth } from "@/components/RequireAuth";
+import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/cadastro/cliente")({
   head: () => ({
@@ -16,41 +18,91 @@ export const Route = createFileRoute("/cadastro/cliente")({
   component: ClientRegistration,
 });
 
+const isValidCpf = (s: string) => s.replace(/\D/g, "").length === 11;
+
 function ClientRegistration() {
   const navigate = useNavigate();
-  const [done, setDone] = useState(false);
-  const [d, setD] = useState({ name: "", email: "", phone: "", password: "", accept: false });
+  const { signUp, resendConfirmation } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [d, setD] = useState({ name: "", email: "", password: "", cpf: "", phone: "", accept: false });
   const set = (k: keyof typeof d, v: string | boolean) => setD((s) => ({ ...s, [k]: v }));
 
-  const ok = d.name && /\S+@\S+\.\S+/.test(d.email) && d.phone && d.password.length >= 6 && d.accept;
+  const ok =
+    d.name.trim() &&
+    /\S+@\S+\.\S+/.test(d.email) &&
+    d.password.length >= 6 &&
+    isValidCpf(d.cpf) &&
+    d.phone.trim() &&
+    d.accept;
 
-  if (done) {
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!ok) return;
+    setSubmitting(true);
+    try {
+      const { error, needsEmailConfirmation } = await signUp(d.email, d.password, d.name, {
+        cpf: d.cpf,
+        telefone: d.phone,
+      });
+      if (error) {
+        toast.error(error);
+        return;
+      }
+      if (needsEmailConfirmation) {
+        setPendingEmail(d.email);
+        return;
+      }
+      toast.success("Conta criada.");
+      navigate({ to: "/home" });
+    } catch {
+      toast.error("Não foi possível criar a conta. Tente novamente em instantes.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function onResend() {
+    if (!pendingEmail) return;
+    setResending(true);
+    try {
+      const { error } = await resendConfirmation(pendingEmail);
+      if (error) toast.error(error);
+      else toast.success("E-mail de confirmação reenviado.");
+    } catch {
+      toast.error("Não foi possível reenviar o e-mail. Tente novamente em instantes.");
+    } finally {
+      setResending(false);
+    }
+  }
+
+  if (pendingEmail) {
     return (
-      <RequireAuth>
       <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
-        <div className="relative">
-          <div className="absolute inset-0 -z-10 rounded-full bg-gold/20 blur-3xl" />
-          <div className="flex size-20 items-center justify-center rounded-full border border-gold bg-gold/10">
-            <Check className="size-10 text-gold" />
-          </div>
+        <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-gold/10 text-gold">
+          <Mail className="size-6" />
         </div>
-        <h1 className="mt-8 font-display text-4xl text-gradient-gold">Bem-vindo à Valore</h1>
+        <h1 className="mt-4 font-display text-3xl">Confirme seu email</h1>
         <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-          Sua conta está pronta. Dê seu primeiro lance em um leilão em destaque.
+          Verifique seu email para confirmar o cadastro.
         </p>
-        <Link
-          to="/home"
-          className="mt-10 rounded-md bg-gradient-gold px-10 py-3 text-xs uppercase tracking-[0.2em] text-primary-foreground shadow-gold"
+        <p className="mt-1 text-xs text-muted-foreground">Verifique sua caixa de entrada e spam.</p>
+        <p className="mt-2 text-xs text-muted-foreground">{pendingEmail}</p>
+        <Button onClick={onResend} disabled={resending} className="mt-6 w-full max-w-xs">
+          {resending ? "Reenviando…" : "Reenviar email de confirmação"}
+        </Button>
+        <button
+          onClick={() => setPendingEmail(null)}
+          className="mt-4 text-xs text-muted-foreground underline-offset-4 hover:underline"
         >
-          Entrar na plataforma
-        </Link>
+          Usar outro e-mail
+        </button>
       </main>
-      </RequireAuth>
     );
   }
 
   return (
-    <RequireAuth>
     <main className="min-h-screen px-6 pb-24 pt-10">
       <div className="mx-auto max-w-md">
         <div className="flex items-center justify-between">
@@ -72,28 +124,34 @@ function ClientRegistration() {
           </p>
         </div>
 
-        <form onSubmit={(e) => { e.preventDefault(); if (ok) setDone(true); }} className="mt-10 space-y-5">
+        <form onSubmit={onSubmit} className="mt-10 space-y-5">
           <Field label="Nome completo">
             <Input value={d.name} onChange={(e) => set("name", e.target.value)} placeholder="Seu nome" />
           </Field>
           <Field label="E-mail">
             <Input type="email" value={d.email} onChange={(e) => set("email", e.target.value)} placeholder="voce@dominio.com" />
           </Field>
-          <Field label="Telefone / WhatsApp">
-            <Input value={d.phone} onChange={(e) => set("phone", e.target.value)} placeholder="(21) 9 0000-0000" />
-          </Field>
           <Field label="Senha">
             <Input type="password" value={d.password} onChange={(e) => set("password", e.target.value)} placeholder="Mínimo 6 caracteres" />
+          </Field>
+          <Field label="CPF">
+            <Input value={d.cpf} onChange={(e) => set("cpf", e.target.value)} placeholder="000.000.000-00" />
+            {d.cpf && !isValidCpf(d.cpf) && (
+              <p className="mt-1 text-[11px] text-destructive">Informe um CPF válido (11 dígitos).</p>
+            )}
+          </Field>
+          <Field label="Telefone / WhatsApp">
+            <Input value={d.phone} onChange={(e) => set("phone", e.target.value)} placeholder="(21) 9 0000-0000" />
           </Field>
 
           <ConductPledge accepted={d.accept} onToggle={() => set("accept", !d.accept)} />
 
           <button
             type="submit"
-            disabled={!ok}
+            disabled={!ok || submitting}
             className="group flex w-full items-center justify-center gap-2 rounded-md bg-gradient-gold px-6 py-4 text-sm font-medium uppercase tracking-[0.2em] text-primary-foreground shadow-gold transition-transform active:scale-[0.98] disabled:opacity-30 disabled:shadow-none"
           >
-            Criar minha conta
+            {submitting ? "Criando…" : "Criar minha conta"}
             <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
           </button>
         </form>
@@ -135,7 +193,6 @@ function ClientRegistration() {
         </div>
       </div>
     </main>
-    </RequireAuth>
   );
 }
 

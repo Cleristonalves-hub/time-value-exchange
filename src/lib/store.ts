@@ -27,6 +27,9 @@ export type Specialist = {
   document: string;
   pixKey: string;
   status: SpecialistStatus;
+  badgeCancelamentoAte: string | null;
+  suspensoAte: string | null;
+  motivoPenalidade: string | null;
   createdAt: number;
 };
 
@@ -38,9 +41,35 @@ export type Leilao = {
   titulo: string;
   descricao: string;
   lanceMinimo: number;
+  lanceAtual: number | null;
   dataInicio: number;
   dataFim: number;
   status: LeilaoStatus;
+  vencedorUsuarioId: string | null;
+  destaqueAte: string | null;
+  criadoPorSistema: boolean;
+  createdAt: number;
+};
+
+// Leilão real com os dados do especialista já embutidos (para exibir nome,
+// área de atuação e foto sem uma segunda consulta).
+export type LeilaoComEspecialista = Leilao & {
+  especialista: { nome: string; nicho: string; especialidade: string; avatarUrl?: string } | null;
+};
+
+export type Lance = {
+  id: string;
+  leilaoId: string;
+  usuarioId: string;
+  valor: number;
+  createdAt: number;
+};
+
+export type Cartao = {
+  id: string;
+  usuarioId: string;
+  ultimosDigitos: string | null;
+  bandeira: string | null;
   createdAt: number;
 };
 
@@ -96,6 +125,9 @@ type SpecialistRow = {
   cpf_cnpj: string | null;
   chave_pix: string | null;
   status: SpecialistStatus;
+  badge_cancelamento_ate: string | null;
+  suspenso_ate: string | null;
+  motivo_penalidade: string | null;
   created_at: string;
 };
 
@@ -105,9 +137,33 @@ type LeilaoRow = {
   titulo: string;
   descricao: string | null;
   lance_minimo: number;
+  lance_atual: number | null;
   data_inicio: string;
   data_fim: string;
   status: LeilaoStatus;
+  vencedor_usuario_id: string | null;
+  destaque_ate: string | null;
+  criado_por_sistema: boolean;
+  created_at: string;
+};
+
+type LeilaoComEspecialistaRow = LeilaoRow & {
+  especialistas: { nome: string | null; nicho: string | null; especialidade: string | null; avatar_url: string | null } | null;
+};
+
+type LanceRow = {
+  id: string;
+  leilao_id: string;
+  usuario_id: string;
+  valor: number;
+  created_at: string;
+};
+
+type CartaoRow = {
+  id: string;
+  usuario_id: string;
+  ultimos_digitos: string | null;
+  bandeira: string | null;
   created_at: string;
 };
 
@@ -117,9 +173,41 @@ const toLeilao = (r: LeilaoRow): Leilao => ({
   titulo: r.titulo,
   descricao: r.descricao ?? "",
   lanceMinimo: r.lance_minimo,
+  lanceAtual: r.lance_atual,
   dataInicio: new Date(r.data_inicio).getTime(),
   dataFim: new Date(r.data_fim).getTime(),
   status: r.status,
+  vencedorUsuarioId: r.vencedor_usuario_id,
+  destaqueAte: r.destaque_ate,
+  criadoPorSistema: r.criado_por_sistema,
+  createdAt: new Date(r.created_at).getTime(),
+});
+
+const toLeilaoComEspecialista = (r: LeilaoComEspecialistaRow): LeilaoComEspecialista => ({
+  ...toLeilao(r),
+  especialista: r.especialistas
+    ? {
+        nome: r.especialistas.nome ?? "",
+        nicho: r.especialistas.nicho ?? "",
+        especialidade: r.especialistas.especialidade ?? "",
+        avatarUrl: r.especialistas.avatar_url ?? undefined,
+      }
+    : null,
+});
+
+const toLance = (r: LanceRow): Lance => ({
+  id: r.id,
+  leilaoId: r.leilao_id,
+  usuarioId: r.usuario_id,
+  valor: r.valor,
+  createdAt: new Date(r.created_at).getTime(),
+});
+
+const toCartao = (r: CartaoRow): Cartao => ({
+  id: r.id,
+  usuarioId: r.usuario_id,
+  ultimosDigitos: r.ultimos_digitos,
+  bandeira: r.bandeira,
   createdAt: new Date(r.created_at).getTime(),
 });
 
@@ -147,6 +235,9 @@ const toSpecialist = (r: SpecialistRow): Specialist => ({
   document: r.cpf_cnpj ?? "",
   pixKey: r.chave_pix ?? "",
   status: r.status,
+  badgeCancelamentoAte: r.badge_cancelamento_ate,
+  suspensoAte: r.suspenso_ate,
+  motivoPenalidade: r.motivo_penalidade,
   createdAt: new Date(r.created_at).getTime(),
 });
 
@@ -164,6 +255,10 @@ const K = {
   feedbacks: ["feedbacks"] as const,
   mySpecialist: ["my-specialist"] as const,
   rejectionReasons: ["rejection-reasons"] as const,
+  activeLeiloes: ["active-leiloes"] as const,
+  leilao: ["leilao"] as const,
+  lances: ["lances"] as const,
+  myCard: ["my-card"] as const,
 };
 
 // ------- Hooks -------
@@ -182,6 +277,82 @@ export function useSpecialists(): Specialist[] {
     staleTime: 15_000,
   });
   return data ?? [];
+}
+
+// Leilões reais ativos, com os dados do especialista embutidos — usados na
+// parte inferior da home ("Especialistas disponíveis agora").
+export function useActiveLeiloes(): LeilaoComEspecialista[] {
+  const { data } = useQuery({
+    queryKey: K.activeLeiloes,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leiloes")
+        .select("*, especialistas(nome, nicho, especialidade, avatar_url)")
+        .eq("status", "ativo")
+        .gt("data_fim", new Date().toISOString())
+        .order("data_fim", { ascending: true });
+      if (error) throw error;
+      return (data as LeilaoComEspecialistaRow[]).map(toLeilaoComEspecialista);
+    },
+    staleTime: 10_000,
+  });
+  return data ?? [];
+}
+
+export function useLeilao(id: string | undefined): LeilaoComEspecialista | null {
+  const { data } = useQuery({
+    queryKey: [...K.leilao, id ?? ""],
+    enabled: !!id,
+    staleTime: 5_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leiloes")
+        .select("*, especialistas(nome, nicho, especialidade, avatar_url)")
+        .eq("id", id)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? toLeilaoComEspecialista(data as LeilaoComEspecialistaRow) : null;
+    },
+  });
+  return data ?? null;
+}
+
+export function useLances(leilaoId: string | undefined): Lance[] {
+  const { data } = useQuery({
+    queryKey: [...K.lances, leilaoId ?? ""],
+    enabled: !!leilaoId,
+    staleTime: 5_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lances")
+        .select("*")
+        .eq("leilao_id", leilaoId)
+        .order("valor", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return (data as LanceRow[]).map(toLance);
+    },
+  });
+  return data ?? [];
+}
+
+// Cartão tokenizado do usuário logado — acesso a leilões é bloqueado sem um.
+export function useMyCard(usuarioId: string | undefined): Cartao | null {
+  const { data } = useQuery({
+    queryKey: [...K.myCard, usuarioId ?? ""],
+    enabled: !!usuarioId,
+    staleTime: 15_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("cartoes")
+        .select("*")
+        .eq("usuario_id", usuarioId)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? toCartao(data as CartaoRow) : null;
+    },
+  });
+  return data ?? null;
 }
 
 // Verifica se já existe um especialista cadastrado com este e-mail (usado para
@@ -346,7 +517,7 @@ export async function uploadAvatar(file: File, prefix = "user"): Promise<string 
 }
 
 export async function addSpecialist(
-  input: Omit<Specialist, "id" | "status" | "createdAt">,
+  input: Omit<Specialist, "id" | "status" | "createdAt" | "badgeCancelamentoAte" | "suspensoAte" | "motivoPenalidade">,
 ): Promise<Specialist | null> {
   const { data, error } = await supabase
     .from("especialistas")
@@ -391,7 +562,7 @@ export async function addSpecialist(
 
 export async function updateSpecialist(
   id: string,
-  input: Omit<Specialist, "id" | "status" | "createdAt">,
+  input: Omit<Specialist, "id" | "status" | "createdAt" | "badgeCancelamentoAte" | "suspensoAte" | "motivoPenalidade">,
 ): Promise<Specialist | null> {
   const { data, error } = await supabase
     .from("especialistas")
@@ -443,9 +614,12 @@ export async function setSpecialistStatus(id: string, status: SpecialistStatus) 
   invalidate(K.specialists);
 }
 
-export async function createLeilao(
-  input: Omit<Leilao, "id" | "status" | "createdAt">,
-): Promise<Leilao | null> {
+type NovoLeilaoInput = Omit<
+  Leilao,
+  "id" | "status" | "createdAt" | "lanceAtual" | "vencedorUsuarioId" | "destaqueAte" | "criadoPorSistema"
+>;
+
+export async function createLeilao(input: NovoLeilaoInput): Promise<Leilao | null> {
   const { data, error } = await supabase
     .from("leiloes")
     .insert({
@@ -464,7 +638,72 @@ export async function createLeilao(
     console.error("createLeilao:", error);
     return null;
   }
+  invalidate(K.activeLeiloes);
   return toLeilao(data as LeilaoRow);
+}
+
+// Dá um lance em um leilão real. Passa pela Edge Function `dar-lance` (não faz
+// update direto no client) porque a validação precisa ser atômica no servidor:
+// confirmar que o usuário tem cartão cadastrado, que o lance supera o atual, e
+// atualizar leiloes.lance_atual + inserir em lances sem race condition entre
+// dois lances simultâneos.
+export async function darLance(
+  leilaoId: string,
+  valor: number,
+): Promise<{ error: string | null }> {
+  const { data, error } = await supabase.functions.invoke("dar-lance", {
+    body: { leilao_id: leilaoId, valor },
+  });
+  if (error) {
+    const message = (data as { error?: string } | null)?.error ?? error.message;
+    return { error: message };
+  }
+  invalidate(K.leilao);
+  invalidate(K.lances);
+  invalidate(K.activeLeiloes);
+  return { error: null };
+}
+
+// Cancela um leilão (ação do especialista). Passa pela Edge Function
+// `cancelar-leilao` porque a regra de penalidade (menos de 2h de antecedência,
+// contagem de cancelamentos no mês, suspensão automática) precisa ser aplicada
+// de forma consistente no servidor, com service_role para atualizar o status
+// do especialista.
+export async function cancelarLeilao(
+  leilaoId: string,
+  motivo: string,
+): Promise<{ error: string | null }> {
+  const { data, error } = await supabase.functions.invoke("cancelar-leilao", {
+    body: { leilao_id: leilaoId, motivo },
+  });
+  if (error) {
+    const message = (data as { error?: string } | null)?.error ?? error.message;
+    return { error: message };
+  }
+  invalidate(K.leilao);
+  invalidate(K.activeLeiloes);
+  invalidate(K.mySpecialist);
+  return { error: null };
+}
+
+// Salva o cartão tokenizado (token de uso único gerado pelo SDK do Mercado
+// Pago no navegador) via Edge Function — o token vira um cartão reutilizável
+// (Customer + Card na API do Mercado Pago) do lado do servidor, que é o único
+// lugar com o Access Token necessário para essa chamada.
+export async function salvarCartao(
+  cardToken: string,
+  ultimosDigitos: string,
+  bandeira: string,
+): Promise<{ error: string | null }> {
+  const { data, error } = await supabase.functions.invoke("salvar-cartao", {
+    body: { card_token: cardToken, ultimos_digitos: ultimosDigitos, bandeira },
+  });
+  if (error) {
+    const message = (data as { error?: string } | null)?.error ?? error.message;
+    return { error: message };
+  }
+  invalidate(K.myCard);
+  return { error: null };
 }
 
 export async function addReport(input: Omit<Report, "id" | "createdAt">) {

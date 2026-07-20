@@ -30,6 +30,11 @@ const CRITERIO_LABELS: Record<string, string> = {
   registro_profissional: "Registro profissional não confirmado",
 };
 
+function formatDateBR(dateOnly: string): string {
+  const [y, m, d] = dateOnly.split("-");
+  return `${d}/${m}/${y}`;
+}
+
 function ProfilePage() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -41,6 +46,11 @@ function ProfilePage() {
   const especialista = useMySpecialist(user?.id, user?.email ?? undefined);
   const reprovado = especialista?.status === "reprovado";
   const motivos = useRejectionReasons(reprovado ? especialista?.id ?? null : null);
+
+  const hoje = new Date().toISOString().slice(0, 10);
+  const suspensaoAtiva = !!especialista?.suspensoAte && especialista.suspensoAte >= hoje;
+  const badgeAtivo = !suspensaoAtiva && !!especialista?.badgeCancelamentoAte && especialista.badgeCancelamentoAte >= hoje;
+  const penalidadeAtiva = suspensaoAtiva || badgeAtivo;
 
   useEffect(() => {
     if (!user) return;
@@ -156,6 +166,36 @@ function ProfilePage() {
                 Criar leilão
               </button>
             )}
+          </div>
+        )}
+
+        {penalidadeAtiva && especialista && (
+          <div className="mt-6 rounded-2xl border border-warning/40 bg-warning/5 p-5">
+            <div className="flex items-center gap-2 text-warning">
+              <AlertTriangle className="size-4" />
+              <h2 className="text-[10px] uppercase tracking-[0.3em]">
+                {suspensaoAtiva ? "Conta suspensa" : 'Badge "Cancelamento recente"'}
+              </h2>
+            </div>
+            <p className="mt-3 text-sm text-foreground">
+              {especialista.motivoPenalidade || "Penalidade aplicada ao seu perfil."}
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {suspensaoAtiva
+                ? "Sua conta está suspensa por 30 dias."
+                : "Seu perfil ficará com este badge por 7 dias."}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {suspensaoAtiva
+                ? `Suspensão encerra em ${formatDateBR(especialista.suspensoAte!)}`
+                : `Badge encerra em ${formatDateBR(especialista.badgeCancelamentoAte!)}`}
+            </p>
+            <p className="mt-3 text-[11px] text-muted-foreground">
+              Se acredita que houve um erro, entre em contato:{" "}
+              <a href="mailto:contato@valore.services" className="text-gold underline-offset-4 hover:underline">
+                contato@valore.services
+              </a>
+            </p>
           </div>
         )}
 

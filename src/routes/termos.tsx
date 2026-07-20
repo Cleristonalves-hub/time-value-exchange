@@ -62,6 +62,13 @@ function TermsPage() {
             </ul>
           </Section>
 
+          <Section title="5.1 Inadimplência do Cliente Vencedor">
+            A Valore não garante o pagamento pelo cliente vencedor. Em caso de inadimplência, tomaremos
+            as medidas de cobrança disponíveis e notificaremos o especialista imediatamente. Em caso de
+            não resolução em 48h, o leilão será reagendado gratuitamente com destaque na plataforma por
+            7 dias.
+          </Section>
+
           <Section title="6. Comissão da Plataforma">
             A Valore retém 20% do valor bruto de cada lance vencedor como comissão de intermediação. O especialista recebe 80% líquido, sujeito às regras fiscais aplicáveis. Saque dos valores disponíveis pode ser solicitado a qualquer momento, com prazo de processamento de até 5 dias úteis.
           </Section>
