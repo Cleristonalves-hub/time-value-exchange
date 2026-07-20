@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, Check, Video, Camera } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Video, Camera, Mail } from "lucide-react";
 import { ValoreLogo } from "@/components/ValoreLogo";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { niches as allNiches } from "@/lib/auctions";
 import { ConductPledge } from "@/components/ConductPledge";
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/cadastro/especialista")({
 type FormData = {
   fullName: string;
   email: string;
+  password: string;
   phone: string;
   city: string;
   bio: string;
@@ -90,7 +92,7 @@ const isValidCpfCnpj = (s: string) => {
 
 function SpecialistRegistration() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signUp, resendConfirmation } = useAuth();
   const existing = useMySpecialist(user?.id, user?.email ?? undefined);
   const [step, setStep] = useState(0);
   const [done, setDone] = useState(false);
@@ -101,8 +103,10 @@ function SpecialistRegistration() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
   const [data, setData] = useState<FormData>({
-    fullName: "", email: "", phone: "", city: "",
+    fullName: "", email: "", password: "", phone: "", city: "",
     bio: "", niche: "", specialty: "", credential: "", experience: "",
     portfolioUrl: "", registrationNumber: "",
     platform: "", duration: "60", languages: "Português",
@@ -119,6 +123,7 @@ function SpecialistRegistration() {
     setData({
       fullName: existing.fullName,
       email: existing.email,
+      password: "",
       phone: existing.phone,
       city: existing.city,
       bio: existing.bio,
@@ -164,7 +169,15 @@ function SpecialistRegistration() {
   const regLabel = registrationLabel(data.niche);
 
   const canProceed = () => {
-    if (step === 0) return data.fullName && data.email && data.phone && data.city && isValidCpfCnpj(data.document);
+    if (step === 0)
+      return (
+        data.fullName &&
+        data.email &&
+        (editingId || data.password.length >= 6) &&
+        data.phone &&
+        data.city &&
+        isValidCpfCnpj(data.document)
+      );
     if (step === 1) return data.niche && data.specialty && data.bio.length > 20;
     if (step === 2) {
       if (!data.credential || !data.experience) return false;
@@ -200,6 +213,21 @@ function SpecialistRegistration() {
         return;
       }
 
+      // Cadastro novo: cria a conta real no Supabase Auth antes de salvar o
+      // perfil — login e senha fazem parte deste mesmo formulário, nunca uma
+      // tela separada depois.
+      let needsEmailConfirmation = false;
+      if (!editingId) {
+        const result = await signUp(data.email, data.password, data.fullName, { telefone: data.phone });
+        if (result.error) {
+          setSubmitting(false);
+          toast.error(result.error);
+          setStep(0);
+          return;
+        }
+        needsEmailConfirmation = !!result.needsEmailConfirmation;
+      }
+
       const payload = {
         fullName: data.fullName,
         email: data.email,
@@ -223,16 +251,59 @@ function SpecialistRegistration() {
         document: data.document,
         pixKey: data.pixKey,
       };
+      // O perfil é salvo agora independente de precisar confirmar o email —
+      // a confirmação só é necessária para depois logar e acessar o app.
       if (editingId) {
         await updateSpecialist(editingId, payload);
       } else {
         await addSpecialist(payload);
       }
       setSubmitting(false);
-      setDone(true);
+      if (needsEmailConfirmation) {
+        setPendingEmail(data.email);
+      } else {
+        setDone(true);
+      }
     }
   };
+
+  async function onResend() {
+    if (!pendingEmail) return;
+    setResending(true);
+    try {
+      const { error } = await resendConfirmation(pendingEmail);
+      if (error) toast.error(error);
+      else toast.success("E-mail de confirmação reenviado.");
+    } catch {
+      toast.error("Não foi possível reenviar o e-mail. Tente novamente em instantes.");
+    } finally {
+      setResending(false);
+    }
+  }
   const back = () => (step === 0 ? navigate({ to: "/" }) : setStep(step - 1));
+
+  if (pendingEmail) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
+        <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-gold/10 text-gold">
+          <Mail className="size-6" />
+        </div>
+        <h1 className="mt-4 font-display text-3xl">Confirme seu email</h1>
+        <p className="mt-3 max-w-sm text-sm text-muted-foreground">
+          Verifique seu email para confirmar o cadastro.
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">Verifique sua caixa de entrada e spam.</p>
+        <p className="mt-2 text-xs text-muted-foreground">{pendingEmail}</p>
+        <p className="mt-4 max-w-sm text-xs text-muted-foreground">
+          Seu perfil de especialista já foi salvo com selo <strong className="text-gold">Novo</strong> — assim
+          que confirmar o email, você já pode entrar e acompanhar a verificação.
+        </p>
+        <Button onClick={onResend} disabled={resending} className="mt-6 w-full max-w-xs">
+          {resending ? "Reenviando…" : "Reenviar email de confirmação"}
+        </Button>
+      </main>
+    );
+  }
 
   if (done) return <SuccessScreen isEdit={!!editingId} />;
 
@@ -303,6 +374,16 @@ function SpecialistRegistration() {
                 />
                 {emailError && <p className="mt-1 text-[11px] text-destructive">{emailError}</p>}
               </Field>
+              {!editingId && (
+                <Field label="Senha">
+                  <Input
+                    type="password"
+                    value={data.password}
+                    onChange={(e) => set("password", e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                  />
+                </Field>
+              )}
               <Field label="Telefone / WhatsApp">
                 <Input value={data.phone} onChange={(e) => set("phone", e.target.value)} placeholder="(21) 9 0000-0000" />
               </Field>
