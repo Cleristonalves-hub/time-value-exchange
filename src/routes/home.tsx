@@ -136,7 +136,8 @@ function FictitiousCarousel() {
       <img
         src={a.photo}
         alt={a.expert}
-        className="h-40 w-full object-cover object-top opacity-90 grayscale-[15%]"
+        className="h-64 w-full object-cover opacity-90 grayscale-[15%] md:h-72"
+        style={{ objectPosition: "top" }}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
       <div className="absolute inset-x-0 bottom-0 p-4">
