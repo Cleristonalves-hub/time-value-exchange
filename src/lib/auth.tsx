@@ -12,12 +12,14 @@ type AuthCtx = {
     password: string,
     nome: string,
     extra?: { cpf?: string; telefone?: string },
-  ) => Promise<{ error: string | null; needsEmailConfirmation?: boolean }>;
+  ) => Promise<{ error: string | null; needsEmailConfirmation?: boolean; emailExists?: boolean }>;
   signOut: () => Promise<void>;
   resendConfirmation: (email: string) => Promise<{ error: string | null }>;
 };
 
 const Ctx = createContext<AuthCtx | null>(null);
+
+const EMAIL_ALREADY_REGISTERED_MESSAGE = "Este email já está cadastrado. Faça login ou use outro email.";
 
 // Fixo por instrução do produto: depois de confirmar o email, o usuário deve
 // cair sempre em https://valore.services/home, independente do ambiente em
@@ -56,7 +58,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
         options: { emailRedirectTo: EMAIL_REDIRECT_TO, data: { nome } },
       });
-      if (error) return { error: error.message };
+      if (error) {
+        if (/already registered|already exists|user already/i.test(error.message)) {
+          return { error: EMAIL_ALREADY_REGISTERED_MESSAGE, emailExists: true };
+        }
+        return { error: error.message };
+      }
+      // Sinal documentado do Supabase: quando o email já tem conta, signUp
+      // "sucede" (sem erro, HTTP 200) mas retorna identities vazio — proteção
+      // contra enumeração de emails cadastrados. Sem essa checagem, um email
+      // já existente pareceria um cadastro novo bem-sucedido.
+      if (data.user && data.user.identities && data.user.identities.length === 0) {
+        return { error: EMAIL_ALREADY_REGISTERED_MESSAGE, emailExists: true };
+      }
       // Cria linha em usuarios (best-effort; RLS permite pelo próprio id)
       if (data.user) {
         await supabase.from("usuarios").insert({

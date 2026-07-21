@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ConductPledge } from "@/components/ConductPledge";
 import { useAuth } from "@/lib/auth";
+import { isValidCPF } from "@/lib/validators";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/cadastro/cliente")({
@@ -18,35 +19,46 @@ export const Route = createFileRoute("/cadastro/cliente")({
   component: ClientRegistration,
 });
 
-const isValidCpf = (s: string) => s.replace(/\D/g, "").length === 11;
-
 function ClientRegistration() {
   const navigate = useNavigate();
   const { signUp, resendConfirmation } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [resending, setResending] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [cpfError, setCpfError] = useState<string | null>(null);
   const [d, setD] = useState({ name: "", email: "", password: "", cpf: "", phone: "", accept: false });
-  const set = (k: keyof typeof d, v: string | boolean) => setD((s) => ({ ...s, [k]: v }));
+  const set = (k: keyof typeof d, v: string | boolean) => {
+    setD((s) => ({ ...s, [k]: v }));
+    if (k === "email") setEmailError(null);
+    if (k === "cpf") setCpfError(null);
+  };
 
   const ok =
     d.name.trim() &&
     /\S+@\S+\.\S+/.test(d.email) &&
     d.password.length >= 6 &&
-    isValidCpf(d.cpf) &&
+    isValidCPF(d.cpf) &&
     d.phone.trim() &&
     d.accept;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setEmailError(null);
+    setCpfError(null);
+    if (!isValidCPF(d.cpf)) {
+      setCpfError("CPF inválido. Verifique e tente novamente.");
+      return;
+    }
     if (!ok) return;
     setSubmitting(true);
     try {
-      const { error, needsEmailConfirmation } = await signUp(d.email, d.password, d.name, {
+      const { error, needsEmailConfirmation, emailExists } = await signUp(d.email, d.password, d.name, {
         cpf: d.cpf,
         telefone: d.phone,
       });
       if (error) {
+        if (emailExists) setEmailError(error);
         toast.error(error);
         return;
       }
@@ -130,14 +142,15 @@ function ClientRegistration() {
           </Field>
           <Field label="E-mail">
             <Input type="email" value={d.email} onChange={(e) => set("email", e.target.value)} placeholder="voce@dominio.com" />
+            {emailError && <p className="mt-1 text-[11px] text-destructive">{emailError}</p>}
           </Field>
           <Field label="Senha">
             <Input type="password" value={d.password} onChange={(e) => set("password", e.target.value)} placeholder="Mínimo 6 caracteres" />
           </Field>
           <Field label="CPF">
             <Input value={d.cpf} onChange={(e) => set("cpf", e.target.value)} placeholder="000.000.000-00" />
-            {d.cpf && !isValidCpf(d.cpf) && (
-              <p className="mt-1 text-[11px] text-destructive">Informe um CPF válido (11 dígitos).</p>
+            {(cpfError || (d.cpf && !isValidCPF(d.cpf))) && (
+              <p className="mt-1 text-[11px] text-destructive">CPF inválido. Verifique e tente novamente.</p>
             )}
           </Field>
           <Field label="Telefone / WhatsApp">

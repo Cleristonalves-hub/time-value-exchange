@@ -9,6 +9,7 @@ import { niches as allNiches } from "@/lib/auctions";
 import { ConductPledge } from "@/components/ConductPledge";
 import { addSpecialist, updateSpecialist, registrationLabel, uploadAvatar, useMySpecialist, specialistEmailExists } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
+import { isValidCpfCnpj } from "@/lib/validators";
 import { toast } from "sonner";
 
 
@@ -83,11 +84,6 @@ const isUrl = (s: string) => {
   } catch {
     return false;
   }
-};
-
-const isValidCpfCnpj = (s: string) => {
-  const digits = s.replace(/\D/g, "");
-  return digits.length === 11 || digits.length === 14;
 };
 
 function SpecialistRegistration() {
@@ -228,6 +224,7 @@ function SpecialistRegistration() {
       const result = await signUp(data.email, data.password, data.fullName, { telefone: data.phone });
       setSubmitting(false);
       if (result.error) {
+        if (result.emailExists) setEmailError(result.error);
         toast.error(result.error);
         return;
       }
@@ -407,7 +404,11 @@ function SpecialistRegistration() {
               <Field label="CPF ou CNPJ">
                 <Input value={data.document} onChange={(e) => set("document", e.target.value)} placeholder="000.000.000-00" />
                 {data.document && !isValidCpfCnpj(data.document) && (
-                  <p className="mt-1 text-[11px] text-destructive">Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido.</p>
+                  <p className="mt-1 text-[11px] text-destructive">
+                    {data.document.replace(/\D/g, "").length === 14
+                      ? "CNPJ inválido. Verifique e tente novamente."
+                      : "CPF inválido. Verifique e tente novamente."}
+                  </p>
                 )}
               </Field>
             </>
