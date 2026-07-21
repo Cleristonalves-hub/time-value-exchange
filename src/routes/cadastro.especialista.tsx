@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, Check, Video, Camera, Mail } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Video, Camera, Mail, AlertTriangle } from "lucide-react";
 import { ValoreLogo } from "@/components/ValoreLogo";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -97,6 +97,7 @@ function SpecialistRegistration() {
   const [conduct, setConduct] = useState(false);
   const [truthPledge, setTruthPledge] = useState(false);
   const [cpfDeclaration, setCpfDeclaration] = useState(false);
+  const [delinquencyAck, setDelinquencyAck] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -220,7 +221,8 @@ function SpecialistRegistration() {
         data.startTime < data.endTime &&
         data.pixKey.trim() &&
         conduct &&
-        truthPledge
+        truthPledge &&
+        delinquencyAck
       );
     return false;
   };
@@ -614,6 +616,46 @@ function SpecialistRegistration() {
               </label>
 
               <ConductPledge accepted={conduct} onToggle={() => setConduct(!conduct)} />
+
+              <div className="rounded-xl border border-warning/40 bg-warning/5 p-5">
+                <div className="flex items-center gap-2 text-warning">
+                  <AlertTriangle className="size-4" />
+                  <span className="text-[10px] uppercase tracking-[0.3em]">
+                    Importante — Leia antes de publicar seu perfil
+                  </span>
+                </div>
+                <p className="mt-3 text-xs leading-relaxed text-foreground/80">
+                  Ao publicar seu perfil na Valore, você está ciente de que:
+                </p>
+                <ul className="mt-3 list-disc space-y-2 pl-5 text-xs leading-relaxed text-foreground/80">
+                  <li>Em caso de inadimplência do cliente, a Valore tomará medidas automáticas de cobrança</li>
+                  <li>
+                    Se não resolvido em 48h, seu leilão será cancelado e reagendado gratuitamente com destaque por
+                    7 dias
+                  </li>
+                  <li>
+                    A Valore não se responsabiliza pela inadimplência do cliente, mas age com rapidez e
+                    transparência
+                  </li>
+                  <li>Cancelamentos frequentes ou sem antecedência de 2 horas resultam em penalidades no seu perfil</li>
+                </ul>
+
+                <label className="mt-5 flex cursor-pointer items-start gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setDelinquencyAck((v) => !v)}
+                    aria-pressed={delinquencyAck}
+                    className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                      delinquencyAck ? "border-warning bg-warning" : "border-border"
+                    }`}
+                  >
+                    {delinquencyAck && <Check className="size-3 text-primary-foreground" />}
+                  </button>
+                  <span className="text-xs leading-relaxed text-foreground/80">
+                    Li e estou ciente das condições acima
+                  </span>
+                </label>
+              </div>
             </>
           )}
         </div>
