@@ -69,6 +69,17 @@ function TermsPage() {
             7 dias.
           </Section>
 
+          <Section title="5.2 Responsabilidade em Caso de Inadimplência">
+            A Valore atua como intermediadora tecnológica entre especialistas e clientes. Em caso de
+            inadimplência do cliente vencedor do leilão, a Valore tomará todas as medidas disponíveis de
+            cobrança automática, incluindo débito no cartão cadastrado e bloqueio de conta. O especialista
+            será notificado imediatamente sobre qualquer intercorrência. Caso o pagamento não seja
+            regularizado em 48 horas, o leilão será cancelado sem custo e o especialista receberá
+            prioridade para reagendamento com destaque gratuito por 7 dias. A Valore não se responsabiliza
+            pela inadimplência do cliente, mas compromete-se a agir com rapidez e transparência em todos
+            os casos.
+          </Section>
+
           <Section title="6. Comissão da Plataforma">
             A Valore retém 20% do valor bruto de cada lance vencedor como comissão de intermediação. O especialista recebe 80% líquido, sujeito às regras fiscais aplicáveis. Saque dos valores disponíveis pode ser solicitado a qualquer momento, com prazo de processamento de até 5 dias úteis.
           </Section>
@@ -112,7 +123,7 @@ function TermsPage() {
           <Section title="13. Contato">
             Para dúvidas sobre estes Termos de Uso, entre em contato:
             <p className="mt-3 text-sm text-foreground/80">
-              E-mail: <span className="text-gold">legal@valore.app</span><br />
+              E-mail: <span className="text-gold">contato@valore.services</span><br />
               Endereço: Av. Rio Branco, 1 — Centro, Rio de Janeiro — RJ, 20090-003
             </p>
           </Section>
