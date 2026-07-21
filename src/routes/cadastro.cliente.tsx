@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, Mail } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { ArrowLeft, ArrowRight, Check, Mail } from "lucide-react";
 import { ValoreLogo } from "@/components/ValoreLogo";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { ConductPledge } from "@/components/ConductPledge";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 import { isValidCPF, isFullName } from "@/lib/validators";
 import { toast } from "sonner";
 
@@ -29,7 +30,15 @@ function ClientRegistration() {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [cpfError, setCpfError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
-  const [d, setD] = useState({ name: "", email: "", password: "", cpf: "", phone: "", accept: false });
+  const [d, setD] = useState({
+    name: "",
+    email: "",
+    password: "",
+    cpf: "",
+    phone: "",
+    accept: false,
+    cpfDeclaration: false,
+  });
   const set = (k: keyof typeof d, v: string | boolean) => {
     setD((s) => ({ ...s, [k]: v }));
     if (k === "email") setEmailError(null);
@@ -43,7 +52,8 @@ function ClientRegistration() {
     d.password.length >= 6 &&
     isValidCPF(d.cpf) &&
     d.phone.trim() &&
-    d.accept;
+    d.accept &&
+    d.cpfDeclaration;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -96,6 +106,22 @@ function ClientRegistration() {
       setResending(false);
     }
   }
+
+  // Enquanto a tela de espera estiver ativa, verifica a cada 3s se o email já
+  // foi confirmado — funciona mesmo se a confirmação acontecer em outra aba ou
+  // dispositivo, sem depender só da sincronização de sessão entre abas.
+  useEffect(() => {
+    if (!pendingEmail) return;
+    const interval = setInterval(async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user?.email_confirmed_at) {
+        clearInterval(interval);
+        setPendingEmail(null);
+        navigate({ to: "/home" });
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [pendingEmail, navigate]);
 
   if (pendingEmail) {
     return (
@@ -169,6 +195,23 @@ function ClientRegistration() {
           </Field>
 
           <ConductPledge accepted={d.accept} onToggle={() => set("accept", !d.accept)} />
+
+          <label className="flex cursor-pointer items-start gap-3 rounded-md border border-gold/30 bg-gold/5 p-4 text-[12px] leading-relaxed text-foreground/80">
+            <button
+              type="button"
+              onClick={() => set("cpfDeclaration", !d.cpfDeclaration)}
+              aria-pressed={d.cpfDeclaration}
+              className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                d.cpfDeclaration ? "border-gold bg-gold" : "border-border"
+              }`}
+            >
+              {d.cpfDeclaration && <Check className="size-3 text-primary-foreground" />}
+            </button>
+            <span>
+              Declaro que o CPF informado é meu e que todas as informações fornecidas são verdadeiras, sob pena das
+              sanções legais cabíveis.
+            </span>
+          </label>
 
           <button
             type="submit"

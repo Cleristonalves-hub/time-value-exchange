@@ -10,6 +10,7 @@ import { niches as allNiches } from "@/lib/auctions";
 import { ConductPledge } from "@/components/ConductPledge";
 import { addSpecialist, updateSpecialist, registrationLabel, uploadAvatar, useMySpecialist, specialistEmailExists } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 import { isValidCpfCnpj, isFullName } from "@/lib/validators";
 import { toast } from "sonner";
 
@@ -95,6 +96,7 @@ function SpecialistRegistration() {
   const [done, setDone] = useState(false);
   const [conduct, setConduct] = useState(false);
   const [truthPledge, setTruthPledge] = useState(false);
+  const [cpfDeclaration, setCpfDeclaration] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -121,6 +123,22 @@ function SpecialistRegistration() {
       setStep(1);
     }
   }, [pendingEmail, user]);
+
+  // Enquanto a tela de espera estiver ativa, verifica a cada 3s se o email já
+  // foi confirmado — funciona mesmo se a confirmação acontecer em outra aba ou
+  // dispositivo, sem depender só da sincronização de sessão entre abas.
+  useEffect(() => {
+    if (!pendingEmail) return;
+    const interval = setInterval(async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.user?.email_confirmed_at) {
+        clearInterval(interval);
+        setPendingEmail(null);
+        setStep(1);
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [pendingEmail]);
 
   // Se o usuário já tem um cadastro de especialista, entra em modo de edição:
   // pré-preenche o formulário e o envio final vira UPDATE em vez de INSERT.
@@ -184,7 +202,8 @@ function SpecialistRegistration() {
         (!!user || data.password.length >= 6) &&
         data.phone &&
         data.city &&
-        isValidCpfCnpj(data.document)
+        isValidCpfCnpj(data.document) &&
+        cpfDeclaration
       );
     if (step === 1) return data.niche && data.specialty && data.bio.length > 20;
     if (step === 2) {
@@ -414,6 +433,19 @@ function SpecialistRegistration() {
                   </p>
                 )}
               </Field>
+
+              <label className="flex cursor-pointer items-start gap-3 rounded-md border border-gold/30 bg-gold/5 p-4 text-[12px] leading-relaxed text-foreground/80">
+                <input
+                  type="checkbox"
+                  checked={cpfDeclaration}
+                  onChange={() => setCpfDeclaration((v) => !v)}
+                  className="mt-0.5 size-4 accent-[color:var(--gold)]"
+                />
+                <span>
+                  Declaro que o CPF informado é meu e que todas as informações fornecidas são verdadeiras, sob pena
+                  das sanções legais cabíveis.
+                </span>
+              </label>
             </>
           )}
 
