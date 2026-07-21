@@ -43,3 +43,9 @@ export function isValidCpfCnpj(raw: string): boolean {
   if (digits.length === 14) return isValidCNPJ(raw);
   return false;
 }
+
+// Exige nome e sobrenome (pelo menos duas palavras) — bloqueia cadastro com
+// apenas o primeiro nome.
+export function isFullName(raw: string): boolean {
+  return raw.trim().split(/\s+/).filter(Boolean).length >= 2;
+}

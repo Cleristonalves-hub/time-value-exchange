@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -145,7 +146,7 @@ function AuthPage() {
               </div>
               <div className="space-y-1">
                 <Label htmlFor="si-pass">Senha</Label>
-                <Input id="si-pass" type="password" value={siPass} onChange={(e) => setSiPass(e.target.value)} required autoComplete="current-password" />
+                <PasswordInput id="si-pass" value={siPass} onChange={(e) => setSiPass(e.target.value)} required autoComplete="current-password" />
               </div>
               <Button type="submit" className="w-full" disabled={busy}>
                 {busy ? "Aguarde…" : "Entrar"}
@@ -165,7 +166,7 @@ function AuthPage() {
               </div>
               <div className="space-y-1">
                 <Label htmlFor="su-pass">Senha</Label>
-                <Input id="su-pass" type="password" value={suPass} onChange={(e) => setSuPass(e.target.value)} minLength={6} required autoComplete="new-password" />
+                <PasswordInput id="su-pass" value={suPass} onChange={(e) => setSuPass(e.target.value)} minLength={6} required autoComplete="new-password" />
               </div>
               <Button type="submit" className="w-full" disabled={busy}>
                 {busy ? "Aguarde…" : "Criar conta"}

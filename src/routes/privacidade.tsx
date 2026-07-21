@@ -70,7 +70,7 @@ function PrivacyPage() {
           </Section>
 
           <Section title="6. Seus Direitos">
-            Você tem o direito de acessar, corrigir, excluir ou exportar seus dados pessoais. Para exercer esses direitos, entre em contato pelo e-mail privacidade@valore.app. Responderemos em até 15 dias úteis.
+            Você tem o direito de acessar, corrigir, excluir ou exportar seus dados pessoais. Para exercer esses direitos, entre em contato pelo e-mail contato@valore.services. Responderemos em até 15 dias úteis.
           </Section>
 
           <Section title="7. Alterações nesta Política">
@@ -80,8 +80,7 @@ function PrivacyPage() {
           <Section title="8. Contato">
             Em caso de dúvidas sobre esta Política de Privacidade, entre em contato:
             <p className="mt-3 text-sm text-foreground/80">
-              E-mail: <span className="text-gold">privacidade@valore.app</span><br />
-              Endereço: Av. Rio Branco, 1 — Centro, Rio de Janeiro — RJ, 20090-003
+              E-mail: <span className="text-gold">contato@valore.services</span>
             </p>
           </Section>
         </div>

@@ -3,10 +3,11 @@ import { useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Mail } from "lucide-react";
 import { ValoreLogo } from "@/components/ValoreLogo";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { ConductPledge } from "@/components/ConductPledge";
 import { useAuth } from "@/lib/auth";
-import { isValidCPF } from "@/lib/validators";
+import { isValidCPF, isFullName } from "@/lib/validators";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/cadastro/cliente")({
@@ -27,15 +28,17 @@ function ClientRegistration() {
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [cpfError, setCpfError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
   const [d, setD] = useState({ name: "", email: "", password: "", cpf: "", phone: "", accept: false });
   const set = (k: keyof typeof d, v: string | boolean) => {
     setD((s) => ({ ...s, [k]: v }));
     if (k === "email") setEmailError(null);
     if (k === "cpf") setCpfError(null);
+    if (k === "name") setNameError(null);
   };
 
   const ok =
-    d.name.trim() &&
+    isFullName(d.name) &&
     /\S+@\S+\.\S+/.test(d.email) &&
     d.password.length >= 6 &&
     isValidCPF(d.cpf) &&
@@ -46,6 +49,11 @@ function ClientRegistration() {
     e.preventDefault();
     setEmailError(null);
     setCpfError(null);
+    setNameError(null);
+    if (!isFullName(d.name)) {
+      setNameError("Por favor, insira seu nome completo.");
+      return;
+    }
     if (!isValidCPF(d.cpf)) {
       setCpfError("CPF inválido. Verifique e tente novamente.");
       return;
@@ -137,23 +145,26 @@ function ClientRegistration() {
         </div>
 
         <form onSubmit={onSubmit} className="mt-10 space-y-5">
-          <Field label="Nome completo">
+          <Field label="Nome completo" required>
             <Input value={d.name} onChange={(e) => set("name", e.target.value)} placeholder="Seu nome" />
+            {(nameError || (d.name && !isFullName(d.name))) && (
+              <p className="mt-1 text-[11px] text-destructive">Por favor, insira seu nome completo.</p>
+            )}
           </Field>
-          <Field label="E-mail">
+          <Field label="E-mail" required>
             <Input type="email" value={d.email} onChange={(e) => set("email", e.target.value)} placeholder="voce@dominio.com" />
             {emailError && <p className="mt-1 text-[11px] text-destructive">{emailError}</p>}
           </Field>
-          <Field label="Senha">
-            <Input type="password" value={d.password} onChange={(e) => set("password", e.target.value)} placeholder="Mínimo 6 caracteres" />
+          <Field label="Senha" required>
+            <PasswordInput value={d.password} onChange={(e) => set("password", e.target.value)} placeholder="Mínimo 6 caracteres" />
           </Field>
-          <Field label="CPF">
+          <Field label="CPF" required>
             <Input value={d.cpf} onChange={(e) => set("cpf", e.target.value)} placeholder="000.000.000-00" />
             {(cpfError || (d.cpf && !isValidCPF(d.cpf))) && (
               <p className="mt-1 text-[11px] text-destructive">CPF inválido. Verifique e tente novamente.</p>
             )}
           </Field>
-          <Field label="Telefone / WhatsApp">
+          <Field label="Telefone / WhatsApp" required>
             <Input value={d.phone} onChange={(e) => set("phone", e.target.value)} placeholder="(21) 9 0000-0000" />
           </Field>
 
@@ -209,10 +220,13 @@ function ClientRegistration() {
   );
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({ label, required, children }: { label: string; required?: boolean; children: ReactNode }) {
   return (
     <div>
-      <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-muted-foreground">{label}</label>
+      <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-muted-foreground">
+        {label}
+        {required && <span className="text-destructive"> *</span>}
+      </label>
       {children}
     </div>
   );

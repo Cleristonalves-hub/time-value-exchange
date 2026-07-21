@@ -3,13 +3,14 @@ import { useEffect, useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, Video, Camera, Mail } from "lucide-react";
 import { ValoreLogo } from "@/components/ValoreLogo";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { niches as allNiches } from "@/lib/auctions";
 import { ConductPledge } from "@/components/ConductPledge";
 import { addSpecialist, updateSpecialist, registrationLabel, uploadAvatar, useMySpecialist, specialistEmailExists } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
-import { isValidCpfCnpj } from "@/lib/validators";
+import { isValidCpfCnpj, isFullName } from "@/lib/validators";
 import { toast } from "sonner";
 
 
@@ -178,7 +179,7 @@ function SpecialistRegistration() {
   const canProceed = () => {
     if (step === 0)
       return (
-        data.fullName &&
+        isFullName(data.fullName) &&
         data.email &&
         (!!user || data.password.length >= 6) &&
         data.phone &&
@@ -369,11 +370,14 @@ function SpecialistRegistration() {
                   {uploading ? "Enviando…" : "Foto de perfil (opcional)"}
                 </p>
               </div>
-              <Field label="Nome completo">
+              <Field label="Nome completo" required>
                 <Input value={data.fullName} onChange={(e) => set("fullName", e.target.value)} placeholder="Como deseja ser chamado" />
+                {data.fullName && !isFullName(data.fullName) && (
+                  <p className="mt-1 text-[11px] text-destructive">Por favor, insira seu nome completo.</p>
+                )}
               </Field>
 
-              <Field label="E-mail">
+              <Field label="E-mail" required>
                 <Input
                   type="email"
                   value={data.email}
@@ -386,22 +390,21 @@ function SpecialistRegistration() {
                 {emailError && <p className="mt-1 text-[11px] text-destructive">{emailError}</p>}
               </Field>
               {!editingId && (
-                <Field label="Senha">
-                  <Input
-                    type="password"
+                <Field label="Senha" required>
+                  <PasswordInput
                     value={data.password}
                     onChange={(e) => set("password", e.target.value)}
                     placeholder="Mínimo 6 caracteres"
                   />
                 </Field>
               )}
-              <Field label="Telefone / WhatsApp">
+              <Field label="Telefone / WhatsApp" required>
                 <Input value={data.phone} onChange={(e) => set("phone", e.target.value)} placeholder="(21) 9 0000-0000" />
               </Field>
-              <Field label="Cidade">
+              <Field label="Cidade" required>
                 <Input value={data.city} onChange={(e) => set("city", e.target.value)} placeholder="Rio de Janeiro, RJ" />
               </Field>
-              <Field label="CPF ou CNPJ">
+              <Field label="CPF ou CNPJ" required>
                 <Input value={data.document} onChange={(e) => set("document", e.target.value)} placeholder="000.000.000-00" />
                 {data.document && !isValidCpfCnpj(data.document) && (
                   <p className="mt-1 text-[11px] text-destructive">
@@ -430,10 +433,10 @@ function SpecialistRegistration() {
                   })}
                 </div>
               </div>
-              <Field label="Sua especialidade">
+              <Field label="Sua especialidade" required>
                 <Input value={data.specialty} onChange={(e) => set("specialty", e.target.value)} placeholder="Ex: Cardiologista — check-up executivo" />
               </Field>
-              <Field label="Bio profissional">
+              <Field label="Bio profissional" required>
                 <Textarea value={data.bio} onChange={(e) => set("bio", e.target.value)} placeholder="Conte sua trajetória em até 3 linhas." className="min-h-[110px]" />
                 <p className="mt-1 text-[11px] text-muted-foreground">{data.bio.length}/280 caracteres</p>
               </Field>
@@ -442,13 +445,13 @@ function SpecialistRegistration() {
 
           {step === 2 && (
             <>
-              <Field label="Principal credencial">
+              <Field label="Principal credencial" required>
                 <Input value={data.credential} onChange={(e) => set("credential", e.target.value)} placeholder="Ex: Pós-doc Harvard, Grammy 2019" />
               </Field>
-              <Field label="Anos de experiência">
+              <Field label="Anos de experiência" required>
                 <Input type="number" value={data.experience} onChange={(e) => set("experience", e.target.value)} placeholder="15" />
               </Field>
-              <Field label="Link do LinkedIn ou portfólio (obrigatório)">
+              <Field label="Link do LinkedIn ou portfólio" required>
                 <Input
                   value={data.portfolioUrl}
                   onChange={(e) => set("portfolioUrl", e.target.value)}
@@ -461,7 +464,7 @@ function SpecialistRegistration() {
                 <p className="mt-1 text-[11px] text-muted-foreground">Verificamos o link automaticamente. Se acessível, você recebe selo Verificado.</p>
               </Field>
               {regLabel && (
-                <Field label={`${regLabel} (obrigatório para este nicho)`}>
+                <Field label={regLabel} required>
                   <Input
                     value={data.registrationNumber}
                     onChange={(e) => set("registrationNumber", e.target.value)}
@@ -504,7 +507,7 @@ function SpecialistRegistration() {
               <Field label="Idiomas que atende">
                 <Input value={data.languages} onChange={(e) => set("languages", e.target.value)} placeholder="Português, Inglês" />
               </Field>
-              <Field label="Valor mínimo do lance (R$)">
+              <Field label="Valor mínimo do lance (R$)" required>
                 <Input
                   type="number"
                   min="0"
@@ -532,7 +535,7 @@ function SpecialistRegistration() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Horário de início">
+                <Field label="Horário de início" required>
                   <select
                     value={data.startTime}
                     onChange={(e) => set("startTime", e.target.value)}
@@ -543,7 +546,7 @@ function SpecialistRegistration() {
                     ))}
                   </select>
                 </Field>
-                <Field label="Horário de fim">
+                <Field label="Horário de fim" required>
                   <select
                     value={data.endTime}
                     onChange={(e) => set("endTime", e.target.value)}
@@ -558,7 +561,7 @@ function SpecialistRegistration() {
               {data.startTime >= data.endTime && (
                 <p className="text-[11px] text-destructive">O horário de fim precisa ser depois do horário de início.</p>
               )}
-              <Field label="Chave PIX (para repasse dos seus ganhos)">
+              <Field label="Chave PIX (para repasse dos seus ganhos)" required>
                 <Input
                   value={data.pixKey}
                   onChange={(e) => set("pixKey", e.target.value)}
@@ -602,10 +605,13 @@ function SpecialistRegistration() {
   );
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({ label, required, children }: { label: string; required?: boolean; children: ReactNode }) {
   return (
     <div>
-      <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-muted-foreground">{label}</label>
+      <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-muted-foreground">
+        {label}
+        {required && <span className="text-destructive"> *</span>}
+      </label>
       {children}
     </div>
   );
