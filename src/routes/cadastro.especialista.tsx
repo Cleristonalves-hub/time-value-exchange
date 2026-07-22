@@ -10,6 +10,7 @@ import { niches as allNiches } from "@/lib/auctions";
 import { ConductPledge } from "@/components/ConductPledge";
 import { addSpecialist, updateSpecialist, registrationLabel, uploadAvatar, useMySpecialist, specialistEmailExists } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
+import { useT, nicheLabel, WEEKDAY_LABEL_KEY } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { isValidCpfCnpj, isFullName } from "@/lib/validators";
 import { toast } from "sonner";
@@ -80,23 +81,15 @@ const STEP_FIELD_ORDER: FieldKey[][] = [
   ["platform", "minBid", "availableDays", "endTime", "pixKey", "conduct", "truthPledge", "delinquencyAck"],
 ];
 
-const STEPS = ["Dados pessoais", "Nicho", "Credenciais", "Videochamada"] as const;
 const nicheOptions = allNiches.filter((n) => n !== "Todos");
-const platforms: { id: FormData["platform"]; label: string; sub: string }[] = [
-  { id: "Zoom", label: "Zoom", sub: "Padrão executivo, gravação em nuvem" },
-  { id: "Google Meet", label: "Google Meet", sub: "Integração com Google Workspace" },
-  { id: "Microsoft Teams", label: "Microsoft Teams", sub: "Integração com Microsoft 365" },
-];
+const platformIds = ["Zoom", "Google Meet", "Microsoft Teams"] as const;
+const platformSubKeys: Record<(typeof platformIds)[number], string> = {
+  Zoom: "ce.platformZoomSub",
+  "Google Meet": "ce.platformMeetSub",
+  "Microsoft Teams": "ce.platformTeamsSub",
+};
 
-const WEEKDAYS: { code: string; label: string }[] = [
-  { code: "seg", label: "Seg" },
-  { code: "ter", label: "Ter" },
-  { code: "qua", label: "Qua" },
-  { code: "qui", label: "Qui" },
-  { code: "sex", label: "Sex" },
-  { code: "sab", label: "Sáb" },
-  { code: "dom", label: "Dom" },
-];
+const WEEKDAY_CODES = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"];
 
 const TIME_OPTIONS: string[] = (() => {
   const out: string[] = [];
@@ -122,6 +115,7 @@ const isUrl = (s: string) => {
 function SpecialistRegistration() {
   const navigate = useNavigate();
   const { user, signUp, resendConfirmation } = useAuth();
+  const { t } = useT();
   const existing = useMySpecialist(user?.id, user?.email ?? undefined);
   const [step, setStep] = useState(0);
   const [done, setDone] = useState(false);
@@ -145,6 +139,8 @@ function SpecialistRegistration() {
     minBid: "", availableDays: [], startTime: "09:00", endTime: "18:00",
     document: "", pixKey: "",
   });
+
+  const STEPS = [t("ce.stepDadosPessoais"), t("ce.stepNicho"), t("ce.stepCredenciais"), t("ce.stepVideochamada")];
 
   // Assim que a sessão aparece (confirmou o email — inclusive detectado numa
   // outra aba, o supabase-js sincroniza a sessão entre abas do mesmo navegador
@@ -237,44 +233,42 @@ function SpecialistRegistration() {
     clearFieldError("availableDays");
   };
 
-  const regLabel = registrationLabel(data.niche);
+  const regLabelKey = registrationLabel(data.niche);
+  const regLabel = regLabelKey ? t(regLabelKey) : null;
 
   function validateStep(s: number): Partial<Record<FieldKey, string>> {
     const errs: Partial<Record<FieldKey, string>> = {};
     if (s === 0) {
-      if (!isFullName(data.fullName)) errs.fullName = "Por favor, insira seu nome completo.";
-      if (!/\S+@\S+\.\S+/.test(data.email)) errs.email = "Informe um e-mail válido.";
-      if (!user && data.password.length < 6) errs.password = "A senha precisa ter pelo menos 6 caracteres.";
-      if (!data.phone.trim()) errs.phone = "Campo obrigatório.";
-      if (!data.city.trim()) errs.city = "Campo obrigatório.";
+      if (!isFullName(data.fullName)) errs.fullName = t("ce.nameError");
+      if (!/\S+@\S+\.\S+/.test(data.email)) errs.email = t("ce.emailInvalid");
+      if (!user && data.password.length < 6) errs.password = t("ce.passwordTooShort");
+      if (!data.phone.trim()) errs.phone = t("ce.required");
+      if (!data.city.trim()) errs.city = t("ce.required");
       if (!isValidCpfCnpj(data.document)) {
-        errs.document =
-          data.document.replace(/\D/g, "").length === 14
-            ? "CNPJ inválido. Verifique e tente novamente."
-            : "CPF inválido. Verifique e tente novamente.";
+        errs.document = data.document.replace(/\D/g, "").length === 14 ? t("ce.cnpjInvalid") : t("ce.cpfInvalid");
       }
-      if (!cpfDeclaration) errs.cpfDeclaration = "É necessário confirmar esta declaração para continuar.";
+      if (!cpfDeclaration) errs.cpfDeclaration = t("ce.cpfDeclarationRequired");
     }
     if (s === 1) {
-      if (!data.niche) errs.niche = "Selecione um nicho.";
-      if (!data.specialty.trim()) errs.specialty = "Campo obrigatório.";
-      if (data.bio.trim().length <= 20) errs.bio = "Escreva pelo menos 21 caracteres sobre sua trajetória.";
+      if (!data.niche) errs.niche = t("ce.nicheRequired");
+      if (!data.specialty.trim()) errs.specialty = t("ce.required");
+      if (data.bio.trim().length <= 20) errs.bio = t("ce.bioTooShort");
     }
     if (s === 2) {
-      if (!data.credential.trim()) errs.credential = "Campo obrigatório.";
-      if (!data.experience.trim()) errs.experience = "Campo obrigatório.";
-      if (!isUrl(data.portfolioUrl)) errs.portfolioUrl = "Informe uma URL válida iniciando com http(s)://";
-      if (regLabel && !data.registrationNumber.trim()) errs.registrationNumber = "Campo obrigatório.";
+      if (!data.credential.trim()) errs.credential = t("ce.required");
+      if (!data.experience.trim()) errs.experience = t("ce.required");
+      if (!isUrl(data.portfolioUrl)) errs.portfolioUrl = t("ce.portfolioInvalid");
+      if (regLabel && !data.registrationNumber.trim()) errs.registrationNumber = t("ce.required");
     }
     if (s === 3) {
-      if (!data.platform) errs.platform = "Selecione uma plataforma de videochamada.";
-      if (!(Number(data.minBid) > 0)) errs.minBid = "Informe um valor mínimo maior que zero.";
-      if (data.availableDays.length === 0) errs.availableDays = "Selecione ao menos um dia disponível.";
-      if (!(data.startTime < data.endTime)) errs.endTime = "O horário de fim precisa ser depois do horário de início.";
-      if (!data.pixKey.trim()) errs.pixKey = "Campo obrigatório.";
-      if (!conduct) errs.conduct = "É necessário aceitar o Código de Conduta para continuar.";
-      if (!truthPledge) errs.truthPledge = "É necessário confirmar esta declaração para continuar.";
-      if (!delinquencyAck) errs.delinquencyAck = "É necessário confirmar esta declaração para continuar.";
+      if (!data.platform) errs.platform = t("ce.platformRequired");
+      if (!(Number(data.minBid) > 0)) errs.minBid = t("ce.minBidRequired");
+      if (data.availableDays.length === 0) errs.availableDays = t("ce.daysRequired");
+      if (!(data.startTime < data.endTime)) errs.endTime = t("ce.endTimeError");
+      if (!data.pixKey.trim()) errs.pixKey = t("ce.required");
+      if (!conduct) errs.conduct = t("cc.acceptRequired");
+      if (!truthPledge) errs.truthPledge = t("ce.truthPledgeRequired");
+      if (!delinquencyAck) errs.delinquencyAck = t("ce.delinquencyRequired");
     }
     return errs;
   }
@@ -302,7 +296,7 @@ function SpecialistRegistration() {
       const emailTaken = await specialistEmailExists(data.email);
       if (emailTaken) {
         setSubmitting(false);
-        const message = "Já existe um perfil cadastrado com este email";
+        const message = t("ce.emailAlreadyRegisteredProfile");
         setFieldErrors((s) => ({ ...s, email: message }));
         fieldRefs.current.email?.scrollIntoView({ behavior: "smooth", block: "center" });
         toast.error(message);
@@ -312,10 +306,13 @@ function SpecialistRegistration() {
       setSubmitting(false);
       if (result.error) {
         if (result.emailExists) {
-          setFieldErrors((s) => ({ ...s, email: result.error as string }));
+          const message = t("common.emailAlreadyRegistered");
+          setFieldErrors((s) => ({ ...s, email: message }));
           fieldRefs.current.email?.scrollIntoView({ behavior: "smooth", block: "center" });
+          toast.error(message);
+        } else {
+          toast.error(result.error);
         }
-        toast.error(result.error);
         return;
       }
       if (result.needsEmailConfirmation) {
@@ -364,7 +361,7 @@ function SpecialistRegistration() {
     } else {
       await addSpecialist(payload);
       setSubmitting(false);
-      toast.success("Perfil publicado.");
+      toast.success(t("ce.profilePublished"));
       navigate({ to: "/criar-leilao" });
     }
   };
@@ -375,9 +372,9 @@ function SpecialistRegistration() {
     try {
       const { error } = await resendConfirmation(pendingEmail);
       if (error) toast.error(error);
-      else toast.success("E-mail de confirmação reenviado.");
+      else toast.success(t("auth.resendSuccess"));
     } catch {
-      toast.error("Não foi possível reenviar o e-mail. Tente novamente em instantes.");
+      toast.error(t("auth.resendError"));
     } finally {
       setResending(false);
     }
@@ -390,17 +387,13 @@ function SpecialistRegistration() {
         <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-gold/10 text-gold">
           <Mail className="size-6" />
         </div>
-        <h1 className="mt-4 font-display text-3xl">Confirme seu email</h1>
+        <h1 className="mt-4 font-display text-3xl">{t("ce.confirmEmailTitle")}</h1>
         <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-          Verifique seu email para continuar o cadastro. Clique no link que enviamos para{" "}
-          <strong className="text-foreground">{pendingEmail}</strong>.
+          {t("ce.confirmEmailBody")} <strong className="text-foreground">{pendingEmail}</strong>.
         </p>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Assim que confirmar, esta tela avança sozinha para o restante do cadastro — não precisa fazer login de
-          novo.
-        </p>
+        <p className="mt-2 text-xs text-muted-foreground">{t("ce.confirmEmailNote")}</p>
         <Button onClick={onResend} disabled={resending} className="mt-6 w-full max-w-xs">
-          {resending ? "Reenviando…" : "Reenviar email de confirmação"}
+          {resending ? t("auth.resending") : t("auth.resend")}
         </Button>
       </main>
     );
@@ -421,7 +414,7 @@ function SpecialistRegistration() {
 
         <div className="mt-8">
           <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-            <span>Etapa {step + 1} de {STEPS.length}</span>
+            <span>{t("ce.stepLabel", { n: step + 1, total: STEPS.length })}</span>
             <span className="text-gold">{STEPS[step]}</span>
           </div>
           <div className="mt-3 flex gap-1.5">
@@ -434,10 +427,10 @@ function SpecialistRegistration() {
         </div>
 
         <h1 className="mt-10 font-display text-4xl text-foreground">
-          {step === 0 && "Sobre você."}
-          {step === 1 && "Sua área de atuação."}
-          {step === 2 && "Suas credenciais."}
-          {step === 3 && "Como atenderá."}
+          {step === 0 && t("ce.titleStep0")}
+          {step === 1 && t("ce.titleStep1")}
+          {step === 2 && t("ce.titleStep2")}
+          {step === 3 && t("ce.titleStep3")}
         </h1>
 
         <div className="mt-8 space-y-5">
@@ -456,11 +449,11 @@ function SpecialistRegistration() {
                   </label>
                 </div>
                 <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
-                  {uploading ? "Enviando…" : "Foto de perfil (opcional)"}
+                  {uploading ? t("ce.uploading") : t("ce.photoOptional")}
                 </p>
               </div>
               <Field
-                label="Nome completo"
+                label={t("ce.fullName")}
                 required
                 error={fieldErrors.fullName}
                 fieldRef={(el) => { fieldRefs.current.fullName = el; }}
@@ -468,13 +461,13 @@ function SpecialistRegistration() {
                 <Input
                   value={data.fullName}
                   onChange={(e) => set("fullName", e.target.value)}
-                  placeholder="Como deseja ser chamado"
+                  placeholder={t("ce.namePlaceholder")}
                   className={fieldErrors.fullName ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
               </Field>
 
               <Field
-                label="E-mail"
+                label={t("ce.email")}
                 required
                 error={fieldErrors.email}
                 fieldRef={(el) => { fieldRefs.current.email = el; }}
@@ -483,13 +476,13 @@ function SpecialistRegistration() {
                   type="email"
                   value={data.email}
                   onChange={(e) => set("email", e.target.value)}
-                  placeholder="voce@dominio.com"
+                  placeholder={t("ce.emailPlaceholder")}
                   className={fieldErrors.email ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
               </Field>
               {!editingId && (
                 <Field
-                  label="Senha"
+                  label={t("ce.password")}
                   required
                   error={fieldErrors.password}
                   fieldRef={(el) => { fieldRefs.current.password = el; }}
@@ -497,13 +490,13 @@ function SpecialistRegistration() {
                   <PasswordInput
                     value={data.password}
                     onChange={(e) => set("password", e.target.value)}
-                    placeholder="Mínimo 6 caracteres"
+                    placeholder={t("ce.passwordPlaceholder")}
                     className={fieldErrors.password ? "border-destructive focus-visible:ring-destructive" : undefined}
                   />
                 </Field>
               )}
               <Field
-                label="Telefone / WhatsApp"
+                label={t("ce.phone")}
                 required
                 error={fieldErrors.phone}
                 fieldRef={(el) => { fieldRefs.current.phone = el; }}
@@ -511,12 +504,12 @@ function SpecialistRegistration() {
                 <Input
                   value={data.phone}
                   onChange={(e) => set("phone", e.target.value)}
-                  placeholder="(21) 9 0000-0000"
+                  placeholder={t("ce.phonePlaceholder")}
                   className={fieldErrors.phone ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
               </Field>
               <Field
-                label="Cidade"
+                label={t("ce.city")}
                 required
                 error={fieldErrors.city}
                 fieldRef={(el) => { fieldRefs.current.city = el; }}
@@ -524,12 +517,12 @@ function SpecialistRegistration() {
                 <Input
                   value={data.city}
                   onChange={(e) => set("city", e.target.value)}
-                  placeholder="Rio de Janeiro, RJ"
+                  placeholder={t("ce.cityPlaceholder")}
                   className={fieldErrors.city ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
               </Field>
               <Field
-                label="CPF ou CNPJ"
+                label={t("ce.document")}
                 required
                 error={fieldErrors.document}
                 fieldRef={(el) => { fieldRefs.current.document = el; }}
@@ -537,7 +530,7 @@ function SpecialistRegistration() {
                 <Input
                   value={data.document}
                   onChange={(e) => set("document", e.target.value)}
-                  placeholder="000.000.000-00"
+                  placeholder={t("ce.documentPlaceholder")}
                   className={fieldErrors.document ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
               </Field>
@@ -557,10 +550,7 @@ function SpecialistRegistration() {
                     }}
                     className="mt-0.5 size-4 accent-[color:var(--gold)]"
                   />
-                  <span>
-                    Declaro que o CPF informado é meu e que todas as informações fornecidas são verdadeiras, sob pena
-                    das sanções legais cabíveis.
-                  </span>
+                  <span>{t("ce.cpfDeclaration")}</span>
                 </label>
                 {fieldErrors.cpfDeclaration && (
                   <p className="mt-1 text-[11px] text-destructive">{fieldErrors.cpfDeclaration}</p>
@@ -572,14 +562,14 @@ function SpecialistRegistration() {
           {step === 1 && (
             <>
               <div ref={(el) => { fieldRefs.current.niche = el; }}>
-                <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">Selecione seu nicho</label>
+                <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("ce.selectNiche")}</label>
                 <div className="grid grid-cols-2 gap-2">
                   {nicheOptions.map((n) => {
                     const active = data.niche === n;
                     return (
                       <button key={n} type="button" onClick={() => set("niche", n)}
                         className={`rounded-md border px-4 py-3 text-sm transition-all ${active ? "border-gold bg-gold/10 text-gold shadow-gold" : fieldErrors.niche ? "border-destructive text-foreground/80" : "border-border text-foreground/80 hover:border-gold/40"}`}>
-                        {n}
+                        {nicheLabel(t, n)}
                       </button>
                     );
                   })}
@@ -587,7 +577,7 @@ function SpecialistRegistration() {
                 {fieldErrors.niche && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.niche}</p>}
               </div>
               <Field
-                label="Sua especialidade"
+                label={t("ce.specialty")}
                 required
                 error={fieldErrors.specialty}
                 fieldRef={(el) => { fieldRefs.current.specialty = el; }}
@@ -595,12 +585,12 @@ function SpecialistRegistration() {
                 <Input
                   value={data.specialty}
                   onChange={(e) => set("specialty", e.target.value)}
-                  placeholder="Ex: Cardiologista — check-up executivo"
+                  placeholder={t("ce.specialtyPlaceholder")}
                   className={fieldErrors.specialty ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
               </Field>
               <Field
-                label="Bio profissional"
+                label={t("ce.bio")}
                 required
                 error={fieldErrors.bio}
                 fieldRef={(el) => { fieldRefs.current.bio = el; }}
@@ -608,10 +598,10 @@ function SpecialistRegistration() {
                 <Textarea
                   value={data.bio}
                   onChange={(e) => set("bio", e.target.value)}
-                  placeholder="Conte sua trajetória em até 3 linhas."
+                  placeholder={t("ce.bioPlaceholder")}
                   className={`min-h-[110px] ${fieldErrors.bio ? "border-destructive focus-visible:ring-destructive" : ""}`}
                 />
-                <p className="mt-1 text-[11px] text-muted-foreground">{data.bio.length}/280 caracteres</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">{t("ce.bioCounter", { n: data.bio.length })}</p>
               </Field>
             </>
           )}
@@ -619,7 +609,7 @@ function SpecialistRegistration() {
           {step === 2 && (
             <>
               <Field
-                label="Principal credencial"
+                label={t("ce.credential")}
                 required
                 error={fieldErrors.credential}
                 fieldRef={(el) => { fieldRefs.current.credential = el; }}
@@ -627,12 +617,12 @@ function SpecialistRegistration() {
                 <Input
                   value={data.credential}
                   onChange={(e) => set("credential", e.target.value)}
-                  placeholder="Ex: Pós-doc Harvard, Grammy 2019"
+                  placeholder={t("ce.credentialPlaceholder")}
                   className={fieldErrors.credential ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
               </Field>
               <Field
-                label="Anos de experiência"
+                label={t("ce.experience")}
                 required
                 error={fieldErrors.experience}
                 fieldRef={(el) => { fieldRefs.current.experience = el; }}
@@ -646,7 +636,7 @@ function SpecialistRegistration() {
                 />
               </Field>
               <Field
-                label="Link do LinkedIn ou portfólio"
+                label={t("ce.portfolio")}
                 required
                 error={fieldErrors.portfolioUrl}
                 fieldRef={(el) => { fieldRefs.current.portfolioUrl = el; }}
@@ -654,11 +644,11 @@ function SpecialistRegistration() {
                 <Input
                   value={data.portfolioUrl}
                   onChange={(e) => set("portfolioUrl", e.target.value)}
-                  placeholder="https://linkedin.com/in/seu-perfil"
+                  placeholder={t("ce.portfolioPlaceholder")}
                   type="url"
                   className={fieldErrors.portfolioUrl ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
-                <p className="mt-1 text-[11px] text-muted-foreground">Verificamos o link automaticamente. Se acessível, você recebe selo Verificado.</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">{t("ce.portfolioHelp")}</p>
               </Field>
               {regLabel && (
                 <Field
@@ -670,14 +660,14 @@ function SpecialistRegistration() {
                   <Input
                     value={data.registrationNumber}
                     onChange={(e) => set("registrationNumber", e.target.value)}
-                    placeholder="Ex: 12345/RJ"
+                    placeholder={t("ce.registrationNumberPlaceholder")}
                     className={fieldErrors.registrationNumber ? "border-destructive focus-visible:ring-destructive" : undefined}
                   />
                 </Field>
               )}
               <div className="rounded-md border border-gold/20 bg-gold/5 p-4">
                 <p className="text-xs leading-relaxed text-foreground/70">
-                  <span className="text-gold">Verificação Valore.</span> Cadastros aparecem imediatamente com selo Novo. Após verificação do link, o selo é elevado para Verificado. Nichos regulados exigem número de registro profissional.
+                  <span className="text-gold">{t("ce.verificationInfoTitle")}</span> {t("ce.verificationInfoBody")}
                 </p>
               </div>
             </>
@@ -686,17 +676,17 @@ function SpecialistRegistration() {
           {step === 3 && (
             <>
               <div ref={(el) => { fieldRefs.current.platform = el; }}>
-                <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">Plataforma de videochamada</label>
+                <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("ce.platform")}</label>
                 <div className="space-y-2">
-                  {platforms.map((p) => {
-                    const active = data.platform === p.id;
+                  {platformIds.map((p) => {
+                    const active = data.platform === p;
                     return (
-                      <button key={p.id} type="button" onClick={() => set("platform", p.id)}
+                      <button key={p} type="button" onClick={() => set("platform", p)}
                         className={`flex w-full items-center gap-3 rounded-md border px-4 py-4 text-left transition-all ${active ? "border-gold bg-gold/10 shadow-gold" : fieldErrors.platform ? "border-destructive" : "border-border hover:border-gold/40"}`}>
                         <Video className={`size-5 ${active ? "text-gold" : "text-muted-foreground"}`} />
                         <div className="flex-1">
-                          <div className={`text-sm font-medium ${active ? "text-gold" : "text-foreground"}`}>{p.label}</div>
-                          <div className="text-[11px] text-muted-foreground">{p.sub}</div>
+                          <div className={`text-sm font-medium ${active ? "text-gold" : "text-foreground"}`}>{p}</div>
+                          <div className="text-[11px] text-muted-foreground">{t(platformSubKeys[p])}</div>
                         </div>
                         {active && <Check className="size-4 text-gold" />}
                       </button>
@@ -705,14 +695,14 @@ function SpecialistRegistration() {
                 </div>
                 {fieldErrors.platform && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.platform}</p>}
               </div>
-              <Field label="Duração padrão da sessão (minutos)">
+              <Field label={t("ce.duration")}>
                 <Input type="number" value={data.duration} onChange={(e) => set("duration", e.target.value)} />
               </Field>
-              <Field label="Idiomas que atende">
-                <Input value={data.languages} onChange={(e) => set("languages", e.target.value)} placeholder="Português, Inglês" />
+              <Field label={t("ce.languages")}>
+                <Input value={data.languages} onChange={(e) => set("languages", e.target.value)} placeholder={t("ce.languagesPlaceholder")} />
               </Field>
               <Field
-                label="Valor mínimo do lance (R$)"
+                label={t("ce.minBid")}
                 required
                 error={fieldErrors.minBid}
                 fieldRef={(el) => { fieldRefs.current.minBid = el; }}
@@ -727,18 +717,18 @@ function SpecialistRegistration() {
                 />
               </Field>
               <div ref={(el) => { fieldRefs.current.availableDays = el; }}>
-                <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">Dias disponíveis</label>
+                <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("ce.availableDays")}</label>
                 <div className="flex flex-wrap gap-2">
-                  {WEEKDAYS.map((d) => {
-                    const active = data.availableDays.includes(d.code);
+                  {WEEKDAY_CODES.map((code) => {
+                    const active = data.availableDays.includes(code);
                     return (
                       <button
-                        key={d.code}
+                        key={code}
                         type="button"
-                        onClick={() => toggleDay(d.code)}
+                        onClick={() => toggleDay(code)}
                         className={`rounded-md border px-3 py-2 text-xs transition-all ${active ? "border-gold bg-gold/10 text-gold shadow-gold" : fieldErrors.availableDays ? "border-destructive text-foreground/80" : "border-border text-foreground/80 hover:border-gold/40"}`}
                       >
-                        {d.label}
+                        {t(WEEKDAY_LABEL_KEY[code])}
                       </button>
                     );
                   })}
@@ -746,19 +736,19 @@ function SpecialistRegistration() {
                 {fieldErrors.availableDays && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.availableDays}</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Horário de início" required>
+                <Field label={t("ce.startTime")} required>
                   <select
                     value={data.startTime}
                     onChange={(e) => set("startTime", e.target.value)}
                     className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
                   >
-                    {TIME_OPTIONS.map((t) => (
-                      <option key={t} value={t}>{t}</option>
+                    {TIME_OPTIONS.map((time) => (
+                      <option key={time} value={time}>{time}</option>
                     ))}
                   </select>
                 </Field>
                 <Field
-                  label="Horário de fim"
+                  label={t("ce.endTime")}
                   required
                   error={fieldErrors.endTime}
                   fieldRef={(el) => { fieldRefs.current.endTime = el; }}
@@ -768,14 +758,14 @@ function SpecialistRegistration() {
                     onChange={(e) => set("endTime", e.target.value)}
                     className={`h-10 w-full rounded-md border bg-background px-3 text-sm ${fieldErrors.endTime ? "border-destructive" : "border-border"}`}
                   >
-                    {TIME_OPTIONS.map((t) => (
-                      <option key={t} value={t}>{t}</option>
+                    {TIME_OPTIONS.map((time) => (
+                      <option key={time} value={time}>{time}</option>
                     ))}
                   </select>
                 </Field>
               </div>
               <Field
-                label="Chave PIX (para repasse dos seus ganhos)"
+                label={t("ce.pixKey")}
                 required
                 error={fieldErrors.pixKey}
                 fieldRef={(el) => { fieldRefs.current.pixKey = el; }}
@@ -783,7 +773,7 @@ function SpecialistRegistration() {
                 <Input
                   value={data.pixKey}
                   onChange={(e) => set("pixKey", e.target.value)}
-                  placeholder="CPF, e-mail, telefone ou chave aleatória"
+                  placeholder={t("ce.pixKeyPlaceholder")}
                   className={fieldErrors.pixKey ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
               </Field>
@@ -803,9 +793,7 @@ function SpecialistRegistration() {
                     }}
                     className="mt-0.5 size-4 accent-[color:var(--gold)]"
                   />
-                  <span>
-                    Declaro que as informações fornecidas são verdadeiras e que possuo as credenciais profissionais indicadas. Estou ciente que sou inteiramente responsável pela veracidade dos meus dados conforme os Termos de Uso da Valore.
-                  </span>
+                  <span>{t("ce.truthPledge")}</span>
                 </label>
                 {fieldErrors.truthPledge && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.truthPledge}</p>}
               </div>
@@ -828,24 +816,14 @@ function SpecialistRegistration() {
               >
                 <div className="flex items-center gap-2 text-warning">
                   <AlertTriangle className="size-4" />
-                  <span className="text-[10px] uppercase tracking-[0.3em]">
-                    Importante — Leia antes de publicar seu perfil
-                  </span>
+                  <span className="text-[10px] uppercase tracking-[0.3em]">{t("ce.importantTitle")}</span>
                 </div>
-                <p className="mt-3 text-xs leading-relaxed text-foreground/80">
-                  Ao publicar seu perfil na Valore, você está ciente de que:
-                </p>
+                <p className="mt-3 text-xs leading-relaxed text-foreground/80">{t("ce.importantIntro")}</p>
                 <ul className="mt-3 list-disc space-y-2 pl-5 text-xs leading-relaxed text-foreground/80">
-                  <li>Em caso de inadimplência do cliente, a Valore tomará medidas automáticas de cobrança</li>
-                  <li>
-                    Se não resolvido em 48h, seu leilão será cancelado e reagendado gratuitamente com destaque por
-                    7 dias
-                  </li>
-                  <li>
-                    A Valore não se responsabiliza pela inadimplência do cliente, mas age com rapidez e
-                    transparência
-                  </li>
-                  <li>Cancelamentos frequentes ou sem antecedência de 2 horas resultam em penalidades no seu perfil</li>
+                  <li>{t("ce.importantBullet1")}</li>
+                  <li>{t("ce.importantBullet2")}</li>
+                  <li>{t("ce.importantBullet3")}</li>
+                  <li>{t("ce.importantBullet4")}</li>
                 </ul>
 
                 <label className="mt-5 flex cursor-pointer items-start gap-3">
@@ -862,9 +840,7 @@ function SpecialistRegistration() {
                   >
                     {delinquencyAck && <Check className="size-3 text-primary-foreground" />}
                   </button>
-                  <span className="text-xs leading-relaxed text-foreground/80">
-                    Li e estou ciente das condições acima
-                  </span>
+                  <span className="text-xs leading-relaxed text-foreground/80">{t("ce.delinquencyAck")}</span>
                 </label>
                 {fieldErrors.delinquencyAck && (
                   <p className="mt-1 text-[11px] text-destructive">{fieldErrors.delinquencyAck}</p>
@@ -879,14 +855,14 @@ function SpecialistRegistration() {
           disabled={submitting}
           className="group mt-10 flex w-full items-center justify-center gap-2 rounded-md bg-gradient-gold px-6 py-4 text-sm font-medium uppercase tracking-[0.2em] text-primary-foreground shadow-gold transition-transform active:scale-[0.98] disabled:opacity-30 disabled:shadow-none"
         >
-          {submitting ? "Enviando…" : step === STEPS.length - 1 ? "Finalizar cadastro" : "Continuar"}
+          {submitting ? t("ce.sending") : step === STEPS.length - 1 ? t("ce.finish") : t("ce.continue")}
           <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
         </button>
 
         <div className="mt-6 flex items-center justify-center gap-4">
-          <Link to="/termos" className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-gold">Termos</Link>
+          <Link to="/termos" className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-gold">{t("footer.terms")}</Link>
           <span className="text-muted-foreground/30">·</span>
-          <Link to="/privacidade" className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-gold">Privacidade</Link>
+          <Link to="/privacidade" className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-gold">{t("footer.privacy")}</Link>
         </div>
       </div>
     </main>
@@ -919,6 +895,7 @@ function Field({
 }
 
 function SuccessScreen({ isEdit }: { isEdit: boolean }) {
+  const { t } = useT();
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
       <div className="relative">
@@ -928,15 +905,13 @@ function SuccessScreen({ isEdit }: { isEdit: boolean }) {
         </div>
       </div>
       <h1 className="mt-8 font-display text-4xl text-gradient-gold">
-        {isEdit ? "Cadastro atualizado" : "Perfil publicado"}
+        {isEdit ? t("ce.successEditTitle") : t("ce.successNewTitle")}
       </h1>
       <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-        {isEdit
-          ? "Suas informações foram enviadas para uma nova verificação. Você verá o resultado no seu perfil em instantes."
-          : <>Seu perfil já está visível com selo <strong className="text-gold">Novo</strong>. Estamos verificando seu link e registro profissional — se ambos forem confirmados, o selo será elevado para <strong className="text-success">Verificado</strong> automaticamente.</>}
+        {isEdit ? t("ce.successEditBody") : t("ce.successNewBody")}
       </p>
       <Link to="/perfil" className="mt-10 rounded-md border border-gold/40 px-8 py-3 text-xs uppercase tracking-[0.2em] text-gold hover:bg-gold/5">
-        {isEdit ? "Ver meu perfil" : "Ver na plataforma"}
+        {isEdit ? t("ce.viewProfile") : t("ce.viewOnPlatform")}
       </Link>
     </main>
   );

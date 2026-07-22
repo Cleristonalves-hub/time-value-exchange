@@ -7,6 +7,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { ConductPledge } from "@/components/ConductPledge";
 import { useAuth } from "@/lib/auth";
+import { useT } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { isValidCPF, isFullName } from "@/lib/validators";
 import { toast } from "sonner";
@@ -27,6 +28,7 @@ const FIELD_ORDER: FieldKey[] = ["name", "email", "password", "cpf", "phone", "a
 function ClientRegistration() {
   const navigate = useNavigate();
   const { signUp, resendConfirmation } = useAuth();
+  const { t } = useT();
   const [submitting, setSubmitting] = useState(false);
   const [resending, setResending] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
@@ -55,13 +57,13 @@ function ClientRegistration() {
 
   function validate(): Partial<Record<FieldKey, string>> {
     const errs: Partial<Record<FieldKey, string>> = {};
-    if (!isFullName(d.name)) errs.name = "Por favor, insira seu nome completo.";
-    if (!/\S+@\S+\.\S+/.test(d.email)) errs.email = "Informe um e-mail válido.";
-    if (d.password.length < 6) errs.password = "A senha precisa ter pelo menos 6 caracteres.";
-    if (!isValidCPF(d.cpf)) errs.cpf = "CPF inválido. Verifique e tente novamente.";
-    if (!d.phone.trim()) errs.phone = "Campo obrigatório.";
-    if (!d.accept) errs.accept = "É necessário aceitar o Código de Conduta para continuar.";
-    if (!d.cpfDeclaration) errs.cpfDeclaration = "É necessário confirmar esta declaração para continuar.";
+    if (!isFullName(d.name)) errs.name = t("cc.nameError");
+    if (!/\S+@\S+\.\S+/.test(d.email)) errs.email = t("cc.emailInvalid");
+    if (d.password.length < 6) errs.password = t("cc.passwordTooShort");
+    if (!isValidCPF(d.cpf)) errs.cpf = t("cc.cpfInvalid");
+    if (!d.phone.trim()) errs.phone = t("cc.required");
+    if (!d.accept) errs.accept = t("cc.acceptRequired");
+    if (!d.cpfDeclaration) errs.cpfDeclaration = t("cc.cpfDeclarationRequired");
     return errs;
   }
 
@@ -88,20 +90,23 @@ function ClientRegistration() {
       });
       if (error) {
         if (emailExists) {
-          setEmailError(error);
+          const message = t("common.emailAlreadyRegistered");
+          setEmailError(message);
           fieldRefs.current.email?.scrollIntoView({ behavior: "smooth", block: "center" });
+          toast.error(message);
+        } else {
+          toast.error(error);
         }
-        toast.error(error);
         return;
       }
       if (needsEmailConfirmation) {
         setPendingEmail(d.email);
         return;
       }
-      toast.success("Conta criada.");
+      toast.success(t("cc.accountCreated"));
       navigate({ to: "/home" });
     } catch {
-      toast.error("Não foi possível criar a conta. Tente novamente em instantes.");
+      toast.error(t("cc.genericError"));
     } finally {
       setSubmitting(false);
     }
@@ -113,9 +118,9 @@ function ClientRegistration() {
     try {
       const { error } = await resendConfirmation(pendingEmail);
       if (error) toast.error(error);
-      else toast.success("E-mail de confirmação reenviado.");
+      else toast.success(t("auth.resendSuccess"));
     } catch {
-      toast.error("Não foi possível reenviar o e-mail. Tente novamente em instantes.");
+      toast.error(t("auth.resendError"));
     } finally {
       setResending(false);
     }
@@ -143,20 +148,18 @@ function ClientRegistration() {
         <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-gold/10 text-gold">
           <Mail className="size-6" />
         </div>
-        <h1 className="mt-4 font-display text-3xl">Confirme seu email</h1>
-        <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-          Verifique seu email para confirmar o cadastro.
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">Verifique sua caixa de entrada e spam.</p>
+        <h1 className="mt-4 font-display text-3xl">{t("auth.confirmEmailTitle")}</h1>
+        <p className="mt-3 max-w-sm text-sm text-muted-foreground">{t("cc.confirmEmailMsg")}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t("auth.checkInboxSpam")}</p>
         <p className="mt-2 text-xs text-muted-foreground">{pendingEmail}</p>
         <Button onClick={onResend} disabled={resending} className="mt-6 w-full max-w-xs">
-          {resending ? "Reenviando…" : "Reenviar email de confirmação"}
+          {resending ? t("auth.resending") : t("auth.resend")}
         </Button>
         <button
           onClick={() => setPendingEmail(null)}
           className="mt-4 text-xs text-muted-foreground underline-offset-4 hover:underline"
         >
-          Usar outro e-mail
+          {t("auth.useOtherEmail")}
         </button>
       </main>
     );
@@ -174,19 +177,17 @@ function ClientRegistration() {
         </div>
 
         <div className="mt-12">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-gold">Criar conta</p>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-gold">{t("auth.tabSignup")}</p>
           <h1 className="mt-3 font-display text-4xl text-foreground">
-            O tempo dos melhores,<br />
-            <span className="italic text-gradient-gold">a um lance.</span>
+            {t("cc.hero1")}<br />
+            <span className="italic text-gradient-gold">{t("cc.hero2")}</span>
           </h1>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Acesse leilões exclusivos. Sem mensalidade, sem assinatura.
-          </p>
+          <p className="mt-3 text-sm text-muted-foreground">{t("cc.heroSub")}</p>
         </div>
 
         <form onSubmit={onSubmit} noValidate className="mt-10 space-y-5">
           <Field
-            label="Nome completo"
+            label={t("cc.fullName")}
             required
             error={fieldErrors.name}
             fieldRef={(el) => { fieldRefs.current.name = el; }}
@@ -194,12 +195,12 @@ function ClientRegistration() {
             <Input
               value={d.name}
               onChange={(e) => set("name", e.target.value)}
-              placeholder="Seu nome"
+              placeholder={t("cc.namePlaceholder")}
               className={fieldErrors.name ? "border-destructive focus-visible:ring-destructive" : undefined}
             />
           </Field>
           <Field
-            label="E-mail"
+            label={t("cc.email")}
             required
             error={fieldErrors.email || emailError || undefined}
             fieldRef={(el) => { fieldRefs.current.email = el; }}
@@ -208,12 +209,12 @@ function ClientRegistration() {
               type="email"
               value={d.email}
               onChange={(e) => set("email", e.target.value)}
-              placeholder="voce@dominio.com"
+              placeholder={t("cc.emailPlaceholder")}
               className={fieldErrors.email || emailError ? "border-destructive focus-visible:ring-destructive" : undefined}
             />
           </Field>
           <Field
-            label="Senha"
+            label={t("cc.password")}
             required
             error={fieldErrors.password}
             fieldRef={(el) => { fieldRefs.current.password = el; }}
@@ -221,12 +222,12 @@ function ClientRegistration() {
             <PasswordInput
               value={d.password}
               onChange={(e) => set("password", e.target.value)}
-              placeholder="Mínimo 6 caracteres"
+              placeholder={t("cc.passwordPlaceholder")}
               className={fieldErrors.password ? "border-destructive focus-visible:ring-destructive" : undefined}
             />
           </Field>
           <Field
-            label="CPF"
+            label={t("cc.cpf")}
             required
             error={fieldErrors.cpf}
             fieldRef={(el) => { fieldRefs.current.cpf = el; }}
@@ -234,12 +235,12 @@ function ClientRegistration() {
             <Input
               value={d.cpf}
               onChange={(e) => set("cpf", e.target.value)}
-              placeholder="000.000.000-00"
+              placeholder={t("cc.cpfPlaceholder")}
               className={fieldErrors.cpf ? "border-destructive focus-visible:ring-destructive" : undefined}
             />
           </Field>
           <Field
-            label="Telefone / WhatsApp"
+            label={t("cc.phone")}
             required
             error={fieldErrors.phone}
             fieldRef={(el) => { fieldRefs.current.phone = el; }}
@@ -247,7 +248,7 @@ function ClientRegistration() {
             <Input
               value={d.phone}
               onChange={(e) => set("phone", e.target.value)}
-              placeholder="(21) 9 0000-0000"
+              placeholder={t("cc.phonePlaceholder")}
               className={fieldErrors.phone ? "border-destructive focus-visible:ring-destructive" : undefined}
             />
           </Field>
@@ -277,10 +278,7 @@ function ClientRegistration() {
               >
                 {d.cpfDeclaration && <Check className="size-3 text-primary-foreground" />}
               </button>
-              <span>
-                Declaro que o CPF informado é meu e que todas as informações fornecidas são verdadeiras, sob pena das
-                sanções legais cabíveis.
-              </span>
+              <span>{t("cc.cpfDeclaration")}</span>
             </label>
             {fieldErrors.cpfDeclaration && (
               <p className="mt-1 text-[11px] text-destructive">{fieldErrors.cpfDeclaration}</p>
@@ -292,14 +290,14 @@ function ClientRegistration() {
             disabled={submitting}
             className="group flex w-full items-center justify-center gap-2 rounded-md bg-gradient-gold px-6 py-4 text-sm font-medium uppercase tracking-[0.2em] text-primary-foreground shadow-gold transition-transform active:scale-[0.98] disabled:opacity-30 disabled:shadow-none"
           >
-            {submitting ? "Criando…" : "Criar minha conta"}
+            {submitting ? t("cc.submitting") : t("cc.submit")}
             <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
           </button>
         </form>
 
         <div className="mt-8 flex items-center gap-3">
           <div className="h-px flex-1 bg-border" />
-          <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">ou</span>
+          <span className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("cc.or")}</span>
           <div className="h-px flex-1 bg-border" />
         </div>
 
@@ -307,13 +305,13 @@ function ClientRegistration() {
           to="/cadastro/especialista"
           className="mt-6 block rounded-md border border-gold/40 px-6 py-4 text-center text-xs uppercase tracking-[0.2em] text-gold hover:bg-gold/5"
         >
-          Sou um especialista
+          {t("cc.imSpecialist")}
         </Link>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          Já tem conta?{" "}
+          {t("cc.alreadyHaveAccount")}{" "}
           <Link to="/auth" search={{ tab: "signin" }} className="text-gold underline-offset-4 hover:underline">
-            Entrar
+            {t("cc.enter")}
           </Link>
         </p>
 
@@ -322,14 +320,14 @@ function ClientRegistration() {
             to="/termos"
             className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground underline-offset-4 transition-colors hover:text-gold hover:underline"
           >
-            Termos de Uso
+            {t("footer.terms")}
           </Link>
           <span className="text-muted-foreground/30">·</span>
           <Link
             to="/privacidade"
             className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground underline-offset-4 transition-colors hover:text-gold hover:underline"
           >
-            Privacidade
+            {t("footer.privacy")}
           </Link>
         </div>
       </div>

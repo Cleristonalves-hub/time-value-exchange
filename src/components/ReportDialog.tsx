@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { Flag, X, Check } from "lucide-react";
 import { addReport } from "@/lib/store";
+import { useT } from "@/lib/i18n";
 
-const CATEGORIES = [
-  "Não compareceu",
-  "Comportamento ofensivo",
-  "Não efetuou pagamento",
-  "Conteúdo inadequado",
-  "Credenciais suspeitas",
-  "Outro",
+const CATEGORY_KEYS = [
+  "rd.catNoShow",
+  "rd.catOffensive",
+  "rd.catNoPayment",
+  "rd.catInappropriate",
+  "rd.catSuspiciousCreds",
+  "rd.catOther",
 ] as const;
 
-type Category = typeof CATEGORIES[number];
+type CategoryKey = typeof CATEGORY_KEYS[number];
 
 export function ReportButton({
   target,
@@ -20,6 +21,7 @@ export function ReportButton({
   target: string;
   variant?: "ghost" | "outline";
 }) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const base =
     variant === "outline"
@@ -32,7 +34,7 @@ export function ReportButton({
         onClick={() => setOpen(true)}
         className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-[11px] uppercase tracking-widest transition-colors ${base}`}
       >
-        <Flag className="size-3.5" /> Denunciar
+        <Flag className="size-3.5" /> {t("rd.report")}
       </button>
       {open && <ReportDialog target={target} onClose={() => setOpen(false)} />}
     </>
@@ -40,13 +42,14 @@ export function ReportButton({
 }
 
 function ReportDialog({ target, onClose }: { target: string; onClose: () => void }) {
-  const [category, setCategory] = useState<Category | null>(null);
+  const { t } = useT();
+  const [category, setCategory] = useState<CategoryKey | null>(null);
   const [details, setDetails] = useState("");
   const [sent, setSent] = useState(false);
 
   const submit = () => {
     if (!category) return;
-    addReport({ target, category, details });
+    addReport({ target, category: t(category), details });
     setSent(true);
   };
 
@@ -56,7 +59,7 @@ function ReportDialog({ target, onClose }: { target: string; onClose: () => void
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-gold">
             <Flag className="size-4" />
-            <span className="text-[10px] uppercase tracking-[0.3em]">Denúncia confidencial</span>
+            <span className="text-[10px] uppercase tracking-[0.3em]">{t("rd.confidential")}</span>
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="size-4" />
@@ -68,26 +71,22 @@ function ReportDialog({ target, onClose }: { target: string; onClose: () => void
             <div className="mx-auto flex size-14 items-center justify-center rounded-full border border-gold bg-gold/10">
               <Check className="size-6 text-gold" />
             </div>
-            <h3 className="mt-4 font-display text-2xl">Denúncia enviada</h3>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Nossa curadoria analisará em até 24h. Um email foi encaminhado para contato@valore.services.
-            </p>
+            <h3 className="mt-4 font-display text-2xl">{t("rd.sentTitle")}</h3>
+            <p className="mt-2 text-xs text-muted-foreground">{t("rd.sentMsg")}</p>
             <button
               onClick={onClose}
               className="mt-6 rounded-md border border-gold/40 px-6 py-2 text-xs uppercase tracking-widest text-gold hover:bg-gold/5"
             >
-              Fechar
+              {t("rd.close")}
             </button>
           </div>
         ) : (
           <>
-            <h3 className="mt-4 font-display text-2xl">Reportar {target}</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Selecione o motivo. Todas as denúncias são analisadas pela curadoria Valore.
-            </p>
+            <h3 className="mt-4 font-display text-2xl">{t("rd.reportTarget", { target })}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">{t("rd.selectReason")}</p>
 
             <div className="mt-5 space-y-2">
-              {CATEGORIES.map((c) => {
+              {CATEGORY_KEYS.map((c) => {
                 const active = category === c;
                 return (
                   <button
@@ -100,7 +99,7 @@ function ReportDialog({ target, onClose }: { target: string; onClose: () => void
                         : "border-border text-foreground/80 hover:border-gold/40"
                     }`}
                   >
-                    <span>{c}</span>
+                    <span>{t(c)}</span>
                     {active && <Check className="size-4" />}
                   </button>
                 );
@@ -110,7 +109,7 @@ function ReportDialog({ target, onClose }: { target: string; onClose: () => void
             <textarea
               value={details}
               onChange={(e) => setDetails(e.target.value)}
-              placeholder="Descreva o ocorrido (opcional)"
+              placeholder={t("rd.detailsPlaceholder")}
               className="mt-4 min-h-[90px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
             />
 
@@ -119,7 +118,7 @@ function ReportDialog({ target, onClose }: { target: string; onClose: () => void
               disabled={!category}
               className="mt-5 w-full rounded-md bg-gradient-gold py-3 text-xs font-medium uppercase tracking-[0.2em] text-primary-foreground shadow-gold transition-transform active:scale-[0.98] disabled:opacity-30 disabled:shadow-none"
             >
-              Enviar denúncia
+              {t("rd.submit")}
             </button>
           </>
         )}

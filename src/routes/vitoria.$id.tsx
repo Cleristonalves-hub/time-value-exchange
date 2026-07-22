@@ -3,20 +3,27 @@ import { Trophy, Video, Copy, CalendarCheck, Check } from "lucide-react";
 import { useMemo, useState } from "react";
 import { auctions, formatBRL } from "@/lib/auctions";
 import { RequireAuth } from "@/components/RequireAuth";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/vitoria/$id")({
   head: () => ({ meta: [{ title: "Você venceu — Valore" }] }),
   component: WinPage,
-  notFoundComponent: () => (
-    <main className="grid min-h-screen place-items-center p-6 text-center">
-      <p className="text-muted-foreground">Leilão não encontrado.</p>
-    </main>
-  ),
-  errorComponent: () => (
-    <main className="grid min-h-screen place-items-center p-6 text-center">
-      <p className="text-destructive">Erro ao carregar vitória.</p>
-    </main>
-  ),
+  notFoundComponent: () => {
+    const { t } = useT();
+    return (
+      <main className="grid min-h-screen place-items-center p-6 text-center">
+        <p className="text-muted-foreground">{t("vt.notFound")}</p>
+      </main>
+    );
+  },
+  errorComponent: () => {
+    const { t } = useT();
+    return (
+      <main className="grid min-h-screen place-items-center p-6 text-center">
+        <p className="text-destructive">{t("vt.loadError")}</p>
+      </main>
+    );
+  },
   loader: ({ params }) => {
     const a = auctions.find((x) => x.id === params.id);
     if (!a) throw notFound();
@@ -42,6 +49,7 @@ function nextDates() {
 
 function WinPage() {
   const { auction } = Route.useLoaderData();
+  const { t } = useT();
   const days = useMemo(nextDates, []);
   const [day, setDay] = useState(days[0].iso);
   const [time, setTime] = useState<string | null>(null);
@@ -61,13 +69,13 @@ function WinPage() {
           <div className="mx-auto flex size-20 items-center justify-center rounded-full bg-gradient-gold shadow-gold">
             <CalendarCheck className="size-10 text-background" />
           </div>
-          <h1 className="mt-6 font-display text-3xl">Sessão confirmada</h1>
+          <h1 className="mt-6 font-display text-3xl">{t("vt.sessionConfirmed")}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {day} às {time} com {auction.expert}
+            {t("vt.sessionConfirmedDetail", { day, time: time ?? "", expert: auction.expert })}
           </p>
 
           <div className="mt-8 rounded-2xl border border-gold/30 bg-surface p-5 text-left">
-            <p className="text-[10px] uppercase tracking-[0.3em] text-gold">Link da videochamada</p>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-gold">{t("vt.videoCallLink")}</p>
             <p className="mt-2 break-all font-mono text-sm">{meetLink}</p>
             <button
               onClick={() => {
@@ -77,7 +85,7 @@ function WinPage() {
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-md border border-gold/50 py-2 text-xs uppercase tracking-widest text-gold hover:bg-gold/5"
             >
               {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-              {copied ? "Link copiado" : "Copiar link"}
+              {copied ? t("vt.linkCopied") : t("vt.copyLink")}
             </button>
           </div>
 
@@ -85,7 +93,7 @@ function WinPage() {
             to="/home"
             className="mt-6 inline-block text-xs uppercase tracking-widest text-muted-foreground hover:text-gold"
           >
-            Voltar para o início
+            {t("vt.backHome")}
           </Link>
         </div>
       </main>
@@ -104,17 +112,17 @@ function WinPage() {
               <Trophy className="size-14 text-background" strokeWidth={1.5} />
             </div>
           </div>
-          <p className="mt-6 text-[10px] uppercase tracking-[0.4em] text-gold">Parabéns</p>
-          <h1 className="mt-2 font-display text-4xl text-gradient-gold">Você venceu</h1>
+          <p className="mt-6 text-[10px] uppercase tracking-[0.4em] text-gold">{t("vt.congrats")}</p>
+          <h1 className="mt-2 font-display text-4xl text-gradient-gold">{t("vt.youWon")}</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            1 hora exclusiva com <span className="text-foreground">{auction.expert}</span>
+            {t("vt.exclusiveHourPrefix")} <span className="text-foreground">{auction.expert}</span>
             <br />
-            por <span className="text-gold">{formatBRL(auction.currentBid)}</span>
+            {t("vt.exclusiveHourFor")} <span className="text-gold">{formatBRL(auction.currentBid)}</span>
           </p>
         </div>
 
         <section className="mt-10">
-          <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Escolha o dia</h2>
+          <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("vt.chooseDay")}</h2>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-2">
             {days.map((d) => (
               <button
@@ -135,7 +143,7 @@ function WinPage() {
             ))}
           </div>
 
-          <h2 className="mt-6 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Horário</h2>
+          <h2 className="mt-6 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("vt.schedule")}</h2>
           <div className="mt-3 grid grid-cols-3 gap-2">
             {days.find((d) => d.iso === day)?.slots.map((s) => (
               <button
@@ -153,7 +161,7 @@ function WinPage() {
 
         <div className="mt-8 flex items-center gap-2 rounded-md border border-border/60 bg-surface p-3 text-xs text-muted-foreground">
           <Video className="size-4 text-gold" />
-          Um link de {auction.platform} será gerado automaticamente.
+          {t("vt.linkNote", { platform: auction.platform })}
         </div>
 
         <button
@@ -161,7 +169,7 @@ function WinPage() {
           disabled={!time}
           className="mt-6 w-full rounded-md bg-gradient-gold py-3 text-sm font-semibold uppercase tracking-widest text-background disabled:opacity-40"
         >
-          Confirmar agendamento
+          {t("vt.confirmSchedule")}
         </button>
       </div>
     </main>

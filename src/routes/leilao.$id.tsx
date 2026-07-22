@@ -8,6 +8,7 @@ import { Disclaimer } from "@/components/Disclaimer";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/lib/auth";
 import { useLeilao, useLances, useMyCard, useMySpecialist, darLance, cancelarLeilao } from "@/lib/store";
+import { useT, leilaoStatusLabel } from "@/lib/i18n";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/leilao/$id")({
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/leilao/$id")({
 function AuctionDetail() {
   const { id } = Route.useParams();
   const { user } = useAuth();
+  const { t } = useT();
   const navigate = useNavigate();
   const leilao = useLeilao(id);
   const lances = useLances(id);
@@ -40,9 +42,9 @@ function AuctionDetail() {
     return (
       <div className="flex min-h-screen items-center justify-center p-6 text-center">
         <div>
-          <p className="font-display text-2xl">Leilão não encontrado.</p>
+          <p className="font-display text-2xl">{t("lz.notFound")}</p>
           <Link to="/home" className="mt-4 inline-block text-sm text-gold underline-offset-4 hover:underline">
-            Voltar aos leilões
+            {t("lz.backToAuctions")}
           </Link>
         </div>
       </div>
@@ -56,7 +58,7 @@ function AuctionDetail() {
 
   function abrirModal() {
     if (!cartao) {
-      toast.error("Cadastre um cartão antes de dar lances.");
+      toast.error(t("lz.cardRequiredToast"));
       navigate({ to: "/cartao" });
       return;
     }
@@ -75,7 +77,7 @@ function AuctionDetail() {
       return;
     }
     setShowModal(false);
-    toast.success("Lance registrado.");
+    toast.success(t("lz.bidRegistered"));
   }
 
   async function confirmarCancelamento() {
@@ -86,7 +88,7 @@ function AuctionDetail() {
       toast.error(error);
       return;
     }
-    toast.success("Leilão cancelado.");
+    toast.success(t("lz.auctionCancelled"));
     setCancelOpen(false);
     navigate({ to: "/perfil" });
   }
@@ -97,15 +99,15 @@ function AuctionDetail() {
         <button
           onClick={() => navigate({ to: "/home" })}
           className="absolute left-4 top-4 rounded-full border border-border/60 bg-background/60 p-2 text-foreground backdrop-blur hover:border-gold/40 hover:text-gold"
-          aria-label="Voltar"
+          aria-label={t("lz.back")}
         >
           <ChevronLeft className="h-5 w-5" strokeWidth={1.5} />
         </button>
         <div className="mx-auto w-full max-w-2xl">
           <span className="inline-block rounded-sm border border-gold/40 bg-background/60 px-3 py-1 text-[10px] uppercase tracking-widest text-gold backdrop-blur">
-            {leilao.especialista?.nicho || "Especialista"}
+            {leilao.especialista?.nicho || t("lz.specialistFallback")}
           </span>
-          <h1 className="mt-3 font-display text-3xl leading-tight">{leilao.especialista?.nome || "Especialista"}</h1>
+          <h1 className="mt-3 font-display text-3xl leading-tight">{leilao.especialista?.nome || t("lz.specialistFallback")}</h1>
           <p className="text-sm text-foreground/80">{leilao.titulo}</p>
         </div>
       </div>
@@ -118,11 +120,11 @@ function AuctionDetail() {
                 onClick={() => setCancelOpen(true)}
                 className="flex w-full items-center justify-center gap-2 rounded-md border border-destructive/40 py-2 text-xs uppercase tracking-widest text-destructive hover:bg-destructive/10"
               >
-                Cancelar leilão
+                {t("lz.cancelAuction")}
               </button>
             ) : (
               <p className="text-center text-xs uppercase tracking-widest text-muted-foreground">
-                Status: {leilao.status}
+                {t("lz.status", { status: leilaoStatusLabel(t, leilao.status) })}
               </p>
             )}
           </div>
@@ -131,11 +133,11 @@ function AuctionDetail() {
         <section className="mt-6 rounded-2xl border border-gold/30 bg-surface p-6 shadow-gold">
           <div className="flex items-end justify-between">
             <div>
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Lance atual</div>
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("lz.currentBid")}</div>
               <div className="font-display text-4xl text-gradient-gold">{formatBRL(lanceAtual)}</div>
             </div>
             <div className="text-right">
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Encerra em</div>
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("lz.endsIn")}</div>
               <Countdown endsAt={leilao.dataFim} variant="live" className="text-xl" />
               <div className="mt-0.5 text-[10px] text-muted-foreground">{formatEndsAt(leilao.dataFim)}</div>
             </div>
@@ -144,22 +146,22 @@ function AuctionDetail() {
 
         {leilao.descricao && (
           <section className="mt-6">
-            <h2 className="font-display text-lg">Sobre o leilão</h2>
+            <h2 className="font-display text-lg">{t("lz.aboutAuction")}</h2>
             <p className="mt-2 text-sm leading-relaxed text-foreground/80">{leilao.descricao}</p>
           </section>
         )}
 
         <section className="mt-6">
-          <h3 className="font-display text-lg">Últimos lances</h3>
+          <h3 className="font-display text-lg">{t("lz.recentBids")}</h3>
           {lances.length === 0 ? (
             <p className="mt-3 rounded-xl border border-border/60 bg-surface p-4 text-center text-sm text-muted-foreground">
-              Nenhum lance ainda. Seja o primeiro.
+              {t("lz.noBidsYet")}
             </p>
           ) : (
             <ul className="mt-3 divide-y divide-border/60 rounded-xl border border-border/60 bg-surface">
               {lances.map((l) => (
                 <li key={l.id} className="flex items-center justify-between px-4 py-3 text-sm">
-                  <span className="text-muted-foreground">Lance anônimo</span>
+                  <span className="text-muted-foreground">{t("lz.anonymousBid")}</span>
                   <span className="font-mono tabular-nums text-gold">{formatBRL(l.valor)}</span>
                 </li>
               ))}
@@ -169,16 +171,14 @@ function AuctionDetail() {
 
         {podeDarLance && (
           <section className="mt-8">
-            <h3 className="font-display text-lg">Seu lance</h3>
+            <h3 className="font-display text-lg">{t("lz.yourBid")}</h3>
 
             {!cartao && (
               <div className="mt-3 flex items-center gap-3 rounded-xl border border-gold/30 bg-gold/5 p-4">
                 <CreditCard className="size-5 shrink-0 text-gold" />
-                <div className="flex-1 text-xs text-foreground/80">
-                  Você precisa cadastrar um cartão para dar lances.
-                </div>
+                <div className="flex-1 text-xs text-foreground/80">{t("lz.needCardMsg")}</div>
                 <Link to="/cartao" className="shrink-0 text-xs font-semibold uppercase tracking-widest text-gold underline-offset-4 hover:underline">
-                  Cadastrar
+                  {t("lz.registerCard")}
                 </Link>
               </div>
             )}
@@ -207,9 +207,7 @@ function AuctionDetail() {
               ))}
             </div>
             {bid > 0 && bid <= lanceAtual && (
-              <p className="mt-2 text-xs text-destructive">
-                Seu lance precisa superar o atual de {formatBRL(lanceAtual)}.
-              </p>
+              <p className="mt-2 text-xs text-destructive">{t("lz.bidMustExceed", { value: formatBRL(lanceAtual) })}</p>
             )}
 
             <button
@@ -217,17 +215,14 @@ function AuctionDetail() {
               onClick={abrirModal}
               className="mt-5 w-full rounded-md bg-gradient-gold py-4 text-sm font-medium uppercase tracking-[0.2em] text-primary-foreground shadow-gold transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
             >
-              Confirmar lance
+              {t("lz.confirmBid")}
             </button>
 
-            <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
-              Ao vencer, sua cobrança é processada automaticamente via cartão cadastrado. Comissão de
-              20% retida pela plataforma. Sessão realizada 100% online por videochamada.
-            </p>
+            <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">{t("lz.chargeNote")}</p>
 
             <div className="mt-6 flex items-center justify-between rounded-md border border-border/60 bg-background/40 px-4 py-3">
-              <p className="text-[11px] text-muted-foreground">Algo errado com este especialista?</p>
-              <ReportButton target={leilao.especialista?.nome || "especialista"} />
+              <p className="text-[11px] text-muted-foreground">{t("lz.somethingWrong")}</p>
+              <ReportButton target={leilao.especialista?.nome || t("lz.specialistFallback")} />
             </div>
           </section>
         )}
@@ -242,13 +237,12 @@ function AuctionDetail() {
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-gold bg-gold/10">
               <Sparkles className="h-6 w-6 text-gold" />
             </div>
-            <h3 className="text-center font-display text-2xl">Confirmar lance</h3>
-            <p className="mt-2 text-center text-sm text-muted-foreground">Valor do lance</p>
+            <h3 className="text-center font-display text-2xl">{t("lz.bidModalTitle")}</h3>
+            <p className="mt-2 text-center text-sm text-muted-foreground">{t("lz.bidValueLabel")}</p>
             <p className="text-center font-display text-3xl text-gradient-gold">{formatBRL(bid)}</p>
 
             <div className="mt-5 rounded-md border border-destructive/30 bg-destructive/5 p-4 text-xs leading-relaxed text-foreground/80">
-              Ao confirmar, você assume um compromisso irrevogável de compra. Em caso de desistência,
-              multa de 20% do valor do lance será aplicada.
+              {t("lz.irrevocableNotice")}
             </div>
 
             <label className="mt-4 flex cursor-pointer items-start gap-3 text-xs text-foreground/80">
@@ -258,7 +252,7 @@ function AuctionDetail() {
                 onChange={() => setAceite((v) => !v)}
                 className="mt-0.5 size-4 accent-[color:var(--gold)]"
               />
-              Entendo e aceito os termos
+              {t("lz.acceptTerms")}
             </label>
 
             <div className="mt-6 flex flex-col gap-2">
@@ -267,13 +261,13 @@ function AuctionDetail() {
                 onClick={confirmarLance}
                 className="rounded-md bg-gradient-gold py-3 text-xs font-semibold uppercase tracking-widest text-primary-foreground shadow-gold disabled:opacity-40"
               >
-                {submitting ? "Enviando…" : "Confirmar lance"}
+                {submitting ? t("lz.sending") : t("lz.confirmBid")}
               </button>
               <button
                 onClick={() => setShowModal(false)}
                 className="rounded-md py-2 text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground"
               >
-                Cancelar
+                {t("lz.cancel")}
               </button>
             </div>
           </div>
@@ -287,16 +281,12 @@ function AuctionDetail() {
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-destructive bg-destructive/10">
               <AlertTriangle className="h-6 w-6 text-destructive" />
             </div>
-            <h3 className="text-center font-display text-2xl">Cancelar leilão</h3>
-            <p className="mt-2 text-center text-xs leading-relaxed text-muted-foreground">
-              Cancelamento até 2h antes do início não tem penalidade. Com menos de 2h de antecedência,
-              seu perfil recebe o badge "Cancelamento recente" por 7 dias. Após 3 cancelamentos
-              penalizados no mesmo mês, sua conta é suspensa por 30 dias.
-            </p>
+            <h3 className="text-center font-display text-2xl">{t("lz.cancelModalTitle")}</h3>
+            <p className="mt-2 text-center text-xs leading-relaxed text-muted-foreground">{t("lz.cancelPolicy")}</p>
             <textarea
               value={cancelMotivo}
               onChange={(e) => setCancelMotivo(e.target.value)}
-              placeholder="Motivo do cancelamento (opcional)"
+              placeholder={t("lz.cancelReasonPlaceholder")}
               rows={3}
               className="mt-4 w-full resize-none rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
             />
@@ -306,13 +296,13 @@ function AuctionDetail() {
                 onClick={confirmarCancelamento}
                 className="rounded-md border border-destructive/50 bg-destructive/10 py-3 text-xs font-semibold uppercase tracking-widest text-destructive hover:bg-destructive/20 disabled:opacity-40"
               >
-                {cancelando ? "Cancelando…" : "Confirmar cancelamento"}
+                {cancelando ? t("lz.cancelling") : t("lz.confirmCancel")}
               </button>
               <button
                 onClick={() => setCancelOpen(false)}
                 className="rounded-md py-2 text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground"
               >
-                Voltar
+                {t("lz.back")}
               </button>
             </div>
           </div>

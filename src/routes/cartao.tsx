@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/lib/auth";
 import { useMyCard, salvarCartao } from "@/lib/store";
+import { useT } from "@/lib/i18n";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/cartao")({
@@ -47,6 +48,7 @@ function CartaoPage() {
 
 function CartaoContent() {
   const { user } = useAuth();
+  const { t } = useT();
   const navigate = useNavigate();
   const cartao = useMyCard(user?.id);
   const [sdkReady, setSdkReady] = useState(false);
@@ -62,7 +64,8 @@ function CartaoContent() {
   useEffect(() => {
     loadMercadoPagoSdk()
       .then(() => setSdkReady(true))
-      .catch(() => toast.error("Não foi possível carregar o formulário de pagamento. Recarregue a página."));
+      .catch(() => toast.error(t("ct.sdkLoadError")));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const ok = numero.replace(/\D/g, "").length >= 13 && nome.trim() && mes && ano && cvv.length >= 3 && cpf.replace(/\D/g, "").length === 11;
@@ -91,11 +94,11 @@ function CartaoContent() {
         toast.error(error);
         return;
       }
-      toast.success("Cartão cadastrado.");
+      toast.success(t("ct.cardRegisteredToast"));
       navigate({ to: "/home" });
     } catch (err) {
       console.error(err);
-      toast.error("Não foi possível validar o cartão. Confira os dados e tente novamente.");
+      toast.error(t("ct.cardValidateError"));
     } finally {
       setSubmitting(false);
     }
@@ -107,12 +110,12 @@ function CartaoContent() {
         <div className="flex size-16 items-center justify-center rounded-full border border-gold bg-gold/10">
           <CreditCard className="size-8 text-gold" />
         </div>
-        <h1 className="mt-6 font-display text-3xl">Cartão cadastrado</h1>
+        <h1 className="mt-6 font-display text-3xl">{t("ct.cardRegistered")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          {cartao.bandeira ?? "Cartão"} terminado em {cartao.ultimosDigitos ?? "----"}
+          {cartao.bandeira ?? t("ct.card")} {t("ct.endingIn")} {cartao.ultimosDigitos ?? "----"}
         </p>
         <Button onClick={() => navigate({ to: "/home" })} className="mt-8 w-full max-w-xs">
-          Continuar
+          {t("ct.continue")}
         </Button>
       </main>
     );
@@ -123,38 +126,35 @@ function CartaoContent() {
       <div className="mx-auto max-w-md">
         <div className="flex items-center gap-2 text-gold">
           <ShieldCheck className="size-5" />
-          <span className="text-[10px] uppercase tracking-[0.3em]">Pagamento obrigatório</span>
+          <span className="text-[10px] uppercase tracking-[0.3em]">{t("ct.paymentRequired")}</span>
         </div>
-        <h1 className="mt-3 font-display text-3xl">Cadastre um cartão para dar lances.</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Só cobramos se você vencer um leilão. Seus dados são tokenizados diretamente pelo Mercado
-          Pago — a Valore nunca armazena o número do seu cartão.
-        </p>
+        <h1 className="mt-3 font-display text-3xl">{t("ct.title")}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{t("ct.subtitle")}</p>
 
         <form onSubmit={onSubmit} className="mt-8 space-y-5">
-          <Field label="Número do cartão">
+          <Field label={t("ct.cardNumber")}>
             <Input value={numero} onChange={(e) => setNumero(e.target.value)} placeholder="0000 0000 0000 0000" inputMode="numeric" />
           </Field>
-          <Field label="Nome impresso no cartão">
-            <Input value={nome} onChange={(e) => setNome(e.target.value.toUpperCase())} placeholder="NOME COMO NO CARTÃO" />
+          <Field label={t("ct.cardholderName")}>
+            <Input value={nome} onChange={(e) => setNome(e.target.value.toUpperCase())} placeholder={t("ct.cardholderNamePlaceholder")} />
           </Field>
           <div className="grid grid-cols-3 gap-3">
-            <Field label="Mês">
+            <Field label={t("ct.month")}>
               <Input value={mes} onChange={(e) => setMes(e.target.value)} placeholder="MM" inputMode="numeric" maxLength={2} />
             </Field>
-            <Field label="Ano">
-              <Input value={ano} onChange={(e) => setAno(e.target.value)} placeholder="AAAA" inputMode="numeric" maxLength={4} />
+            <Field label={t("ct.year")}>
+              <Input value={ano} onChange={(e) => setAno(e.target.value)} placeholder={t("ct.yearPlaceholder")} inputMode="numeric" maxLength={4} />
             </Field>
-            <Field label="CVV">
+            <Field label={t("ct.cvv")}>
               <Input value={cvv} onChange={(e) => setCvv(e.target.value)} placeholder="123" inputMode="numeric" maxLength={4} />
             </Field>
           </div>
-          <Field label="CPF do titular">
+          <Field label={t("ct.cpf")}>
             <Input value={cpf} onChange={(e) => setCpf(e.target.value)} placeholder="000.000.000-00" />
           </Field>
 
           <Button type="submit" disabled={!ok || !sdkReady || submitting} className="w-full">
-            {submitting ? "Validando…" : "Cadastrar cartão"}
+            {submitting ? t("ct.validating") : t("ct.submit")}
           </Button>
         </form>
       </div>

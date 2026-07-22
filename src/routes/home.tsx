@@ -5,18 +5,12 @@ import { ValoreLogo, ValoreMark } from "@/components/ValoreLogo";
 import { BottomNav } from "@/components/BottomNav";
 import { Disclaimer } from "@/components/Disclaimer";
 import { Countdown } from "@/components/Countdown";
-import { LanguageSelector } from "@/components/LanguageSelector";
 import { LiveActivity } from "@/components/LiveActivity";
 import { RequireAuth } from "@/components/RequireAuth";
 import { auctions, formatBRL, formatEndsAt } from "@/lib/auctions";
 import { useActiveLeiloes } from "@/lib/store";
-
-function getTimeOfDay() {
-  const h = new Date().getHours();
-  if (h < 12) return "Bom dia.";
-  if (h < 18) return "Boa tarde.";
-  return "Boa noite.";
-}
+import { useT } from "@/lib/i18n";
+import { useLocalizedAuction } from "@/lib/mockContent";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -33,7 +27,15 @@ export const Route = createFileRoute("/home")({
 });
 
 function Home() {
+  const { t } = useT();
   const leiloes = useActiveLeiloes();
+
+  function getTimeOfDay() {
+    const h = new Date().getHours();
+    if (h < 12) return t("home.greetingMorning");
+    if (h < 18) return t("home.greetingAfternoon");
+    return t("home.greetingEvening");
+  }
 
   return (
     <main className="min-h-screen pb-24">
@@ -44,9 +46,8 @@ function Home() {
             <ValoreLogo className="text-xl" />
           </div>
           <div className="flex items-center gap-2">
-            <LanguageSelector />
             <button
-              aria-label="Notificações"
+              aria-label={t("home.notifications")}
               className="rounded-full border border-border/60 p-2 text-muted-foreground transition-colors hover:border-gold/40 hover:text-gold"
             >
               <Bell className="h-4 w-4" strokeWidth={1.5} />
@@ -66,10 +67,10 @@ function Home() {
 
         {/* Parte inferior — Especialistas reais */}
         <section className="mt-8">
-          <h2 className="font-display text-lg">Especialistas disponíveis agora</h2>
+          <h2 className="font-display text-lg">{t("home.specialistsAvailable")}</h2>
           {leiloes.length === 0 ? (
             <p className="mt-4 rounded-md border border-border/60 bg-surface p-8 text-center text-sm text-muted-foreground">
-              Nenhum especialista ou leilão disponível no momento. Volte em breve.
+              {t("home.emptySpecialists")}
             </p>
           ) : (
             <div className="mt-4 space-y-3">
@@ -87,6 +88,7 @@ function Home() {
 }
 
 function LeilaoCard({ leilao }: { leilao: ReturnType<typeof useActiveLeiloes>[number] }) {
+  const { t } = useT();
   const lanceAtual = leilao.lanceAtual ?? leilao.lanceMinimo;
   return (
     <Link
@@ -95,16 +97,16 @@ function LeilaoCard({ leilao }: { leilao: ReturnType<typeof useActiveLeiloes>[nu
       className="block overflow-hidden rounded-xl border border-border/60 bg-surface p-4 transition-all hover:border-gold/50 hover:shadow-gold"
     >
       <div className="mb-1 inline-block rounded-sm border border-gold/30 px-2 py-0.5 text-[10px] uppercase tracking-widest text-gold">
-        {leilao.especialista?.nicho || "Especialista"}
+        {leilao.especialista?.nicho || t("home.specialistFallback")}
       </div>
       <h3 className="font-display text-lg leading-tight text-foreground">
-        {leilao.especialista?.nome || "Especialista"}
+        {leilao.especialista?.nome || t("home.specialistFallback")}
       </h3>
       <p className="truncate text-xs text-muted-foreground">{leilao.especialista?.especialidade || leilao.titulo}</p>
 
       <div className="mt-3 flex items-end justify-between">
         <div>
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Lance atual</div>
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("home.currentBid")}</div>
           <div className="font-display text-xl text-gradient-gold">{formatBRL(lanceAtual)}</div>
         </div>
         <div className="text-right">
@@ -119,6 +121,7 @@ function LeilaoCard({ leilao }: { leilao: ReturnType<typeof useActiveLeiloes>[nu
 // Carrossel decorativo com especialistas fictícios, deixando claro que são só
 // ilustrativos (badge "Exemplo") — não linka para lugar nenhum.
 function FictitiousCarousel() {
+  const { t, lang } = useT();
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -126,12 +129,12 @@ function FictitiousCarousel() {
     return () => clearInterval(t);
   }, []);
 
-  const a = auctions[index];
+  const a = useLocalizedAuction(auctions[index], lang);
 
   return (
     <section className="relative overflow-hidden rounded-2xl border border-border/60 bg-surface">
       <div className="absolute right-3 top-3 z-10 rounded-full border border-gold/40 bg-background/70 px-2.5 py-1 text-[9px] uppercase tracking-widest text-gold backdrop-blur">
-        Exemplo
+        {t("home.example")}
       </div>
       <img
         src={a.photo}

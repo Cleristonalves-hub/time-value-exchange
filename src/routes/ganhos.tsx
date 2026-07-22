@@ -4,6 +4,7 @@ import { formatBRL } from "@/lib/auctions";
 import { ArrowDownToLine, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { RequireAuth } from "@/components/RequireAuth";
+import { useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/ganhos")({
   head: () => ({ meta: [{ title: "Ganhos — Valore" }] }),
@@ -26,6 +27,7 @@ function fee(gross: number) {
 }
 
 function EarningsPage() {
+  const { t } = useT();
   const [requested, setRequested] = useState(false);
   const monthGross = sessions.reduce((s, x) => s + x.gross, 0);
   const monthNet = sessions.reduce((s, x) => s + net(x.gross), 0);
@@ -35,18 +37,18 @@ function EarningsPage() {
     <RequireAuth>
     <main className="min-h-screen pb-28">
       <div className="mx-auto max-w-2xl px-5 pt-10">
-        <p className="text-[10px] uppercase tracking-[0.3em] text-gold">Junho · 2026</p>
-        <h1 className="mt-1 font-display text-3xl">Ganhos do mês</h1>
+        <p className="text-[10px] uppercase tracking-[0.3em] text-gold">{t("gn.monthYear")}</p>
+        <h1 className="mt-1 font-display text-3xl">{t("gn.title")}</h1>
 
         <section className="mt-6 rounded-2xl border border-gold/30 bg-surface p-6 shadow-gold">
           <div className="flex items-center gap-2 text-gold">
             <TrendingUp className="size-4" />
-            <p className="text-[10px] uppercase tracking-[0.3em]">Líquido a receber</p>
+            <p className="text-[10px] uppercase tracking-[0.3em]">{t("gn.netToReceive")}</p>
           </div>
           <p className="mt-2 font-display text-5xl text-gradient-gold">{formatBRL(monthNet)}</p>
           <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
-            <Stat label="Bruto" value={formatBRL(monthGross)} />
-            <Stat label="Comissão 20%" value={`− ${formatBRL(monthFee)}`} tone="text-muted-foreground" />
+            <Stat label={t("gn.gross")} value={formatBRL(monthGross)} />
+            <Stat label={t("gn.commission20")} value={`− ${formatBRL(monthFee)}`} tone="text-muted-foreground" />
           </div>
           <button
             onClick={() => setRequested(true)}
@@ -54,17 +56,15 @@ function EarningsPage() {
             className="mt-6 flex w-full items-center justify-center gap-2 rounded-md bg-gradient-gold py-3 text-sm font-semibold uppercase tracking-widest text-background disabled:opacity-60"
           >
             <ArrowDownToLine className="size-4" />
-            {requested ? "Solicitação enviada" : "Solicitar saque"}
+            {requested ? t("gn.requestSent") : t("gn.requestWithdrawal")}
           </button>
           {requested && (
-            <p className="mt-2 text-center text-[11px] text-muted-foreground">
-              Pagamento em até 2 dias úteis via PIX.
-            </p>
+            <p className="mt-2 text-center text-[11px] text-muted-foreground">{t("gn.paymentNote")}</p>
           )}
         </section>
 
         <section className="mt-8">
-          <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Histórico de sessões</h2>
+          <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("gn.history")}</h2>
           <ul className="mt-3 space-y-2">
             {sessions.map((s) => (
               <li key={s.id} className="rounded-xl border border-border/60 bg-surface p-4">
@@ -76,8 +76,8 @@ function EarningsPage() {
                   <p className="font-display text-xl text-gold">{formatBRL(net(s.gross))}</p>
                 </div>
                 <div className="mt-3 flex justify-between border-t border-border/40 pt-3 text-[11px] text-muted-foreground">
-                  <span>Bruto {formatBRL(s.gross)}</span>
-                  <span>Comissão − {formatBRL(fee(s.gross))}</span>
+                  <span>{t("gn.gross")} {formatBRL(s.gross)}</span>
+                  <span>{t("gn.commission20")} − {formatBRL(fee(s.gross))}</span>
                 </div>
               </li>
             ))}

@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { TrendingUp, Zap } from "lucide-react";
+import { useT, nicheLabel } from "@/lib/i18n";
 
+// Nomes próprios fictícios usados apenas para ilustrar o feed decorativo —
+// não mudam entre idiomas, assim como os nomes dos especialistas fictícios.
 const NAMES = [
   "Dra. Helena Vasconcellos",
   "Chef Marco Andreatta",
@@ -30,6 +33,7 @@ function fmt(v: number) {
 }
 
 export function LiveActivity() {
+  const { t } = useT();
   const [events, setEvents] = useState<Event[]>(() => Array.from({ length: 3 }, makeEvent));
   const [totalBids, setTotalBids] = useState(1247);
   const [online, setOnline] = useState(184);
@@ -56,11 +60,11 @@ export function LiveActivity() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/60 opacity-75" />
             <span className="relative inline-flex size-2 rounded-full bg-success" />
           </span>
-          <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Ao vivo</span>
+          <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">{t("liveActivity.live")}</span>
         </div>
         <div className="flex gap-4 text-[10px] uppercase tracking-widest text-muted-foreground">
-          <span><span className="text-gold font-mono">{online}</span> online</span>
-          <span><span className="text-gold font-mono">{totalBids.toLocaleString("pt-BR")}</span> lances hoje</span>
+          <span><span className="text-gold font-mono">{online}</span> {t("liveActivity.online")}</span>
+          <span><span className="text-gold font-mono">{totalBids.toLocaleString("pt-BR")}</span> {t("liveActivity.bidsToday")}</span>
         </div>
       </div>
 
@@ -76,9 +80,9 @@ export function LiveActivity() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm text-foreground">
-                Novo lance em <span className="text-gold">{e.name}</span>
+                {t("liveActivity.newBid")} <span className="text-gold">{e.name}</span>
               </p>
-              <p className="text-[11px] text-muted-foreground">{e.niche}</p>
+              <p className="text-[11px] text-muted-foreground">{nicheLabel(t, e.niche)}</p>
             </div>
             <div className="font-display text-sm text-gradient-gold">{fmt(e.value)}</div>
           </li>

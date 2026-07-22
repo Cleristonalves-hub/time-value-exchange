@@ -12,6 +12,7 @@ import {
 import { auctions, formatBRL } from "@/lib/auctions";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 import { useAuth } from "@/lib/auth";
+import { useT, nicheLabel } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — Valore" }] }),
@@ -21,11 +22,12 @@ export const Route = createFileRoute("/admin")({
 function AdminGate() {
   const { isAdmin, loading, user } = useIsAdmin();
   const { signOut } = useAuth();
+  const { t } = useT();
 
   if (loading) {
     return (
       <main className="grid min-h-screen place-items-center px-5">
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">Carregando…</p>
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">{t("ad.loading")}</p>
       </main>
     );
   }
@@ -36,15 +38,15 @@ function AdminGate() {
         <div className="w-full max-w-sm rounded-2xl border border-gold/30 bg-surface p-8 text-center shadow-gold">
           <div className="flex items-center justify-center gap-2 text-gold">
             <Lock className="size-4" />
-            <p className="text-[10px] uppercase tracking-[0.3em]">Acesso restrito</p>
+            <p className="text-[10px] uppercase tracking-[0.3em]">{t("ad.restrictedAccess")}</p>
           </div>
-          <h1 className="mt-2 font-display text-3xl">Painel Valore</h1>
-          <p className="mt-2 text-xs text-muted-foreground">Faça login para acessar o painel administrativo.</p>
+          <h1 className="mt-2 font-display text-3xl">{t("ad.panelTitle")}</h1>
+          <p className="mt-2 text-xs text-muted-foreground">{t("ad.loginToAccess")}</p>
           <Link
             to="/auth"
             className="mt-6 inline-block rounded-md bg-gradient-gold px-6 py-3 text-xs font-medium uppercase tracking-[0.2em] text-primary-foreground shadow-gold"
           >
-            Entrar
+            {t("ad.enter")}
           </Link>
         </div>
       </main>
@@ -57,17 +59,17 @@ function AdminGate() {
         <div className="w-full max-w-sm rounded-2xl border border-destructive/30 bg-surface p-8 text-center">
           <div className="flex items-center justify-center gap-2 text-destructive">
             <Lock className="size-4" />
-            <p className="text-[10px] uppercase tracking-[0.3em]">Sem permissão</p>
+            <p className="text-[10px] uppercase tracking-[0.3em]">{t("ad.noPermission")}</p>
           </div>
-          <h1 className="mt-2 font-display text-2xl">Acesso negado</h1>
+          <h1 className="mt-2 font-display text-2xl">{t("ad.accessDenied")}</h1>
           <p className="mt-2 text-xs text-muted-foreground">
-            Sua conta ({user.email}) não tem a role <code>admin</code>. Peça a um administrador para conceder acesso.
+            {t("ad.noAdminRole", { email: user.email ?? "" })}
           </p>
           <button
             onClick={() => signOut()}
             className="mt-6 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-gold"
           >
-            Sair
+            {t("ad.signOut")}
           </button>
         </div>
       </main>
@@ -81,6 +83,7 @@ function AdminGate() {
 type Tab = "especialistas" | "denuncias" | "leiloes" | "feedback";
 
 function AdminPanel({ onLogout }: { onLogout: () => void }) {
+  const { t } = useT();
   const specialists = useSpecialists();
   const reports = useReports();
   const reviews = useReviews();
@@ -88,10 +91,10 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
   const [tab, setTab] = useState<Tab>("especialistas");
 
   const tabs: { id: Tab; label: string; icon: React.ElementType; count: number }[] = [
-    { id: "especialistas", label: "Especialistas", icon: Users, count: specialists.length },
-    { id: "denuncias", label: "Denúncias", icon: Flag, count: reports.length },
-    { id: "leiloes", label: "Leilões", icon: Gavel, count: auctions.length },
-    { id: "feedback", label: "Feedback", icon: MessageSquare, count: feedbacks.length },
+    { id: "especialistas", label: t("ad.specialists"), icon: Users, count: specialists.length },
+    { id: "denuncias", label: t("ad.reports"), icon: Flag, count: reports.length },
+    { id: "leiloes", label: t("ad.auctions"), icon: Gavel, count: auctions.length },
+    { id: "feedback", label: t("ad.feedback"), icon: MessageSquare, count: feedbacks.length },
   ];
 
   return (
@@ -101,24 +104,24 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           <div>
             <div className="flex items-center gap-2 text-gold">
               <ShieldCheck className="size-4" />
-              <p className="text-[10px] uppercase tracking-[0.3em]">Painel administrativo</p>
+              <p className="text-[10px] uppercase tracking-[0.3em]">{t("ad.adminPanel")}</p>
             </div>
             <h1 className="mt-1 font-display text-3xl">Valore Admin</h1>
           </div>
-          <button onClick={onLogout} className="text-[10px] uppercase tracking-widest text-muted-foreground hover:text-gold">Sair</button>
+          <button onClick={onLogout} className="text-[10px] uppercase tracking-widest text-muted-foreground hover:text-gold">{t("ad.signOut")}</button>
         </div>
 
         <div className="mt-6 flex gap-2 overflow-x-auto border-b border-border/60 pb-2">
-          {tabs.map((t) => {
-            const active = tab === t.id;
-            const Icon = t.icon;
+          {tabs.map((tb) => {
+            const active = tab === tb.id;
+            const Icon = tb.icon;
             return (
               <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
+                key={tb.id}
+                onClick={() => setTab(tb.id)}
                 className={`flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-xs uppercase tracking-widest transition-colors ${active ? "bg-gold/10 text-gold" : "text-muted-foreground hover:text-foreground"}`}
               >
-                <Icon className="size-3.5" /> {t.label} <span className="rounded-full bg-background/60 px-1.5 text-[10px]">{t.count}</span>
+                <Icon className="size-3.5" /> {tb.label} <span className="rounded-full bg-background/60 px-1.5 text-[10px]">{tb.count}</span>
               </button>
             );
           })}
@@ -131,30 +134,36 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           {tab === "feedback" && <FeedbackTab items={feedbacks} />}
         </div>
 
-        <p className="mt-8 text-center text-[10px] text-muted-foreground">
-          Dados armazenados localmente neste navegador. Ative Lovable Cloud para persistência real e envio automático de emails para contato@valore.services.
-        </p>
+        <p className="mt-8 text-center text-[10px] text-muted-foreground">{t("ad.storageNote")}</p>
       </div>
     </main>
   );
 }
 
 function StatusBadge({ status }: { status: SpecialistStatus }) {
+  const { t } = useT();
   const map: Record<SpecialistStatus, string> = {
     novo: "border-gold/40 text-gold bg-gold/5",
     verificado: "border-success/40 text-success bg-success/5",
     suspenso: "border-destructive/40 text-destructive bg-destructive/5",
     reprovado: "border-muted-foreground/40 text-muted-foreground bg-background/40",
   };
+  const labels: Record<SpecialistStatus, string> = {
+    novo: t("pf.statusNew"),
+    verificado: t("pf.statusVerified"),
+    suspenso: t("pf.statusSuspended"),
+    reprovado: t("pf.statusRejected"),
+  };
   return (
     <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-widest ${map[status]}`}>
-      {status}
+      {labels[status]}
     </span>
   );
 }
 
 function SpecialistsTab({ items, reviews }: { items: ReturnType<typeof useSpecialists>; reviews: ReturnType<typeof useReviews> }) {
-  if (items.length === 0) return <Empty text="Nenhum especialista cadastrado ainda." />;
+  const { t } = useT();
+  if (items.length === 0) return <Empty text={t("ad.noSpecialists")} />;
   return (
     <ul className="space-y-3">
       {items.map((s) => {
@@ -167,10 +176,10 @@ function SpecialistsTab({ items, reviews }: { items: ReturnType<typeof useSpecia
                   <p className="font-display text-xl">{s.fullName}</p>
                   <StatusBadge status={s.status} />
                 </div>
-                <p className="mt-1 text-xs text-gold">{s.niche} · {s.specialty}</p>
+                <p className="mt-1 text-xs text-gold">{nicheLabel(t, s.niche)} · {s.specialty}</p>
                 <p className="mt-2 text-xs text-muted-foreground">{s.credential}</p>
                 {s.registrationNumber && (
-                  <p className="text-[11px] text-muted-foreground">Registro: {s.registrationNumber}</p>
+                  <p className="text-[11px] text-muted-foreground">{t("ad.registration")}: {s.registrationNumber}</p>
                 )}
                 <p className="text-[11px] text-muted-foreground">{s.email} · {s.city}</p>
                 {s.portfolioUrl && (
@@ -179,23 +188,23 @@ function SpecialistsTab({ items, reviews }: { items: ReturnType<typeof useSpecia
                   </a>
                 )}
                 {neg > 0 && (
-                  <p className="mt-2 text-[11px] text-destructive">{neg} avaliação(ões) negativa(s)</p>
+                  <p className="mt-2 text-[11px] text-destructive">{neg} {t("ad.negativeReviews")}</p>
                 )}
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               <ActionBtn onClick={() => setSpecialistStatus(s.id, "verificado")} kind="gold">
-                <Check className="size-3.5" /> Aprovar
+                <Check className="size-3.5" /> {t("ad.approve")}
               </ActionBtn>
               <ActionBtn onClick={() => setSpecialistStatus(s.id, "reprovado")} kind="ghost">
-                <X className="size-3.5" /> Reprovar
+                <X className="size-3.5" /> {t("ad.reject")}
               </ActionBtn>
               <ActionBtn onClick={() => setSpecialistStatus(s.id, "suspenso")} kind="danger">
-                Suspender
+                {t("ad.suspend")}
               </ActionBtn>
               {s.status === "suspenso" && (
                 <ActionBtn onClick={() => setSpecialistStatus(s.id, "verificado")} kind="ghost">
-                  Reativar
+                  {t("ad.reactivate")}
                 </ActionBtn>
               )}
             </div>
@@ -221,7 +230,8 @@ function ActionBtn({ children, onClick, kind }: { children: React.ReactNode; onC
 }
 
 function ReportsTab({ items }: { items: ReturnType<typeof useReports> }) {
-  if (items.length === 0) return <Empty text="Nenhuma denúncia até o momento." />;
+  const { t } = useT();
+  if (items.length === 0) return <Empty text={t("ad.noReports")} />;
   return (
     <ul className="space-y-3">
       {items.map((r) => (
@@ -243,6 +253,7 @@ function ReportsTab({ items }: { items: ReturnType<typeof useReports> }) {
 }
 
 function AuctionsTab() {
+  const { t } = useT();
   return (
     <ul className="space-y-2">
       {auctions.map((a) => (
@@ -253,7 +264,7 @@ function AuctionsTab() {
           </div>
           <div className="text-right">
             <p className="font-display text-lg text-gold">{formatBRL(a.currentBid)}</p>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Lance atual</p>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{t("ad.currentBid")}</p>
           </div>
         </li>
       ))}
@@ -262,15 +273,18 @@ function AuctionsTab() {
 }
 
 function FeedbackTab({ items }: { items: ReturnType<typeof useFeedbacks> }) {
-  if (items.length === 0) return <Empty text="Nenhuma sugestão ou reclamação recebida." />;
+  const { t } = useT();
+  if (items.length === 0) return <Empty text={t("ad.noFeedback")} />;
   return (
     <ul className="space-y-3">
       {items.map((f) => (
         <li key={f.id} className="rounded-xl border border-border/60 bg-surface p-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-medium">{f.name} <span className="text-xs text-muted-foreground">· {f.email || "sem email"}</span></p>
-              <p className="mt-1 text-[10px] uppercase tracking-widest text-gold">{f.kind}</p>
+              <p className="text-sm font-medium">{f.name} <span className="text-xs text-muted-foreground">· {f.email || t("ad.noEmail")}</span></p>
+              <p className="mt-1 text-[10px] uppercase tracking-widest text-gold">
+                {f.kind === "sugestao" ? t("fb.suggestion") : t("fb.complaint")}
+              </p>
               <p className="mt-2 text-sm text-foreground/80">{f.message}</p>
             </div>
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground">

@@ -771,9 +771,11 @@ export const DISCLAIMER =
 
 export const REGULATED_NICHES = ["Saúde", "Direito", "Finanças"];
 
+// Retorna a CHAVE de tradução (não o texto), pois este arquivo não tem acesso
+// ao idioma ativo — quem chama deve passar o retorno por t().
 export function registrationLabel(niche: string): string | null {
-  if (niche === "Saúde") return "Número do CRM";
-  if (niche === "Direito") return "Número da OAB";
-  if (niche === "Finanças") return "Registro CFA / CVM";
+  if (niche === "Saúde") return "reg.crm";
+  if (niche === "Direito") return "reg.oab";
+  if (niche === "Finanças") return "reg.cfa";
   return null;
 }

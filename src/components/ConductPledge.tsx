@@ -1,4 +1,5 @@
 import { Check, ShieldAlert } from "lucide-react";
+import { useT } from "@/lib/i18n";
 
 export function ConductPledge({
   accepted,
@@ -9,26 +10,23 @@ export function ConductPledge({
   onToggle: () => void;
   error?: boolean;
 }) {
+  const { t } = useT();
   return (
     <div className={`rounded-xl border bg-surface p-5 ${error ? "border-destructive" : "border-gold/30"}`}>
       <div className="flex items-center gap-2 text-gold">
         <ShieldAlert className="size-4" />
-        <span className="text-[10px] uppercase tracking-[0.3em]">Código de Conduta Valore</span>
+        <span className="text-[10px] uppercase tracking-[0.3em]">{t("cp.title")}</span>
       </div>
       <p className="mt-3 font-display text-xl leading-snug text-foreground">
-        "Seja cordial ou seja cancelado.<br />
-        <span className="italic text-gradient-gold">A escolha é sua.</span>"
+        "{t("cp.quote1")}<br />
+        <span className="italic text-gradient-gold">{t("cp.quote2")}</span>"
       </p>
-      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-        Má conduta, ausência sem aviso, inadimplência, comportamento ofensivo ou
-        qualquer desrespeito resulta em <span className="text-foreground">banimento permanente</span>{" "}
-        da plataforma. Sem exceções.
-      </p>
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{t("cp.body")}</p>
 
       <ul className="mt-4 space-y-2 text-[11px] text-muted-foreground">
-        <Tier n={1} label="1ª denúncia" effect="Advertência pública no perfil" />
-        <Tier n={2} label="2ª denúncia" effect="Suspensão temporária da conta" />
-        <Tier n={3} label="3ª denúncia" effect="Banimento permanente da Valore" />
+        <Tier n={1} label={t("cp.tier1Label")} effect={t("cp.tier1Effect")} />
+        <Tier n={2} label={t("cp.tier2Label")} effect={t("cp.tier2Effect")} />
+        <Tier n={3} label={t("cp.tier3Label")} effect={t("cp.tier3Effect")} />
       </ul>
 
       <label className="mt-5 flex cursor-pointer items-start gap-3">
@@ -42,9 +40,7 @@ export function ConductPledge({
         >
           {accepted && <Check className="size-3 text-primary-foreground" />}
         </button>
-        <span className="text-xs leading-relaxed text-foreground/80">
-          Li, compreendi e me comprometo com o Código de Conduta Valore.
-        </span>
+        <span className="text-xs leading-relaxed text-foreground/80">{t("cp.accept")}</span>
       </label>
     </div>
   );
@@ -65,17 +61,18 @@ function Tier({ n, label, effect }: { n: number; label: string; effect: string }
 export type WarningTier = 0 | 1 | 2 | 3;
 
 export function WarningBadge({ tier }: { tier: WarningTier }) {
+  const { t } = useT();
   if (tier === 0) {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full border border-success/40 bg-success/10 px-3 py-1 text-[10px] uppercase tracking-widest text-success">
-        <ShieldAlert className="size-3" /> Reputação intacta
+        <ShieldAlert className="size-3" /> {t("cp.reputationIntact")}
       </span>
     );
   }
   const map = {
-    1: { label: "1 advertência", cls: "border-gold/40 bg-gold/10 text-gold" },
-    2: { label: "Suspenso", cls: "border-warning/40 bg-warning/10 text-warning" },
-    3: { label: "Banido", cls: "border-destructive/40 bg-destructive/10 text-destructive" },
+    1: { label: t("cp.oneWarning"), cls: "border-gold/40 bg-gold/10 text-gold" },
+    2: { label: t("cp.suspended"), cls: "border-warning/40 bg-warning/10 text-warning" },
+    3: { label: t("cp.banned"), cls: "border-destructive/40 bg-destructive/10 text-destructive" },
   }[tier];
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] uppercase tracking-widest ${map.cls}`}>

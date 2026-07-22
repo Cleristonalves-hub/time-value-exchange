@@ -6,6 +6,7 @@ import { ShieldAlert, Camera, LogOut, Trash2, AlertTriangle } from "lucide-react
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadAvatar, updateUserAvatar, deleteMyAccount, useMySpecialist, useRejectionReasons } from "@/lib/store";
+import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -25,9 +26,9 @@ export const Route = createFileRoute("/perfil")({
   component: ProfilePage,
 });
 
-const CRITERIO_LABELS: Record<string, string> = {
-  link: "LinkedIn não acessível",
-  registro_profissional: "Registro profissional não confirmado",
+const CRITERIO_KEYS: Record<string, string> = {
+  link: "pf.criterioLink",
+  registro_profissional: "pf.criterioRegistro",
 };
 
 function formatDateBR(dateOnly: string): string {
@@ -37,6 +38,7 @@ function formatDateBR(dateOnly: string): string {
 
 function ProfilePage() {
   const { user, signOut } = useAuth();
+  const { t } = useT();
   const navigate = useNavigate();
   const tier: 0 | 1 | 2 | 3 = 0;
   const [nome, setNome] = useState<string>("");
@@ -73,9 +75,9 @@ function ProfilePage() {
     if (url) {
       await updateUserAvatar(user.id, url);
       setAvatar(url);
-      toast.success("Foto atualizada.");
+      toast.success(t("pf.photoUpdated"));
     } else {
-      toast.error("Não foi possível enviar a foto.");
+      toast.error(t("pf.photoError"));
     }
     setBusy(false);
   }
@@ -86,10 +88,10 @@ function ProfilePage() {
     const ok = await deleteMyAccount(user.id);
     setBusy(false);
     if (ok) {
-      toast.success("Conta removida.");
+      toast.success(t("pf.accountRemoved"));
       navigate({ to: "/" });
     } else {
-      toast.error("Erro ao remover conta.");
+      toast.error(t("pf.accountRemoveError"));
     }
   }
 
@@ -97,11 +99,11 @@ function ProfilePage() {
     return (
       <main className="min-h-screen pb-24">
         <div className="mx-auto max-w-2xl px-5 pt-10">
-          <h1 className="font-display text-3xl">Perfil</h1>
+          <h1 className="font-display text-3xl">{t("pf.title")}</h1>
           <div className="mt-6 rounded-2xl border border-gold/30 bg-surface p-6 text-center">
             <div className="mx-auto h-20 w-20 rounded-full bg-gradient-gold" />
-            <p className="mt-4 font-display text-xl">Convidado</p>
-            <p className="text-xs text-muted-foreground">Crie sua conta para participar dos leilões.</p>
+            <p className="mt-4 font-display text-xl">{t("pf.guest")}</p>
+            <p className="text-xs text-muted-foreground">{t("pf.guestMsg")}</p>
             <div className="mt-4 flex justify-center">
               <WarningBadge tier={tier} />
             </div>
@@ -109,7 +111,7 @@ function ProfilePage() {
               to="/auth"
               className="mt-6 inline-block rounded-md border border-gold/40 px-6 py-2 text-xs uppercase tracking-widest text-gold hover:bg-gold/5"
             >
-              Entrar ou criar conta
+              {t("pf.loginOrCreate")}
             </Link>
           </div>
         </div>
@@ -121,7 +123,7 @@ function ProfilePage() {
   return (
     <main className="min-h-screen pb-24">
       <div className="mx-auto max-w-2xl px-5 pt-10">
-        <h1 className="font-display text-3xl">Perfil</h1>
+        <h1 className="font-display text-3xl">{t("pf.title")}</h1>
 
         <div className="mt-6 rounded-2xl border border-gold/30 bg-surface p-6 text-center">
           <div className="relative mx-auto h-24 w-24">
@@ -146,16 +148,23 @@ function ProfilePage() {
           <div className="mt-6 rounded-2xl border border-gold/30 bg-surface p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Cadastro de especialista</h2>
+                <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("pf.specialistRegistration")}</h2>
                 <p className="mt-1 text-sm text-foreground">
-                  Status: <span className="text-gold">{especialista.status === "verificado" ? "Verificado" : especialista.status === "suspenso" ? "Suspenso" : "Novo"}</span>
+                  {t("pf.status")}:{" "}
+                  <span className="text-gold">
+                    {especialista.status === "verificado"
+                      ? t("pf.statusVerified")
+                      : especialista.status === "suspenso"
+                        ? t("pf.statusSuspended")
+                        : t("pf.statusNew")}
+                  </span>
                 </p>
               </div>
               <button
                 onClick={() => navigate({ to: "/cadastro/especialista" })}
                 className="shrink-0 rounded-md border border-gold/40 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-gold hover:bg-gold/5"
               >
-                Editar perfil
+                {t("pf.editProfile")}
               </button>
             </div>
             {(especialista.status === "novo" || especialista.status === "verificado") && (
@@ -163,7 +172,7 @@ function ProfilePage() {
                 onClick={() => navigate({ to: "/criar-leilao" })}
                 className="mt-3 w-full rounded-md bg-gradient-gold py-2 text-xs font-semibold uppercase tracking-widest text-primary-foreground shadow-gold hover:opacity-90"
               >
-                Criar leilão
+                {t("pf.createAuction")}
               </button>
             )}
           </div>
@@ -174,24 +183,22 @@ function ProfilePage() {
             <div className="flex items-center gap-2 text-warning">
               <AlertTriangle className="size-4" />
               <h2 className="text-[10px] uppercase tracking-[0.3em]">
-                {suspensaoAtiva ? "Conta suspensa" : 'Badge "Cancelamento recente"'}
+                {suspensaoAtiva ? t("pf.suspendedAccount") : t("pf.recentCancellationBadge")}
               </h2>
             </div>
             <p className="mt-3 text-sm text-foreground">
-              {especialista.motivoPenalidade || "Penalidade aplicada ao seu perfil."}
+              {especialista.motivoPenalidade || t("pf.defaultPenalty")}
             </p>
             <p className="mt-2 text-xs text-muted-foreground">
-              {suspensaoAtiva
-                ? "Sua conta está suspensa por 30 dias."
-                : "Seu perfil ficará com este badge por 7 dias."}
+              {suspensaoAtiva ? t("pf.suspended30") : t("pf.badge7")}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {suspensaoAtiva
-                ? `Suspensão encerra em ${formatDateBR(especialista.suspensoAte!)}`
-                : `Badge encerra em ${formatDateBR(especialista.badgeCancelamentoAte!)}`}
+                ? t("pf.suspensionEnds", { date: formatDateBR(especialista.suspensoAte!) })
+                : t("pf.badgeEnds", { date: formatDateBR(especialista.badgeCancelamentoAte!) })}
             </p>
             <p className="mt-3 text-[11px] text-muted-foreground">
-              Se acredita que houve um erro, entre em contato:{" "}
+              {t("pf.contactIfError")}{" "}
               <a href="mailto:contato@valore.services" className="text-gold underline-offset-4 hover:underline">
                 contato@valore.services
               </a>
@@ -203,48 +210,44 @@ function ProfilePage() {
           <div className="mt-6 rounded-2xl border border-destructive/40 bg-destructive/10 p-5">
             <div className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="size-4" />
-              <h2 className="text-[10px] uppercase tracking-[0.3em]">Cadastro reprovado</h2>
+              <h2 className="text-[10px] uppercase tracking-[0.3em]">{t("pf.rejectedTitle")}</h2>
             </div>
             <p className="mt-3 text-sm text-destructive">
               {motivos.length > 0
-                ? motivos.map((m) => CRITERIO_LABELS[m.criterio] ?? m.detalhe).join(" e ")
-                : "Não foi possível confirmar suas credenciais na verificação automática."}
+                ? motivos.map((m) => (CRITERIO_KEYS[m.criterio] ? t(CRITERIO_KEYS[m.criterio]) : m.detalhe)).join(" e ")
+                : t("pf.rejectedDefault")}
             </p>
-            <p className="mt-2 text-xs text-destructive/80">
-              Corrija as informações abaixo e reenvie para uma nova análise.
-            </p>
+            <p className="mt-2 text-xs text-destructive/80">{t("pf.rejectedFix")}</p>
             <button
               onClick={() => navigate({ to: "/cadastro/especialista" })}
               className="mt-4 w-full rounded-md border border-destructive/50 bg-destructive/10 py-2 text-xs font-semibold uppercase tracking-widest text-destructive hover:bg-destructive/20"
             >
-              Atualizar informações
+              {t("pf.updateInfo")}
             </button>
           </div>
         )}
 
         <section className="mt-6 space-y-3">
-          <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Configurações</h2>
+          <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("pf.settings")}</h2>
           <Button variant="outline" className="w-full justify-start" onClick={async () => { await signOut(); navigate({ to: "/" }); }}>
-            <LogOut className="mr-2 size-4" /> Sair da conta
+            <LogOut className="mr-2 size-4" /> {t("pf.signOut")}
           </Button>
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" className="w-full justify-start border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive">
-                <Trash2 className="mr-2 size-4" /> Deletar minha conta
+                <Trash2 className="mr-2 size-4" /> {t("pf.deleteAccount")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Deletar conta?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta ação é permanente. Seus dados de perfil e cadastro como especialista serão removidos.
-                </AlertDialogDescription>
+                <AlertDialogTitle>{t("pf.deleteConfirmTitle")}</AlertDialogTitle>
+                <AlertDialogDescription>{t("pf.deleteConfirmMsg")}</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogCancel>{t("pf.deleteCancel")}</AlertDialogCancel>
                 <AlertDialogAction onClick={onDelete} disabled={busy} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  Deletar
+                  {t("pf.deleteConfirm")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -254,17 +257,17 @@ function ProfilePage() {
         <section className="mt-8 rounded-2xl border border-border/60 bg-surface p-6">
           <div className="flex items-center gap-2 text-gold">
             <ShieldAlert className="size-4" />
-            <h2 className="text-[10px] uppercase tracking-[0.3em]">Sistema de reputação</h2>
+            <h2 className="text-[10px] uppercase tracking-[0.3em]">{t("pf.reputationSystem")}</h2>
           </div>
           <p className="mt-3 font-display text-xl leading-snug">
-            Seja cordial ou seja cancelado.<br />
-            <span className="italic text-gradient-gold">A escolha é sua.</span>
+            {t("pf.reputationQuote1")}<br />
+            <span className="italic text-gradient-gold">{t("pf.reputationQuote2")}</span>
           </p>
 
           <ul className="mt-5 space-y-3 text-sm">
-            <Step n={1} tone="border-gold/40 text-gold" title="Advertência" desc="Aviso público no seu perfil, visível a todos." />
-            <Step n={2} tone="border-warning/40 text-warning" title="Suspensão temporária" desc="Sua conta é congelada e leilões são pausados." />
-            <Step n={3} tone="border-destructive/40 text-destructive" title="Banimento permanente" desc="Perfil removido e impedido de retornar à plataforma." />
+            <Step n={1} tone="border-gold/40 text-gold" title={t("pf.warnTitle")} desc={t("pf.warnDesc")} />
+            <Step n={2} tone="border-warning/40 text-warning" title={t("pf.suspTitle")} desc={t("pf.suspDesc")} />
+            <Step n={3} tone="border-destructive/40 text-destructive" title={t("pf.banTitle")} desc={t("pf.banDesc")} />
           </ul>
         </section>
       </div>

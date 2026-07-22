@@ -5,6 +5,7 @@ import { ValoreLogo } from "@/components/ValoreLogo";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useT } from "@/lib/i18n";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/redefinir-senha")({
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/redefinir-senha")({
 
 function ResetPasswordPage() {
   const navigate = useNavigate();
+  const { t } = useT();
   const [checking, setChecking] = useState(true);
   const [ready, setReady] = useState(false);
   const [password, setPassword] = useState("");
@@ -50,7 +52,7 @@ function ResetPasswordPage() {
       }
       setDone(true);
     } catch {
-      toast.error("Não foi possível redefinir a senha. Tente novamente em instantes.");
+      toast.error(t("resetPw.genericError"));
     } finally {
       setSubmitting(false);
     }
@@ -64,15 +66,13 @@ function ResetPasswordPage() {
         <div className="flex size-14 items-center justify-center rounded-full border border-gold bg-gold/10 text-gold">
           <Check className="size-6" />
         </div>
-        <h1 className="mt-6 font-display text-3xl text-foreground">Senha redefinida</h1>
-        <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-          Sua senha foi atualizada com sucesso. Você já pode entrar com a nova senha.
-        </p>
+        <h1 className="mt-6 font-display text-3xl text-foreground">{t("resetPw.doneTitle")}</h1>
+        <p className="mt-3 max-w-sm text-sm text-muted-foreground">{t("resetPw.doneMsg")}</p>
         <Button
           onClick={() => navigate({ to: "/auth", search: { tab: "signin" } })}
           className="mt-8 w-full max-w-xs"
         >
-          Ir para o login
+          {t("resetPw.goToLogin")}
         </Button>
       </main>
     );
@@ -81,16 +81,14 @@ function ResetPasswordPage() {
   if (!ready) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
-        <h1 className="font-display text-2xl text-foreground">Link inválido ou expirado</h1>
-        <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-          Solicite um novo link de redefinição de senha na tela de login.
-        </p>
+        <h1 className="font-display text-2xl text-foreground">{t("resetPw.invalidTitle")}</h1>
+        <p className="mt-3 max-w-sm text-sm text-muted-foreground">{t("resetPw.invalidMsg")}</p>
         <Link
           to="/auth"
           search={{ tab: "signin" }}
           className="mt-8 rounded-md border border-gold/40 px-8 py-3 text-xs uppercase tracking-[0.2em] text-gold hover:bg-gold/5"
         >
-          Voltar para o login
+          {t("resetPw.invalidCta")}
         </Link>
       </main>
     );
@@ -102,30 +100,30 @@ function ResetPasswordPage() {
         <div className="flex justify-center">
           <ValoreLogo className="text-2xl" />
         </div>
-        <h1 className="mt-8 text-center font-display text-3xl text-foreground">Nova senha</h1>
-        <p className="mt-2 text-center text-sm text-muted-foreground">Escolha uma nova senha para sua conta.</p>
+        <h1 className="mt-8 text-center font-display text-3xl text-foreground">{t("resetPw.title")}</h1>
+        <p className="mt-2 text-center text-sm text-muted-foreground">{t("resetPw.subtitle")}</p>
 
         <form onSubmit={onSubmit} className="mt-8 space-y-4">
           <div>
-            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-muted-foreground">Nova senha</label>
+            <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("resetPw.newPassword")}</label>
             <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mínimo 6 caracteres"
+              placeholder={t("resetPw.minLenPlaceholder")}
             />
           </div>
           <div>
             <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              Confirmar nova senha
+              {t("resetPw.confirmPassword")}
             </label>
             <PasswordInput
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Repita a nova senha"
+              placeholder={t("resetPw.repeatPlaceholder")}
               className={confirmPassword && password !== confirmPassword ? "border-destructive" : undefined}
             />
             {confirmPassword && password !== confirmPassword && (
-              <p className="mt-1 text-[11px] text-destructive">As senhas não coincidem.</p>
+              <p className="mt-1 text-[11px] text-destructive">{t("resetPw.mismatch")}</p>
             )}
           </div>
           <Button
@@ -133,7 +131,7 @@ function ResetPasswordPage() {
             disabled={!ok || submitting}
             className="w-full bg-gradient-gold text-primary-foreground disabled:opacity-30"
           >
-            {submitting ? "Salvando…" : "Redefinir senha"}
+            {submitting ? t("resetPw.saving") : t("resetPw.submit")}
           </Button>
         </form>
       </div>

@@ -6,6 +6,7 @@ import { niches } from "@/lib/auctions";
 import { useSpecialists, type Specialist } from "@/lib/store";
 import { Disclaimer } from "@/components/Disclaimer";
 import { RequireAuth } from "@/components/RequireAuth";
+import { useT, nicheLabel } from "@/lib/i18n";
 
 export const Route = createFileRoute("/explorar")({
   head: () => ({ meta: [{ title: "Explorar — Valore" }] }),
@@ -13,6 +14,7 @@ export const Route = createFileRoute("/explorar")({
 });
 
 function ExplorePage() {
+  const { t } = useT();
   const specialists = useSpecialists();
   const [query, setQuery] = useState("");
   const [niche, setNiche] = useState("Todos");
@@ -37,15 +39,15 @@ function ExplorePage() {
     <RequireAuth>
     <main className="min-h-screen pb-24">
       <div className="mx-auto max-w-2xl px-5 pt-10">
-        <h1 className="font-display text-3xl">Explorar</h1>
-        <p className="text-sm text-muted-foreground">Curadoria Valore — especialistas em destaque.</p>
+        <h1 className="font-display text-3xl">{t("ex.title")}</h1>
+        <p className="text-sm text-muted-foreground">{t("ex.subtitle")}</p>
 
         <div className="mt-6 flex items-center gap-2 rounded-xl border border-border/60 bg-surface px-4 py-3 focus-within:border-gold">
           <Search className="size-4 text-muted-foreground" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar por nome ou nicho…"
+            placeholder={t("ex.searchPlaceholder")}
             className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
         </div>
@@ -59,21 +61,21 @@ function ExplorePage() {
                 onClick={() => setNiche(n)}
                 className={`whitespace-nowrap rounded-full border px-3 py-1 text-[11px] uppercase tracking-widest transition-colors ${active ? "border-gold bg-gold/10 text-gold" : "border-border text-muted-foreground hover:border-gold/40"}`}
               >
-                {n}
+                {nicheLabel(t, n)}
               </button>
             );
           })}
         </div>
 
         <section className="mt-6">
-          <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Especialistas</h2>
+          <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("ex.specialists")}</h2>
           {availableSpecialists.length === 0 ? (
             <p className="mt-3 rounded-xl border border-border/60 bg-surface p-6 text-center text-sm text-muted-foreground">
-              Nenhum especialista disponível no momento.
+              {t("ex.emptyNone")}
             </p>
           ) : filteredSpecialists.length === 0 ? (
             <p className="mt-3 rounded-xl border border-border/60 bg-surface p-6 text-center text-sm text-muted-foreground">
-              Nenhum especialista encontrado.
+              {t("ex.emptyFiltered")}
             </p>
           ) : (
             <ul className="mt-3 space-y-2">
@@ -90,6 +92,7 @@ function ExplorePage() {
 }
 
 function SpecialistCard({ s }: { s: Specialist }) {
+  const { t } = useT();
   const verified = s.status === "verificado";
   return (
     <li className="rounded-xl border border-border/60 bg-surface p-4">
@@ -104,19 +107,18 @@ function SpecialistCard({ s }: { s: Specialist }) {
             <h3 className="font-display text-lg leading-tight">{s.fullName}</h3>
             {verified ? (
               <span className="inline-flex items-center gap-1 rounded-full border border-success/40 bg-success/5 px-2 py-0.5 text-[10px] uppercase tracking-widest text-success">
-                <BadgeCheck className="size-3" /> Verificado
+                <BadgeCheck className="size-3" /> {t("ex.verified")}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold/5 px-2 py-0.5 text-[10px] uppercase tracking-widest text-gold">
-                <Sparkles className="size-3" /> Novo
+                <Sparkles className="size-3" /> {t("ex.new")}
               </span>
             )}
           </div>
-          <p className="mt-1 text-xs text-gold">{s.niche} · {s.specialty}</p>
+          <p className="mt-1 text-xs text-gold">{nicheLabel(t, s.niche)} · {s.specialty}</p>
           <p className="mt-1 truncate text-[11px] text-muted-foreground">{s.credential}</p>
         </div>
       </div>
     </li>
   );
 }
-

@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { useMySpecialist, createLeilao } from "@/lib/store";
+import { useT, nicheLabel } from "@/lib/i18n";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/criar-leilao")({
@@ -22,6 +23,7 @@ const FIELD_ORDER: FieldKey[] = ["titulo", "lanceMinimo", "dataInicio", "dataFim
 
 function CriarLeilaoPage() {
   const { user, loading } = useAuth();
+  const { t } = useT();
   const navigate = useNavigate();
   const especialista = useMySpecialist(user?.id, user?.email ?? undefined);
 
@@ -53,13 +55,13 @@ function CriarLeilaoPage() {
 
   function validate(): Partial<Record<FieldKey, string>> {
     const errs: Partial<Record<FieldKey, string>> = {};
-    if (!titulo.trim()) errs.titulo = "Campo obrigatório.";
-    if (!(Number(lanceMinimo) > 0)) errs.lanceMinimo = "Informe um valor mínimo maior que zero.";
-    if (!dataInicio) errs.dataInicio = "Campo obrigatório.";
+    if (!titulo.trim()) errs.titulo = t("cl.required");
+    if (!(Number(lanceMinimo) > 0)) errs.lanceMinimo = t("cl.minBidRequired");
+    if (!dataInicio) errs.dataInicio = t("cl.required");
     if (!dataFim) {
-      errs.dataFim = "Campo obrigatório.";
+      errs.dataFim = t("cl.required");
     } else if (dataInicio && new Date(dataFim).getTime() <= new Date(dataInicio).getTime()) {
-      errs.dataFim = "O encerramento precisa ser depois do início.";
+      errs.dataFim = t("cl.endDateBeforeStart");
     }
     return errs;
   }
@@ -90,10 +92,10 @@ function CriarLeilaoPage() {
     });
     setSubmitting(false);
     if (created) {
-      toast.success("Leilão publicado.");
+      toast.success(t("cl.published"));
       navigate({ to: "/perfil" });
     } else {
-      toast.error("Não foi possível publicar o leilão.");
+      toast.error(t("cl.publishError"));
     }
   }
 
@@ -102,9 +104,9 @@ function CriarLeilaoPage() {
   if (!user) {
     return (
       <GuardScreen
-        title="Entre na sua conta"
-        message="Você precisa estar logado como especialista para criar um leilão."
-        ctaLabel="Entrar ou criar conta"
+        title={t("cl.guardLoginTitle")}
+        message={t("cl.guardLoginMsg")}
+        ctaLabel={t("cl.guardLoginCta")}
         ctaTo="/auth"
       />
     );
@@ -113,9 +115,9 @@ function CriarLeilaoPage() {
   if (!especialista) {
     return (
       <GuardScreen
-        title="Cadastro necessário"
-        message="Você ainda não tem um cadastro de especialista. Cadastre-se para poder criar leilões."
-        ctaLabel="Cadastrar-se como especialista"
+        title={t("cl.guardProfileTitle")}
+        message={t("cl.guardProfileMsg")}
+        ctaLabel={t("cl.guardProfileCta")}
         ctaTo="/cadastro/especialista"
       />
     );
@@ -124,15 +126,15 @@ function CriarLeilaoPage() {
   if (!podeCriar) {
     return (
       <GuardScreen
-        title="Cadastro não aprovado"
-        message="Seu cadastro precisa estar com status Novo ou Verificado para criar leilões. Revise suas informações no seu perfil."
-        ctaLabel="Ver meu perfil"
+        title={t("cl.guardApprovalTitle")}
+        message={t("cl.guardApprovalMsg")}
+        ctaLabel={t("cl.guardApprovalCta")}
         ctaTo="/perfil"
       />
     );
   }
 
-  const areaAtuacao = [especialista.niche, especialista.specialty].filter(Boolean).join(" — ");
+  const areaAtuacao = [nicheLabel(t, especialista.niche), especialista.specialty].filter(Boolean).join(" — ");
 
   return (
     <main className="min-h-screen px-6 pb-24 pt-10">
@@ -146,17 +148,15 @@ function CriarLeilaoPage() {
         </div>
 
         <div className="mt-8 rounded-md border border-gold/30 bg-gold/5 p-4">
-          <p className="text-sm text-foreground/90">
-            Bem-vindo à Valore! Crie seu primeiro leilão e comece a receber clientes.
-          </p>
+          <p className="text-sm text-foreground/90">{t("cl.welcome")}</p>
         </div>
 
-        <h1 className="mt-6 font-display text-4xl text-foreground">Criar leilão.</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Publique uma nova sessão para receber lances.</p>
+        <h1 className="mt-6 font-display text-4xl text-foreground">{t("cl.title")}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{t("cl.subtitle")}</p>
 
         <form onSubmit={onSubmit} noValidate className="mt-8 space-y-5">
           <Field
-            label="Título do leilão"
+            label={t("cl.titleField")}
             required
             error={fieldErrors.titulo}
             fieldRef={(el) => { fieldRefs.current.titulo = el; }}
@@ -167,32 +167,32 @@ function CriarLeilaoPage() {
                 setTitulo(e.target.value);
                 clearFieldError("titulo");
               }}
-              placeholder="Ex: Consultoria financeira - 1 hora"
+              placeholder={t("cl.titlePlaceholder")}
               className={fieldErrors.titulo ? "border-destructive focus-visible:ring-destructive" : undefined}
             />
           </Field>
 
-          <Field label="Descrição">
+          <Field label={t("cl.description")}>
             <Textarea
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
-              placeholder="O que está incluso na sessão, formato, pré-requisitos…"
+              placeholder={t("cl.descriptionPlaceholder")}
               className="min-h-[110px]"
             />
           </Field>
 
-          <Field label="Área de atuação">
+          <Field label={t("cl.areaOfExpertise")}>
             <Input value={areaAtuacao || "—"} disabled className="text-muted-foreground" />
             <p className="mt-1 text-[11px] text-muted-foreground">
-              Definida no seu cadastro de especialista.{" "}
+              {t("cl.areaDefinedNote")}{" "}
               <Link to="/cadastro/especialista" className="text-gold underline-offset-4 hover:underline">
-                Editar perfil
+                {t("cl.editProfile")}
               </Link>
             </p>
           </Field>
 
           <Field
-            label="Valor mínimo do lance (R$)"
+            label={t("cl.minBid")}
             required
             error={fieldErrors.lanceMinimo}
             fieldRef={(el) => { fieldRefs.current.lanceMinimo = el; }}
@@ -211,7 +211,7 @@ function CriarLeilaoPage() {
           </Field>
 
           <Field
-            label="Data e hora de início"
+            label={t("cl.startDate")}
             required
             error={fieldErrors.dataInicio}
             fieldRef={(el) => { fieldRefs.current.dataInicio = el; }}
@@ -228,7 +228,7 @@ function CriarLeilaoPage() {
           </Field>
 
           <Field
-            label="Data e hora de encerramento"
+            label={t("cl.endDate")}
             required
             error={fieldErrors.dataFim}
             fieldRef={(el) => { fieldRefs.current.dataFim = el; }}
@@ -244,12 +244,12 @@ function CriarLeilaoPage() {
             />
           </Field>
 
-          <Field label="Plataforma de videochamada">
+          <Field label={t("cl.platform")}>
             <Input value={especialista.platform || "—"} disabled className="text-muted-foreground" />
             <p className="mt-1 text-[11px] text-muted-foreground">
-              Definida no seu cadastro de especialista.{" "}
+              {t("cl.areaDefinedNote")}{" "}
               <Link to="/cadastro/especialista" className="text-gold underline-offset-4 hover:underline">
-                Editar perfil
+                {t("cl.editProfile")}
               </Link>
             </p>
           </Field>
@@ -259,7 +259,7 @@ function CriarLeilaoPage() {
             disabled={submitting}
             className="w-full bg-gradient-gold py-6 text-sm font-medium uppercase tracking-[0.2em] text-primary-foreground shadow-gold disabled:opacity-30"
           >
-            {submitting ? "Publicando…" : "Publicar leilão"}
+            {submitting ? t("cl.submitting") : t("cl.submit")}
           </Button>
         </form>
       </div>

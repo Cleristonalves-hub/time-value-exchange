@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { ValoreLogo, ValoreMark } from "@/components/ValoreLogo";
-import { LanguageSelector } from "@/components/LanguageSelector";
 import { useT } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 
@@ -43,10 +42,6 @@ function Splash() {
       {/* ambient glow */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute left-1/2 top-1/3 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold/10 blur-[120px]" />
-      </div>
-
-      <div className="absolute right-5 top-5 z-10">
-        <LanguageSelector variant="bordered" />
       </div>
 
       <div className="flex w-full justify-center pt-8">

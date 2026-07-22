@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const { signIn, signUp, resendConfirmation, resetPasswordForEmail } = useAuth();
+  const { t } = useT();
   const navigate = useNavigate();
   const { tab } = Route.useSearch();
   const [busy, setBusy] = useState(false);
@@ -60,10 +62,10 @@ function AuthPage() {
         toast.error(error);
         return;
       }
-      toast.success("Bem-vindo(a) de volta.");
+      toast.success(t("auth.welcomeBack"));
       navigate({ to: "/home" });
     } catch {
-      toast.error("Não foi possível entrar. Tente novamente em instantes.");
+      toast.error(t("auth.signInError"));
     } finally {
       setBusy(false);
     }
@@ -73,9 +75,9 @@ function AuthPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      const { error, needsEmailConfirmation } = await signUp(suEmail, suPass, suNome);
+      const { error, needsEmailConfirmation, emailExists } = await signUp(suEmail, suPass, suNome);
       if (error) {
-        toast.error(error);
+        toast.error(emailExists ? t("common.emailAlreadyRegistered") : error);
         return;
       }
       if (needsEmailConfirmation) {
@@ -83,10 +85,10 @@ function AuthPage() {
         setPendingEmail(suEmail);
         return; // ainda não há sessão — não navega para /home
       }
-      toast.success("Conta criada.");
+      toast.success(t("auth.accountCreated"));
       navigate({ to: "/home" });
     } catch {
-      toast.error("Não foi possível criar a conta. Tente novamente em instantes.");
+      toast.error(t("auth.signUpError"));
     } finally {
       setBusy(false);
     }
@@ -103,7 +105,7 @@ function AuthPage() {
       }
       setForgotSent(true);
     } catch {
-      toast.error("Não foi possível enviar o link. Tente novamente em instantes.");
+      toast.error(t("auth.resetError"));
     } finally {
       setForgotBusy(false);
     }
@@ -115,9 +117,9 @@ function AuthPage() {
     try {
       const { error } = await resendConfirmation(pendingEmail);
       if (error) toast.error(error);
-      else toast.success("E-mail de confirmação reenviado.");
+      else toast.success(t("auth.resendSuccess"));
     } catch {
-      toast.error("Não foi possível reenviar o e-mail. Tente novamente em instantes.");
+      toast.error(t("auth.resendError"));
     } finally {
       setResending(false);
     }
@@ -132,10 +134,9 @@ function AuthPage() {
               <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-gold/10 text-gold">
                 <Mail className="size-6" />
               </div>
-              <h1 className="mt-4 text-xl font-semibold">Verifique seu email</h1>
+              <h1 className="mt-4 text-xl font-semibold">{t("auth.resetCheckEmailTitle")}</h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                Enviamos um link de redefinição de senha para{" "}
-                <strong className="text-foreground">{forgotEmail}</strong>.
+                {t("auth.resetCheckEmailMsg")} <strong className="text-foreground">{forgotEmail}</strong>.
               </p>
               <button
                 onClick={() => {
@@ -144,19 +145,17 @@ function AuthPage() {
                 }}
                 className="mt-6 text-xs text-muted-foreground underline-offset-4 hover:underline"
               >
-                Voltar para o login
+                {t("auth.backToLogin")}
               </button>
             </div>
           ) : (
             <form onSubmit={onForgotPassword} className="space-y-4">
               <div className="text-center">
-                <h1 className="text-xl font-semibold">Redefinir senha</h1>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Informe seu e-mail para receber o link de redefinição.
-                </p>
+                <h1 className="text-xl font-semibold">{t("auth.resetTitle")}</h1>
+                <p className="mt-2 text-sm text-muted-foreground">{t("auth.resetSubtitle")}</p>
               </div>
               <div className="space-y-1">
-                <Label htmlFor="forgot-email">E-mail</Label>
+                <Label htmlFor="forgot-email">{t("auth.email")}</Label>
                 <Input
                   id="forgot-email"
                   type="email"
@@ -167,14 +166,14 @@ function AuthPage() {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={forgotBusy || !forgotEmail}>
-                {forgotBusy ? "Enviando…" : "Enviar link de redefinição"}
+                {forgotBusy ? t("auth.resending") : t("auth.resetSend")}
               </Button>
               <button
                 type="button"
                 onClick={() => setShowForgotPassword(false)}
                 className="block w-full text-center text-xs text-muted-foreground underline-offset-4 hover:underline"
               >
-                Voltar
+                {t("auth.back")}
               </button>
             </form>
           )}
@@ -190,22 +189,20 @@ function AuthPage() {
           <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-gold/10 text-gold">
             <Mail className="size-6" />
           </div>
-          <h1 className="mt-4 text-xl font-semibold">Confirme seu email</h1>
+          <h1 className="mt-4 text-xl font-semibold">{t("auth.confirmEmailTitle")}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {pendingReason === "signup"
-              ? "Verifique seu email para confirmar o cadastro."
-              : "Confirme seu email para continuar."}
+            {pendingReason === "signup" ? t("auth.confirmEmailSignup") : t("auth.confirmEmailSignin")}
           </p>
-          <p className="mt-1 text-xs text-muted-foreground">Verifique sua caixa de entrada e spam.</p>
+          <p className="mt-1 text-xs text-muted-foreground">{t("auth.checkInboxSpam")}</p>
           <p className="mt-2 text-xs text-muted-foreground">{pendingEmail}</p>
           <Button onClick={onResend} disabled={resending} className="mt-6 w-full">
-            {resending ? "Reenviando…" : "Reenviar email de confirmação"}
+            {resending ? t("auth.resending") : t("auth.resend")}
           </Button>
           <button
             onClick={() => setPendingEmail(null)}
             className="mt-4 text-xs text-muted-foreground underline-offset-4 hover:underline"
           >
-            Usar outro e-mail
+            {t("auth.useOtherEmail")}
           </button>
         </div>
       </div>
@@ -218,18 +215,18 @@ function AuthPage() {
         <h1 className="text-2xl font-semibold mb-4 text-center">Valore</h1>
         <Tabs defaultValue={tab === "signup" ? "signup" : "signin"} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="signin">Já tenho conta</TabsTrigger>
-            <TabsTrigger value="signup">Criar conta</TabsTrigger>
+            <TabsTrigger value="signin">{t("auth.tabSignin")}</TabsTrigger>
+            <TabsTrigger value="signup">{t("auth.tabSignup")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="signin">
             <form onSubmit={onSignIn} className="space-y-4">
               <div className="space-y-1">
-                <Label htmlFor="si-email">E-mail</Label>
+                <Label htmlFor="si-email">{t("auth.email")}</Label>
                 <Input id="si-email" type="email" value={siEmail} onChange={(e) => setSiEmail(e.target.value)} required autoComplete="email" />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="si-pass">Senha</Label>
+                <Label htmlFor="si-pass">{t("auth.password")}</Label>
                 <PasswordInput id="si-pass" value={siPass} onChange={(e) => setSiPass(e.target.value)} required autoComplete="current-password" />
                 <button
                   type="button"
@@ -239,11 +236,11 @@ function AuthPage() {
                   }}
                   className="text-xs text-muted-foreground underline-offset-4 hover:underline"
                 >
-                  Esqueceu sua senha?
+                  {t("auth.forgotPassword")}
                 </button>
               </div>
               <Button type="submit" className="w-full" disabled={busy}>
-                {busy ? "Aguarde…" : "Entrar"}
+                {busy ? t("auth.busy") : t("auth.signIn")}
               </Button>
             </form>
           </TabsContent>
@@ -251,19 +248,19 @@ function AuthPage() {
           <TabsContent value="signup">
             <form onSubmit={onSignUp} className="space-y-4">
               <div className="space-y-1">
-                <Label htmlFor="su-nome">Nome</Label>
+                <Label htmlFor="su-nome">{t("auth.name")}</Label>
                 <Input id="su-nome" value={suNome} onChange={(e) => setSuNome(e.target.value)} required />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="su-email">E-mail</Label>
+                <Label htmlFor="su-email">{t("auth.email")}</Label>
                 <Input id="su-email" type="email" value={suEmail} onChange={(e) => setSuEmail(e.target.value)} required autoComplete="email" />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="su-pass">Senha</Label>
+                <Label htmlFor="su-pass">{t("auth.password")}</Label>
                 <PasswordInput id="su-pass" value={suPass} onChange={(e) => setSuPass(e.target.value)} minLength={6} required autoComplete="new-password" />
               </div>
               <Button type="submit" className="w-full" disabled={busy}>
-                {busy ? "Aguarde…" : "Criar conta"}
+                {busy ? t("auth.busy") : t("auth.tabSignup")}
               </Button>
             </form>
           </TabsContent>
