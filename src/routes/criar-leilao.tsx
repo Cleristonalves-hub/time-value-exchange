@@ -112,7 +112,13 @@ function CriarLeilaoPage() {
           <span className="w-5" />
         </div>
 
-        <h1 className="mt-10 font-display text-4xl text-foreground">Criar leilão.</h1>
+        <div className="mt-8 rounded-md border border-gold/30 bg-gold/5 p-4">
+          <p className="text-sm text-foreground/90">
+            Bem-vindo à Valore! Crie seu primeiro leilão e comece a receber clientes.
+          </p>
+        </div>
+
+        <h1 className="mt-6 font-display text-4xl text-foreground">Criar leilão.</h1>
         <p className="mt-2 text-sm text-muted-foreground">Publique uma nova sessão para receber lances.</p>
 
         <form onSubmit={onSubmit} className="mt-8 space-y-5">

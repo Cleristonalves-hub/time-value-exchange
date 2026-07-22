@@ -297,7 +297,7 @@ function SpecialistRegistration() {
       await addSpecialist(payload);
       setSubmitting(false);
       toast.success("Perfil publicado.");
-      navigate({ to: "/home" });
+      navigate({ to: "/criar-leilao" });
     }
   };
 
