@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, Video, Camera, Mail, AlertTriangle } from "lucide-react";
 import { ValoreLogo } from "@/components/ValoreLogo";
 import { Input } from "@/components/ui/input";
@@ -48,6 +48,37 @@ type FormData = {
   document: string;
   pixKey: string;
 };
+
+type FieldKey =
+  | "fullName"
+  | "email"
+  | "password"
+  | "phone"
+  | "city"
+  | "document"
+  | "cpfDeclaration"
+  | "niche"
+  | "specialty"
+  | "bio"
+  | "credential"
+  | "experience"
+  | "portfolioUrl"
+  | "registrationNumber"
+  | "platform"
+  | "minBid"
+  | "availableDays"
+  | "endTime"
+  | "pixKey"
+  | "conduct"
+  | "truthPledge"
+  | "delinquencyAck";
+
+const STEP_FIELD_ORDER: FieldKey[][] = [
+  ["fullName", "email", "password", "phone", "city", "document", "cpfDeclaration"],
+  ["niche", "specialty", "bio"],
+  ["credential", "experience", "portfolioUrl", "registrationNumber"],
+  ["platform", "minBid", "availableDays", "endTime", "pixKey", "conduct", "truthPledge", "delinquencyAck"],
+];
 
 const STEPS = ["Dados pessoais", "Nicho", "Credenciais", "Videochamada"] as const;
 const nicheOptions = allNiches.filter((n) => n !== "Todos");
@@ -101,10 +132,11 @@ function SpecialistRegistration() {
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [emailError, setEmailError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({});
+  const fieldRefs = useRef<Partial<Record<FieldKey, HTMLDivElement | null>>>({});
   const [data, setData] = useState<FormData>({
     fullName: "", email: "", password: "", phone: "", city: "",
     bio: "", niche: "", specialty: "", credential: "", experience: "",
@@ -181,54 +213,85 @@ function SpecialistRegistration() {
     if (url) setPhotoUrl(url);
   }
 
+  function clearFieldError(key: FieldKey) {
+    setFieldErrors((s) => {
+      if (!s[key]) return s;
+      const next = { ...s };
+      delete next[key];
+      return next;
+    });
+  }
 
-  const set = <K extends keyof FormData>(k: K, v: FormData[K]) =>
+  const set = <K extends keyof FormData>(k: K, v: FormData[K]) => {
     setData((d) => ({ ...d, [k]: v }));
+    clearFieldError(k as unknown as FieldKey);
+  };
 
-  const toggleDay = (code: string) =>
+  const toggleDay = (code: string) => {
     setData((d) => ({
       ...d,
       availableDays: d.availableDays.includes(code)
         ? d.availableDays.filter((c) => c !== code)
         : [...d.availableDays, code],
     }));
+    clearFieldError("availableDays");
+  };
 
   const regLabel = registrationLabel(data.niche);
 
-  const canProceed = () => {
-    if (step === 0)
-      return (
-        isFullName(data.fullName) &&
-        data.email &&
-        (!!user || data.password.length >= 6) &&
-        data.phone &&
-        data.city &&
-        isValidCpfCnpj(data.document) &&
-        cpfDeclaration
-      );
-    if (step === 1) return data.niche && data.specialty && data.bio.length > 20;
-    if (step === 2) {
-      if (!data.credential || !data.experience) return false;
-      if (!isUrl(data.portfolioUrl)) return false;
-      if (regLabel && !data.registrationNumber.trim()) return false;
-      return true;
+  function validateStep(s: number): Partial<Record<FieldKey, string>> {
+    const errs: Partial<Record<FieldKey, string>> = {};
+    if (s === 0) {
+      if (!isFullName(data.fullName)) errs.fullName = "Por favor, insira seu nome completo.";
+      if (!/\S+@\S+\.\S+/.test(data.email)) errs.email = "Informe um e-mail válido.";
+      if (!user && data.password.length < 6) errs.password = "A senha precisa ter pelo menos 6 caracteres.";
+      if (!data.phone.trim()) errs.phone = "Campo obrigatório.";
+      if (!data.city.trim()) errs.city = "Campo obrigatório.";
+      if (!isValidCpfCnpj(data.document)) {
+        errs.document =
+          data.document.replace(/\D/g, "").length === 14
+            ? "CNPJ inválido. Verifique e tente novamente."
+            : "CPF inválido. Verifique e tente novamente.";
+      }
+      if (!cpfDeclaration) errs.cpfDeclaration = "É necessário confirmar esta declaração para continuar.";
     }
-    if (step === 3)
-      return (
-        data.platform &&
-        Number(data.minBid) > 0 &&
-        data.availableDays.length > 0 &&
-        data.startTime < data.endTime &&
-        data.pixKey.trim() &&
-        conduct &&
-        truthPledge &&
-        delinquencyAck
-      );
-    return false;
-  };
+    if (s === 1) {
+      if (!data.niche) errs.niche = "Selecione um nicho.";
+      if (!data.specialty.trim()) errs.specialty = "Campo obrigatório.";
+      if (data.bio.trim().length <= 20) errs.bio = "Escreva pelo menos 21 caracteres sobre sua trajetória.";
+    }
+    if (s === 2) {
+      if (!data.credential.trim()) errs.credential = "Campo obrigatório.";
+      if (!data.experience.trim()) errs.experience = "Campo obrigatório.";
+      if (!isUrl(data.portfolioUrl)) errs.portfolioUrl = "Informe uma URL válida iniciando com http(s)://";
+      if (regLabel && !data.registrationNumber.trim()) errs.registrationNumber = "Campo obrigatório.";
+    }
+    if (s === 3) {
+      if (!data.platform) errs.platform = "Selecione uma plataforma de videochamada.";
+      if (!(Number(data.minBid) > 0)) errs.minBid = "Informe um valor mínimo maior que zero.";
+      if (data.availableDays.length === 0) errs.availableDays = "Selecione ao menos um dia disponível.";
+      if (!(data.startTime < data.endTime)) errs.endTime = "O horário de fim precisa ser depois do horário de início.";
+      if (!data.pixKey.trim()) errs.pixKey = "Campo obrigatório.";
+      if (!conduct) errs.conduct = "É necessário aceitar o Código de Conduta para continuar.";
+      if (!truthPledge) errs.truthPledge = "É necessário confirmar esta declaração para continuar.";
+      if (!delinquencyAck) errs.delinquencyAck = "É necessário confirmar esta declaração para continuar.";
+    }
+    return errs;
+  }
+
+  function scrollToFirstError(s: number, errs: Partial<Record<FieldKey, string>>) {
+    const firstKey = STEP_FIELD_ORDER[s]?.find((k) => errs[k]);
+    if (firstKey) fieldRefs.current[firstKey]?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 
   const next = async () => {
-    setEmailError(null);
+    const errs = validateStep(step);
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      scrollToFirstError(step, errs);
+      return;
+    }
+    setFieldErrors({});
 
     // Etapa 1 (Dados pessoais): se ainda não há sessão, cria a conta agora —
     // antes de deixar avançar para a etapa 2 — e trava o formulário na tela de
@@ -239,14 +302,19 @@ function SpecialistRegistration() {
       const emailTaken = await specialistEmailExists(data.email);
       if (emailTaken) {
         setSubmitting(false);
-        setEmailError("Já existe um perfil cadastrado com este email");
-        toast.error("Já existe um perfil cadastrado com este email");
+        const message = "Já existe um perfil cadastrado com este email";
+        setFieldErrors((s) => ({ ...s, email: message }));
+        fieldRefs.current.email?.scrollIntoView({ behavior: "smooth", block: "center" });
+        toast.error(message);
         return;
       }
       const result = await signUp(data.email, data.password, data.fullName, { telefone: data.phone });
       setSubmitting(false);
       if (result.error) {
-        if (result.emailExists) setEmailError(result.error);
+        if (result.emailExists) {
+          setFieldErrors((s) => ({ ...s, email: result.error as string }));
+          fieldRefs.current.email?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
         toast.error(result.error);
         return;
       }
@@ -264,7 +332,7 @@ function SpecialistRegistration() {
     }
 
     // Última etapa: salva o perfil (a conta já foi criada na etapa 1) e manda
-    // direto para /home.
+    // direto para /criar-leilao.
     setSubmitting(true);
     const payload = {
       fullName: data.fullName,
@@ -391,87 +459,158 @@ function SpecialistRegistration() {
                   {uploading ? "Enviando…" : "Foto de perfil (opcional)"}
                 </p>
               </div>
-              <Field label="Nome completo" required>
-                <Input value={data.fullName} onChange={(e) => set("fullName", e.target.value)} placeholder="Como deseja ser chamado" />
-                {data.fullName && !isFullName(data.fullName) && (
-                  <p className="mt-1 text-[11px] text-destructive">Por favor, insira seu nome completo.</p>
-                )}
+              <Field
+                label="Nome completo"
+                required
+                error={fieldErrors.fullName}
+                fieldRef={(el) => { fieldRefs.current.fullName = el; }}
+              >
+                <Input
+                  value={data.fullName}
+                  onChange={(e) => set("fullName", e.target.value)}
+                  placeholder="Como deseja ser chamado"
+                  className={fieldErrors.fullName ? "border-destructive focus-visible:ring-destructive" : undefined}
+                />
               </Field>
 
-              <Field label="E-mail" required>
+              <Field
+                label="E-mail"
+                required
+                error={fieldErrors.email}
+                fieldRef={(el) => { fieldRefs.current.email = el; }}
+              >
                 <Input
                   type="email"
                   value={data.email}
-                  onChange={(e) => {
-                    set("email", e.target.value);
-                    setEmailError(null);
-                  }}
+                  onChange={(e) => set("email", e.target.value)}
                   placeholder="voce@dominio.com"
+                  className={fieldErrors.email ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
-                {emailError && <p className="mt-1 text-[11px] text-destructive">{emailError}</p>}
               </Field>
               {!editingId && (
-                <Field label="Senha" required>
+                <Field
+                  label="Senha"
+                  required
+                  error={fieldErrors.password}
+                  fieldRef={(el) => { fieldRefs.current.password = el; }}
+                >
                   <PasswordInput
                     value={data.password}
                     onChange={(e) => set("password", e.target.value)}
                     placeholder="Mínimo 6 caracteres"
+                    className={fieldErrors.password ? "border-destructive focus-visible:ring-destructive" : undefined}
                   />
                 </Field>
               )}
-              <Field label="Telefone / WhatsApp" required>
-                <Input value={data.phone} onChange={(e) => set("phone", e.target.value)} placeholder="(21) 9 0000-0000" />
+              <Field
+                label="Telefone / WhatsApp"
+                required
+                error={fieldErrors.phone}
+                fieldRef={(el) => { fieldRefs.current.phone = el; }}
+              >
+                <Input
+                  value={data.phone}
+                  onChange={(e) => set("phone", e.target.value)}
+                  placeholder="(21) 9 0000-0000"
+                  className={fieldErrors.phone ? "border-destructive focus-visible:ring-destructive" : undefined}
+                />
               </Field>
-              <Field label="Cidade" required>
-                <Input value={data.city} onChange={(e) => set("city", e.target.value)} placeholder="Rio de Janeiro, RJ" />
+              <Field
+                label="Cidade"
+                required
+                error={fieldErrors.city}
+                fieldRef={(el) => { fieldRefs.current.city = el; }}
+              >
+                <Input
+                  value={data.city}
+                  onChange={(e) => set("city", e.target.value)}
+                  placeholder="Rio de Janeiro, RJ"
+                  className={fieldErrors.city ? "border-destructive focus-visible:ring-destructive" : undefined}
+                />
               </Field>
-              <Field label="CPF ou CNPJ" required>
-                <Input value={data.document} onChange={(e) => set("document", e.target.value)} placeholder="000.000.000-00" />
-                {data.document && !isValidCpfCnpj(data.document) && (
-                  <p className="mt-1 text-[11px] text-destructive">
-                    {data.document.replace(/\D/g, "").length === 14
-                      ? "CNPJ inválido. Verifique e tente novamente."
-                      : "CPF inválido. Verifique e tente novamente."}
-                  </p>
-                )}
+              <Field
+                label="CPF ou CNPJ"
+                required
+                error={fieldErrors.document}
+                fieldRef={(el) => { fieldRefs.current.document = el; }}
+              >
+                <Input
+                  value={data.document}
+                  onChange={(e) => set("document", e.target.value)}
+                  placeholder="000.000.000-00"
+                  className={fieldErrors.document ? "border-destructive focus-visible:ring-destructive" : undefined}
+                />
               </Field>
 
-              <label className="flex cursor-pointer items-start gap-3 rounded-md border border-gold/30 bg-gold/5 p-4 text-[12px] leading-relaxed text-foreground/80">
-                <input
-                  type="checkbox"
-                  checked={cpfDeclaration}
-                  onChange={() => setCpfDeclaration((v) => !v)}
-                  className="mt-0.5 size-4 accent-[color:var(--gold)]"
-                />
-                <span>
-                  Declaro que o CPF informado é meu e que todas as informações fornecidas são verdadeiras, sob pena
-                  das sanções legais cabíveis.
-                </span>
-              </label>
+              <div ref={(el) => { fieldRefs.current.cpfDeclaration = el; }}>
+                <label
+                  className={`flex cursor-pointer items-start gap-3 rounded-md border p-4 text-[12px] leading-relaxed text-foreground/80 ${
+                    fieldErrors.cpfDeclaration ? "border-destructive bg-destructive/5" : "border-gold/30 bg-gold/5"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={cpfDeclaration}
+                    onChange={() => {
+                      setCpfDeclaration((v) => !v);
+                      clearFieldError("cpfDeclaration");
+                    }}
+                    className="mt-0.5 size-4 accent-[color:var(--gold)]"
+                  />
+                  <span>
+                    Declaro que o CPF informado é meu e que todas as informações fornecidas são verdadeiras, sob pena
+                    das sanções legais cabíveis.
+                  </span>
+                </label>
+                {fieldErrors.cpfDeclaration && (
+                  <p className="mt-1 text-[11px] text-destructive">{fieldErrors.cpfDeclaration}</p>
+                )}
+              </div>
             </>
           )}
 
           {step === 1 && (
             <>
-              <div>
+              <div ref={(el) => { fieldRefs.current.niche = el; }}>
                 <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">Selecione seu nicho</label>
                 <div className="grid grid-cols-2 gap-2">
                   {nicheOptions.map((n) => {
                     const active = data.niche === n;
                     return (
                       <button key={n} type="button" onClick={() => set("niche", n)}
-                        className={`rounded-md border px-4 py-3 text-sm transition-all ${active ? "border-gold bg-gold/10 text-gold shadow-gold" : "border-border text-foreground/80 hover:border-gold/40"}`}>
+                        className={`rounded-md border px-4 py-3 text-sm transition-all ${active ? "border-gold bg-gold/10 text-gold shadow-gold" : fieldErrors.niche ? "border-destructive text-foreground/80" : "border-border text-foreground/80 hover:border-gold/40"}`}>
                         {n}
                       </button>
                     );
                   })}
                 </div>
+                {fieldErrors.niche && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.niche}</p>}
               </div>
-              <Field label="Sua especialidade" required>
-                <Input value={data.specialty} onChange={(e) => set("specialty", e.target.value)} placeholder="Ex: Cardiologista — check-up executivo" />
+              <Field
+                label="Sua especialidade"
+                required
+                error={fieldErrors.specialty}
+                fieldRef={(el) => { fieldRefs.current.specialty = el; }}
+              >
+                <Input
+                  value={data.specialty}
+                  onChange={(e) => set("specialty", e.target.value)}
+                  placeholder="Ex: Cardiologista — check-up executivo"
+                  className={fieldErrors.specialty ? "border-destructive focus-visible:ring-destructive" : undefined}
+                />
               </Field>
-              <Field label="Bio profissional" required>
-                <Textarea value={data.bio} onChange={(e) => set("bio", e.target.value)} placeholder="Conte sua trajetória em até 3 linhas." className="min-h-[110px]" />
+              <Field
+                label="Bio profissional"
+                required
+                error={fieldErrors.bio}
+                fieldRef={(el) => { fieldRefs.current.bio = el; }}
+              >
+                <Textarea
+                  value={data.bio}
+                  onChange={(e) => set("bio", e.target.value)}
+                  placeholder="Conte sua trajetória em até 3 linhas."
+                  className={`min-h-[110px] ${fieldErrors.bio ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                />
                 <p className="mt-1 text-[11px] text-muted-foreground">{data.bio.length}/280 caracteres</p>
               </Field>
             </>
@@ -479,30 +618,60 @@ function SpecialistRegistration() {
 
           {step === 2 && (
             <>
-              <Field label="Principal credencial" required>
-                <Input value={data.credential} onChange={(e) => set("credential", e.target.value)} placeholder="Ex: Pós-doc Harvard, Grammy 2019" />
+              <Field
+                label="Principal credencial"
+                required
+                error={fieldErrors.credential}
+                fieldRef={(el) => { fieldRefs.current.credential = el; }}
+              >
+                <Input
+                  value={data.credential}
+                  onChange={(e) => set("credential", e.target.value)}
+                  placeholder="Ex: Pós-doc Harvard, Grammy 2019"
+                  className={fieldErrors.credential ? "border-destructive focus-visible:ring-destructive" : undefined}
+                />
               </Field>
-              <Field label="Anos de experiência" required>
-                <Input type="number" value={data.experience} onChange={(e) => set("experience", e.target.value)} placeholder="15" />
+              <Field
+                label="Anos de experiência"
+                required
+                error={fieldErrors.experience}
+                fieldRef={(el) => { fieldRefs.current.experience = el; }}
+              >
+                <Input
+                  type="number"
+                  value={data.experience}
+                  onChange={(e) => set("experience", e.target.value)}
+                  placeholder="15"
+                  className={fieldErrors.experience ? "border-destructive focus-visible:ring-destructive" : undefined}
+                />
               </Field>
-              <Field label="Link do LinkedIn ou portfólio" required>
+              <Field
+                label="Link do LinkedIn ou portfólio"
+                required
+                error={fieldErrors.portfolioUrl}
+                fieldRef={(el) => { fieldRefs.current.portfolioUrl = el; }}
+              >
                 <Input
                   value={data.portfolioUrl}
                   onChange={(e) => set("portfolioUrl", e.target.value)}
                   placeholder="https://linkedin.com/in/seu-perfil"
                   type="url"
+                  className={fieldErrors.portfolioUrl ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
-                {data.portfolioUrl && !isUrl(data.portfolioUrl) && (
-                  <p className="mt-1 text-[11px] text-destructive">Informe uma URL válida iniciando com http(s)://</p>
-                )}
                 <p className="mt-1 text-[11px] text-muted-foreground">Verificamos o link automaticamente. Se acessível, você recebe selo Verificado.</p>
               </Field>
               {regLabel && (
-                <Field label={regLabel} required>
+                <Field
+                  label={regLabel}
+                  required
+                  error={fieldErrors.registrationNumber}
+                  fieldRef={(el) => { fieldRefs.current.registrationNumber = el; }}
+                >
                   <Input
                     value={data.registrationNumber}
                     onChange={(e) => set("registrationNumber", e.target.value)}
                     placeholder="Ex: 12345/RJ"
+                    className={fieldErrors.registrationNumber ? "border-destructive focus-visible:ring-destructive" : undefined}
                   />
                 </Field>
               )}
@@ -516,14 +685,14 @@ function SpecialistRegistration() {
 
           {step === 3 && (
             <>
-              <div>
+              <div ref={(el) => { fieldRefs.current.platform = el; }}>
                 <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">Plataforma de videochamada</label>
                 <div className="space-y-2">
                   {platforms.map((p) => {
                     const active = data.platform === p.id;
                     return (
                       <button key={p.id} type="button" onClick={() => set("platform", p.id)}
-                        className={`flex w-full items-center gap-3 rounded-md border px-4 py-4 text-left transition-all ${active ? "border-gold bg-gold/10 shadow-gold" : "border-border hover:border-gold/40"}`}>
+                        className={`flex w-full items-center gap-3 rounded-md border px-4 py-4 text-left transition-all ${active ? "border-gold bg-gold/10 shadow-gold" : fieldErrors.platform ? "border-destructive" : "border-border hover:border-gold/40"}`}>
                         <Video className={`size-5 ${active ? "text-gold" : "text-muted-foreground"}`} />
                         <div className="flex-1">
                           <div className={`text-sm font-medium ${active ? "text-gold" : "text-foreground"}`}>{p.label}</div>
@@ -534,6 +703,7 @@ function SpecialistRegistration() {
                     );
                   })}
                 </div>
+                {fieldErrors.platform && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.platform}</p>}
               </div>
               <Field label="Duração padrão da sessão (minutos)">
                 <Input type="number" value={data.duration} onChange={(e) => set("duration", e.target.value)} />
@@ -541,16 +711,22 @@ function SpecialistRegistration() {
               <Field label="Idiomas que atende">
                 <Input value={data.languages} onChange={(e) => set("languages", e.target.value)} placeholder="Português, Inglês" />
               </Field>
-              <Field label="Valor mínimo do lance (R$)" required>
+              <Field
+                label="Valor mínimo do lance (R$)"
+                required
+                error={fieldErrors.minBid}
+                fieldRef={(el) => { fieldRefs.current.minBid = el; }}
+              >
                 <Input
                   type="number"
                   min="0"
                   value={data.minBid}
                   onChange={(e) => set("minBid", e.target.value)}
                   placeholder="500"
+                  className={fieldErrors.minBid ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
               </Field>
-              <div>
+              <div ref={(el) => { fieldRefs.current.availableDays = el; }}>
                 <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">Dias disponíveis</label>
                 <div className="flex flex-wrap gap-2">
                   {WEEKDAYS.map((d) => {
@@ -560,13 +736,14 @@ function SpecialistRegistration() {
                         key={d.code}
                         type="button"
                         onClick={() => toggleDay(d.code)}
-                        className={`rounded-md border px-3 py-2 text-xs transition-all ${active ? "border-gold bg-gold/10 text-gold shadow-gold" : "border-border text-foreground/80 hover:border-gold/40"}`}
+                        className={`rounded-md border px-3 py-2 text-xs transition-all ${active ? "border-gold bg-gold/10 text-gold shadow-gold" : fieldErrors.availableDays ? "border-destructive text-foreground/80" : "border-border text-foreground/80 hover:border-gold/40"}`}
                       >
                         {d.label}
                       </button>
                     );
                   })}
                 </div>
+                {fieldErrors.availableDays && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.availableDays}</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Horário de início" required>
@@ -580,11 +757,16 @@ function SpecialistRegistration() {
                     ))}
                   </select>
                 </Field>
-                <Field label="Horário de fim" required>
+                <Field
+                  label="Horário de fim"
+                  required
+                  error={fieldErrors.endTime}
+                  fieldRef={(el) => { fieldRefs.current.endTime = el; }}
+                >
                   <select
                     value={data.endTime}
                     onChange={(e) => set("endTime", e.target.value)}
-                    className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
+                    className={`h-10 w-full rounded-md border bg-background px-3 text-sm ${fieldErrors.endTime ? "border-destructive" : "border-border"}`}
                   >
                     {TIME_OPTIONS.map((t) => (
                       <option key={t} value={t}>{t}</option>
@@ -592,32 +774,58 @@ function SpecialistRegistration() {
                   </select>
                 </Field>
               </div>
-              {data.startTime >= data.endTime && (
-                <p className="text-[11px] text-destructive">O horário de fim precisa ser depois do horário de início.</p>
-              )}
-              <Field label="Chave PIX (para repasse dos seus ganhos)" required>
+              <Field
+                label="Chave PIX (para repasse dos seus ganhos)"
+                required
+                error={fieldErrors.pixKey}
+                fieldRef={(el) => { fieldRefs.current.pixKey = el; }}
+              >
                 <Input
                   value={data.pixKey}
                   onChange={(e) => set("pixKey", e.target.value)}
                   placeholder="CPF, e-mail, telefone ou chave aleatória"
+                  className={fieldErrors.pixKey ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
               </Field>
 
-              <label className="flex cursor-pointer items-start gap-3 rounded-md border border-gold/30 bg-gold/5 p-4 text-[12px] leading-relaxed text-foreground/80">
-                <input
-                  type="checkbox"
-                  checked={truthPledge}
-                  onChange={() => setTruthPledge((v) => !v)}
-                  className="mt-0.5 size-4 accent-[color:var(--gold)]"
+              <div ref={(el) => { fieldRefs.current.truthPledge = el; }}>
+                <label
+                  className={`flex cursor-pointer items-start gap-3 rounded-md border p-4 text-[12px] leading-relaxed text-foreground/80 ${
+                    fieldErrors.truthPledge ? "border-destructive bg-destructive/5" : "border-gold/30 bg-gold/5"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={truthPledge}
+                    onChange={() => {
+                      setTruthPledge((v) => !v);
+                      clearFieldError("truthPledge");
+                    }}
+                    className="mt-0.5 size-4 accent-[color:var(--gold)]"
+                  />
+                  <span>
+                    Declaro que as informações fornecidas são verdadeiras e que possuo as credenciais profissionais indicadas. Estou ciente que sou inteiramente responsável pela veracidade dos meus dados conforme os Termos de Uso da Valore.
+                  </span>
+                </label>
+                {fieldErrors.truthPledge && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.truthPledge}</p>}
+              </div>
+
+              <div ref={(el) => { fieldRefs.current.conduct = el; }}>
+                <ConductPledge
+                  accepted={conduct}
+                  onToggle={() => {
+                    setConduct(!conduct);
+                    clearFieldError("conduct");
+                  }}
+                  error={!!fieldErrors.conduct}
                 />
-                <span>
-                  Declaro que as informações fornecidas são verdadeiras e que possuo as credenciais profissionais indicadas. Estou ciente que sou inteiramente responsável pela veracidade dos meus dados conforme os Termos de Uso da Valore.
-                </span>
-              </label>
+                {fieldErrors.conduct && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.conduct}</p>}
+              </div>
 
-              <ConductPledge accepted={conduct} onToggle={() => setConduct(!conduct)} />
-
-              <div className="rounded-xl border border-warning/40 bg-warning/5 p-5">
+              <div
+                ref={(el) => { fieldRefs.current.delinquencyAck = el; }}
+                className={`rounded-xl border p-5 ${fieldErrors.delinquencyAck ? "border-destructive bg-destructive/5" : "border-warning/40 bg-warning/5"}`}
+              >
                 <div className="flex items-center gap-2 text-warning">
                   <AlertTriangle className="size-4" />
                   <span className="text-[10px] uppercase tracking-[0.3em]">
@@ -643,10 +851,13 @@ function SpecialistRegistration() {
                 <label className="mt-5 flex cursor-pointer items-start gap-3">
                   <button
                     type="button"
-                    onClick={() => setDelinquencyAck((v) => !v)}
+                    onClick={() => {
+                      setDelinquencyAck((v) => !v);
+                      clearFieldError("delinquencyAck");
+                    }}
                     aria-pressed={delinquencyAck}
                     className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border transition-colors ${
-                      delinquencyAck ? "border-warning bg-warning" : "border-border"
+                      delinquencyAck ? "border-warning bg-warning" : fieldErrors.delinquencyAck ? "border-destructive" : "border-border"
                     }`}
                   >
                     {delinquencyAck && <Check className="size-3 text-primary-foreground" />}
@@ -655,6 +866,9 @@ function SpecialistRegistration() {
                     Li e estou ciente das condições acima
                   </span>
                 </label>
+                {fieldErrors.delinquencyAck && (
+                  <p className="mt-1 text-[11px] text-destructive">{fieldErrors.delinquencyAck}</p>
+                )}
               </div>
             </>
           )}
@@ -662,7 +876,7 @@ function SpecialistRegistration() {
 
         <button
           onClick={next}
-          disabled={!canProceed() || submitting}
+          disabled={submitting}
           className="group mt-10 flex w-full items-center justify-center gap-2 rounded-md bg-gradient-gold px-6 py-4 text-sm font-medium uppercase tracking-[0.2em] text-primary-foreground shadow-gold transition-transform active:scale-[0.98] disabled:opacity-30 disabled:shadow-none"
         >
           {submitting ? "Enviando…" : step === STEPS.length - 1 ? "Finalizar cadastro" : "Continuar"}
@@ -679,14 +893,27 @@ function SpecialistRegistration() {
   );
 }
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: ReactNode }) {
+function Field({
+  label,
+  required,
+  error,
+  fieldRef,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  fieldRef?: (el: HTMLDivElement | null) => void;
+  children: ReactNode;
+}) {
   return (
-    <div>
+    <div ref={fieldRef}>
       <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-muted-foreground">
         {label}
         {required && <span className="text-destructive"> *</span>}
       </label>
       {children}
+      {error && <p className="mt-1 text-[11px] text-destructive">{error}</p>}
     </div>
   );
 }

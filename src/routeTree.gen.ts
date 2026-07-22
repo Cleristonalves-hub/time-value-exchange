@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermosRouteImport } from './routes/termos'
+import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as LancesRouteImport } from './routes/lances'
@@ -31,6 +32,11 @@ import { Route as AvaliarIdRouteImport } from './routes/avaliar.$id'
 const TermosRoute = TermosRouteImport.update({
   id: '/termos',
   path: '/termos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RedefinirSenhaRoute = RedefinirSenhaRouteImport.update({
+  id: '/redefinir-senha',
+  path: '/redefinir-senha',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
@@ -132,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/lances': typeof LancesRoute
   '/perfil': typeof PerfilRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
   '/termos': typeof TermosRoute
   '/avaliar/$id': typeof AvaliarIdRoute
   '/cadastro/cliente': typeof CadastroClienteRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/lances': typeof LancesRoute
   '/perfil': typeof PerfilRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
   '/termos': typeof TermosRoute
   '/avaliar/$id': typeof AvaliarIdRoute
   '/cadastro/cliente': typeof CadastroClienteRoute
@@ -173,6 +181,7 @@ export interface FileRoutesById {
   '/lances': typeof LancesRoute
   '/perfil': typeof PerfilRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/redefinir-senha': typeof RedefinirSenhaRoute
   '/termos': typeof TermosRoute
   '/avaliar/$id': typeof AvaliarIdRoute
   '/cadastro/cliente': typeof CadastroClienteRoute
@@ -195,6 +204,7 @@ export interface FileRouteTypes {
     | '/lances'
     | '/perfil'
     | '/privacidade'
+    | '/redefinir-senha'
     | '/termos'
     | '/avaliar/$id'
     | '/cadastro/cliente'
@@ -215,6 +225,7 @@ export interface FileRouteTypes {
     | '/lances'
     | '/perfil'
     | '/privacidade'
+    | '/redefinir-senha'
     | '/termos'
     | '/avaliar/$id'
     | '/cadastro/cliente'
@@ -235,6 +246,7 @@ export interface FileRouteTypes {
     | '/lances'
     | '/perfil'
     | '/privacidade'
+    | '/redefinir-senha'
     | '/termos'
     | '/avaliar/$id'
     | '/cadastro/cliente'
@@ -256,6 +268,7 @@ export interface RootRouteChildren {
   LancesRoute: typeof LancesRoute
   PerfilRoute: typeof PerfilRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
+  RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   TermosRoute: typeof TermosRoute
   AvaliarIdRoute: typeof AvaliarIdRoute
   CadastroClienteRoute: typeof CadastroClienteRoute
@@ -271,6 +284,13 @@ declare module '@tanstack/react-router' {
       path: '/termos'
       fullPath: '/termos'
       preLoaderRoute: typeof TermosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/redefinir-senha': {
+      id: '/redefinir-senha'
+      path: '/redefinir-senha'
+      fullPath: '/redefinir-senha'
+      preLoaderRoute: typeof RedefinirSenhaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacidade': {
@@ -408,6 +428,7 @@ const rootRouteChildren: RootRouteChildren = {
   LancesRoute: LancesRoute,
   PerfilRoute: PerfilRoute,
   PrivacidadeRoute: PrivacidadeRoute,
+  RedefinirSenhaRoute: RedefinirSenhaRoute,
   TermosRoute: TermosRoute,
   AvaliarIdRoute: AvaliarIdRoute,
   CadastroClienteRoute: CadastroClienteRoute,

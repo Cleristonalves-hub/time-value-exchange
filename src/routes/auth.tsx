@@ -17,11 +17,18 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { signIn, signUp, resendConfirmation } = useAuth();
+  const { signIn, signUp, resendConfirmation, resetPasswordForEmail } = useAuth();
   const navigate = useNavigate();
   const { tab } = Route.useSearch();
   const [busy, setBusy] = useState(false);
   const [resending, setResending] = useState(false);
+
+  // Tela de "esqueci minha senha" — sobrepõe o formulário de login/cadastro
+  // enquanto ativa.
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotBusy, setForgotBusy] = useState(false);
 
   // E-mail pendente de confirmação — enquanto setado, mostramos a tela de espera
   // em vez do formulário, e nenhuma navegação para /home acontece.
@@ -85,6 +92,23 @@ function AuthPage() {
     }
   }
 
+  async function onForgotPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setForgotBusy(true);
+    try {
+      const { error } = await resetPasswordForEmail(forgotEmail);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+      setForgotSent(true);
+    } catch {
+      toast.error("Não foi possível enviar o link. Tente novamente em instantes.");
+    } finally {
+      setForgotBusy(false);
+    }
+  }
+
   async function onResend() {
     if (!pendingEmail) return;
     setResending(true);
@@ -97,6 +121,66 @@ function AuthPage() {
     } finally {
       setResending(false);
     }
+  }
+
+  if (showForgotPassword) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm rounded-lg border p-6">
+          {forgotSent ? (
+            <div className="text-center">
+              <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-gold/10 text-gold">
+                <Mail className="size-6" />
+              </div>
+              <h1 className="mt-4 text-xl font-semibold">Verifique seu email</h1>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Enviamos um link de redefinição de senha para{" "}
+                <strong className="text-foreground">{forgotEmail}</strong>.
+              </p>
+              <button
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setForgotSent(false);
+                }}
+                className="mt-6 text-xs text-muted-foreground underline-offset-4 hover:underline"
+              >
+                Voltar para o login
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={onForgotPassword} className="space-y-4">
+              <div className="text-center">
+                <h1 className="text-xl font-semibold">Redefinir senha</h1>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Informe seu e-mail para receber o link de redefinição.
+                </p>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="forgot-email">E-mail</Label>
+                <Input
+                  id="forgot-email"
+                  type="email"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={forgotBusy || !forgotEmail}>
+                {forgotBusy ? "Enviando…" : "Enviar link de redefinição"}
+              </Button>
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(false)}
+                className="block w-full text-center text-xs text-muted-foreground underline-offset-4 hover:underline"
+              >
+                Voltar
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    );
   }
 
   if (pendingEmail) {
@@ -147,6 +231,16 @@ function AuthPage() {
               <div className="space-y-1">
                 <Label htmlFor="si-pass">Senha</Label>
                 <PasswordInput id="si-pass" value={siPass} onChange={(e) => setSiPass(e.target.value)} required autoComplete="current-password" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotEmail(siEmail);
+                    setShowForgotPassword(true);
+                  }}
+                  className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+                >
+                  Esqueceu sua senha?
+                </button>
               </div>
               <Button type="submit" className="w-full" disabled={busy}>
                 {busy ? "Aguarde…" : "Entrar"}

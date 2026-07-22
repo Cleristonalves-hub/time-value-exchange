@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 import { ValoreLogo } from "@/components/ValoreLogo";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,9 @@ export const Route = createFileRoute("/criar-leilao")({
 // Especialistas com cadastro "reprovado" ou "suspenso" não podem publicar leilões.
 const ALLOWED_STATUSES = new Set(["novo", "verificado"]);
 
+type FieldKey = "titulo" | "lanceMinimo" | "dataInicio" | "dataFim";
+const FIELD_ORDER: FieldKey[] = ["titulo", "lanceMinimo", "dataInicio", "dataFim"];
+
 function CriarLeilaoPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -28,6 +31,8 @@ function CriarLeilaoPage() {
   const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({});
+  const fieldRefs = useRef<Partial<Record<FieldKey, HTMLDivElement | null>>>({});
 
   // Pré-preenche o valor mínimo com o que o especialista já cadastrou.
   useEffect(() => {
@@ -37,17 +42,43 @@ function CriarLeilaoPage() {
 
   const podeCriar = !!especialista && ALLOWED_STATUSES.has(especialista.status);
 
-  const canSubmit =
-    podeCriar &&
-    titulo.trim().length > 0 &&
-    Number(lanceMinimo) > 0 &&
-    !!dataInicio &&
-    !!dataFim &&
-    new Date(dataFim).getTime() > new Date(dataInicio).getTime();
+  function clearFieldError(key: FieldKey) {
+    setFieldErrors((s) => {
+      if (!s[key]) return s;
+      const next = { ...s };
+      delete next[key];
+      return next;
+    });
+  }
+
+  function validate(): Partial<Record<FieldKey, string>> {
+    const errs: Partial<Record<FieldKey, string>> = {};
+    if (!titulo.trim()) errs.titulo = "Campo obrigatório.";
+    if (!(Number(lanceMinimo) > 0)) errs.lanceMinimo = "Informe um valor mínimo maior que zero.";
+    if (!dataInicio) errs.dataInicio = "Campo obrigatório.";
+    if (!dataFim) {
+      errs.dataFim = "Campo obrigatório.";
+    } else if (dataInicio && new Date(dataFim).getTime() <= new Date(dataInicio).getTime()) {
+      errs.dataFim = "O encerramento precisa ser depois do início.";
+    }
+    return errs;
+  }
+
+  function scrollToFirstError(errs: Partial<Record<FieldKey, string>>) {
+    const firstKey = FIELD_ORDER.find((k) => errs[k]);
+    if (firstKey) fieldRefs.current[firstKey]?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!especialista || !canSubmit) return;
+    if (!especialista) return;
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      scrollToFirstError(errs);
+      return;
+    }
+    setFieldErrors({});
     setSubmitting(true);
     const created = await createLeilao({
       especialistaId: especialista.id,
@@ -101,6 +132,8 @@ function CriarLeilaoPage() {
     );
   }
 
+  const areaAtuacao = [especialista.niche, especialista.specialty].filter(Boolean).join(" — ");
+
   return (
     <main className="min-h-screen px-6 pb-24 pt-10">
       <div className="mx-auto max-w-md">
@@ -121,12 +154,21 @@ function CriarLeilaoPage() {
         <h1 className="mt-6 font-display text-4xl text-foreground">Criar leilão.</h1>
         <p className="mt-2 text-sm text-muted-foreground">Publique uma nova sessão para receber lances.</p>
 
-        <form onSubmit={onSubmit} className="mt-8 space-y-5">
-          <Field label="Título do leilão">
+        <form onSubmit={onSubmit} noValidate className="mt-8 space-y-5">
+          <Field
+            label="Título do leilão"
+            required
+            error={fieldErrors.titulo}
+            fieldRef={(el) => { fieldRefs.current.titulo = el; }}
+          >
             <Input
               value={titulo}
-              onChange={(e) => setTitulo(e.target.value)}
+              onChange={(e) => {
+                setTitulo(e.target.value);
+                clearFieldError("titulo");
+              }}
               placeholder="Ex: Consultoria financeira - 1 hora"
+              className={fieldErrors.titulo ? "border-destructive focus-visible:ring-destructive" : undefined}
             />
           </Field>
 
@@ -139,30 +181,82 @@ function CriarLeilaoPage() {
             />
           </Field>
 
-          <Field label="Valor mínimo do lance (R$)">
+          <Field label="Área de atuação">
+            <Input value={areaAtuacao || "—"} disabled className="text-muted-foreground" />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Definida no seu cadastro de especialista.{" "}
+              <Link to="/cadastro/especialista" className="text-gold underline-offset-4 hover:underline">
+                Editar perfil
+              </Link>
+            </p>
+          </Field>
+
+          <Field
+            label="Valor mínimo do lance (R$)"
+            required
+            error={fieldErrors.lanceMinimo}
+            fieldRef={(el) => { fieldRefs.current.lanceMinimo = el; }}
+          >
             <Input
               type="number"
               min="0"
               value={lanceMinimo}
-              onChange={(e) => setLanceMinimo(e.target.value)}
+              onChange={(e) => {
+                setLanceMinimo(e.target.value);
+                clearFieldError("lanceMinimo");
+              }}
               placeholder="500"
+              className={fieldErrors.lanceMinimo ? "border-destructive focus-visible:ring-destructive" : undefined}
             />
           </Field>
 
-          <Field label="Data e hora de início">
-            <Input type="datetime-local" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
+          <Field
+            label="Data e hora de início"
+            required
+            error={fieldErrors.dataInicio}
+            fieldRef={(el) => { fieldRefs.current.dataInicio = el; }}
+          >
+            <Input
+              type="datetime-local"
+              value={dataInicio}
+              onChange={(e) => {
+                setDataInicio(e.target.value);
+                clearFieldError("dataInicio");
+              }}
+              className={fieldErrors.dataInicio ? "border-destructive focus-visible:ring-destructive" : undefined}
+            />
           </Field>
 
-          <Field label="Data e hora de encerramento">
-            <Input type="datetime-local" value={dataFim} onChange={(e) => setDataFim(e.target.value)} />
+          <Field
+            label="Data e hora de encerramento"
+            required
+            error={fieldErrors.dataFim}
+            fieldRef={(el) => { fieldRefs.current.dataFim = el; }}
+          >
+            <Input
+              type="datetime-local"
+              value={dataFim}
+              onChange={(e) => {
+                setDataFim(e.target.value);
+                clearFieldError("dataFim");
+              }}
+              className={fieldErrors.dataFim ? "border-destructive focus-visible:ring-destructive" : undefined}
+            />
           </Field>
-          {dataInicio && dataFim && new Date(dataFim).getTime() <= new Date(dataInicio).getTime() && (
-            <p className="text-[11px] text-destructive">O encerramento precisa ser depois do início.</p>
-          )}
+
+          <Field label="Plataforma de videochamada">
+            <Input value={especialista.platform || "—"} disabled className="text-muted-foreground" />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              Definida no seu cadastro de especialista.{" "}
+              <Link to="/cadastro/especialista" className="text-gold underline-offset-4 hover:underline">
+                Editar perfil
+              </Link>
+            </p>
+          </Field>
 
           <Button
             type="submit"
-            disabled={!canSubmit || submitting}
+            disabled={submitting}
             className="w-full bg-gradient-gold py-6 text-sm font-medium uppercase tracking-[0.2em] text-primary-foreground shadow-gold disabled:opacity-30"
           >
             {submitting ? "Publicando…" : "Publicar leilão"}
@@ -173,11 +267,27 @@ function CriarLeilaoPage() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  required,
+  error,
+  fieldRef,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  fieldRef?: (el: HTMLDivElement | null) => void;
+  children: ReactNode;
+}) {
   return (
-    <div>
-      <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-muted-foreground">{label}</label>
+    <div ref={fieldRef}>
+      <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-muted-foreground">
+        {label}
+        {required && <span className="text-destructive"> *</span>}
+      </label>
       {children}
+      {error && <p className="mt-1 text-[11px] text-destructive">{error}</p>}
     </div>
   );
 }

@@ -15,6 +15,7 @@ type AuthCtx = {
   ) => Promise<{ error: string | null; needsEmailConfirmation?: boolean; emailExists?: boolean }>;
   signOut: () => Promise<void>;
   resendConfirmation: (email: string) => Promise<{ error: string | null }>;
+  resetPasswordForEmail: (email: string) => Promise<{ error: string | null }>;
 };
 
 const Ctx = createContext<AuthCtx | null>(null);
@@ -27,6 +28,10 @@ const EMAIL_ALREADY_REGISTERED_MESSAGE = "Este email já está cadastrado. Faça
 // do Supabase (Authentication > URL Configuration), senão o Supabase ignora
 // esse valor e usa o Site URL padrão.
 const EMAIL_REDIRECT_TO = "https://valore.services/home";
+
+// Para onde o link de redefinição de senha do Supabase aponta — precisa estar
+// na mesma allowlist de Redirect URLs mencionada acima.
+const RESET_PASSWORD_REDIRECT_TO = "https://valore.services/redefinir-senha";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -92,6 +97,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         type: "signup",
         email,
         options: { emailRedirectTo: EMAIL_REDIRECT_TO },
+      });
+      return { error: error?.message ?? null };
+    },
+    async resetPasswordForEmail(email) {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: RESET_PASSWORD_REDIRECT_TO,
       });
       return { error: error?.message ?? null };
     },

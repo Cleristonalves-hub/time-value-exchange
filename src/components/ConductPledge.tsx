@@ -3,12 +3,14 @@ import { Check, ShieldAlert } from "lucide-react";
 export function ConductPledge({
   accepted,
   onToggle,
+  error,
 }: {
   accepted: boolean;
   onToggle: () => void;
+  error?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-gold/30 bg-surface p-5">
+    <div className={`rounded-xl border bg-surface p-5 ${error ? "border-destructive" : "border-gold/30"}`}>
       <div className="flex items-center gap-2 text-gold">
         <ShieldAlert className="size-4" />
         <span className="text-[10px] uppercase tracking-[0.3em]">Código de Conduta Valore</span>
@@ -35,7 +37,7 @@ export function ConductPledge({
           onClick={onToggle}
           aria-pressed={accepted}
           className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border transition-colors ${
-            accepted ? "border-gold bg-gold" : "border-border"
+            accepted ? "border-gold bg-gold" : error ? "border-destructive" : "border-border"
           }`}
         >
           {accepted && <Check className="size-3 text-primary-foreground" />}

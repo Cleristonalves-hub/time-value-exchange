@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, Mail } from "lucide-react";
 import { ValoreLogo } from "@/components/ValoreLogo";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,9 @@ export const Route = createFileRoute("/cadastro/cliente")({
   component: ClientRegistration,
 });
 
+type FieldKey = "name" | "email" | "password" | "cpf" | "phone" | "accept" | "cpfDeclaration";
+const FIELD_ORDER: FieldKey[] = ["name", "email", "password", "cpf", "phone", "accept", "cpfDeclaration"];
+
 function ClientRegistration() {
   const navigate = useNavigate();
   const { signUp, resendConfirmation } = useAuth();
@@ -28,8 +31,8 @@ function ClientRegistration() {
   const [resending, setResending] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
-  const [cpfError, setCpfError] = useState<string | null>(null);
-  const [nameError, setNameError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({});
+  const fieldRefs = useRef<Partial<Record<FieldKey, HTMLDivElement | null>>>({});
   const [d, setD] = useState({
     name: "",
     email: "",
@@ -42,33 +45,41 @@ function ClientRegistration() {
   const set = (k: keyof typeof d, v: string | boolean) => {
     setD((s) => ({ ...s, [k]: v }));
     if (k === "email") setEmailError(null);
-    if (k === "cpf") setCpfError(null);
-    if (k === "name") setNameError(null);
+    setFieldErrors((s) => {
+      if (!s[k as FieldKey]) return s;
+      const next = { ...s };
+      delete next[k as FieldKey];
+      return next;
+    });
   };
 
-  const ok =
-    isFullName(d.name) &&
-    /\S+@\S+\.\S+/.test(d.email) &&
-    d.password.length >= 6 &&
-    isValidCPF(d.cpf) &&
-    d.phone.trim() &&
-    d.accept &&
-    d.cpfDeclaration;
+  function validate(): Partial<Record<FieldKey, string>> {
+    const errs: Partial<Record<FieldKey, string>> = {};
+    if (!isFullName(d.name)) errs.name = "Por favor, insira seu nome completo.";
+    if (!/\S+@\S+\.\S+/.test(d.email)) errs.email = "Informe um e-mail válido.";
+    if (d.password.length < 6) errs.password = "A senha precisa ter pelo menos 6 caracteres.";
+    if (!isValidCPF(d.cpf)) errs.cpf = "CPF inválido. Verifique e tente novamente.";
+    if (!d.phone.trim()) errs.phone = "Campo obrigatório.";
+    if (!d.accept) errs.accept = "É necessário aceitar o Código de Conduta para continuar.";
+    if (!d.cpfDeclaration) errs.cpfDeclaration = "É necessário confirmar esta declaração para continuar.";
+    return errs;
+  }
+
+  function scrollToFirstError(errs: Partial<Record<FieldKey, string>>) {
+    const firstKey = FIELD_ORDER.find((k) => errs[k]);
+    if (firstKey) fieldRefs.current[firstKey]?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setEmailError(null);
-    setCpfError(null);
-    setNameError(null);
-    if (!isFullName(d.name)) {
-      setNameError("Por favor, insira seu nome completo.");
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      scrollToFirstError(errs);
       return;
     }
-    if (!isValidCPF(d.cpf)) {
-      setCpfError("CPF inválido. Verifique e tente novamente.");
-      return;
-    }
-    if (!ok) return;
+    setFieldErrors({});
     setSubmitting(true);
     try {
       const { error, needsEmailConfirmation, emailExists } = await signUp(d.email, d.password, d.name, {
@@ -76,7 +87,10 @@ function ClientRegistration() {
         telefone: d.phone,
       });
       if (error) {
-        if (emailExists) setEmailError(error);
+        if (emailExists) {
+          setEmailError(error);
+          fieldRefs.current.email?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
         toast.error(error);
         return;
       }
@@ -170,52 +184,112 @@ function ClientRegistration() {
           </p>
         </div>
 
-        <form onSubmit={onSubmit} className="mt-10 space-y-5">
-          <Field label="Nome completo" required>
-            <Input value={d.name} onChange={(e) => set("name", e.target.value)} placeholder="Seu nome" />
-            {(nameError || (d.name && !isFullName(d.name))) && (
-              <p className="mt-1 text-[11px] text-destructive">Por favor, insira seu nome completo.</p>
-            )}
+        <form onSubmit={onSubmit} noValidate className="mt-10 space-y-5">
+          <Field
+            label="Nome completo"
+            required
+            error={fieldErrors.name}
+            fieldRef={(el) => { fieldRefs.current.name = el; }}
+          >
+            <Input
+              value={d.name}
+              onChange={(e) => set("name", e.target.value)}
+              placeholder="Seu nome"
+              className={fieldErrors.name ? "border-destructive focus-visible:ring-destructive" : undefined}
+            />
           </Field>
-          <Field label="E-mail" required>
-            <Input type="email" value={d.email} onChange={(e) => set("email", e.target.value)} placeholder="voce@dominio.com" />
-            {emailError && <p className="mt-1 text-[11px] text-destructive">{emailError}</p>}
+          <Field
+            label="E-mail"
+            required
+            error={fieldErrors.email || emailError || undefined}
+            fieldRef={(el) => { fieldRefs.current.email = el; }}
+          >
+            <Input
+              type="email"
+              value={d.email}
+              onChange={(e) => set("email", e.target.value)}
+              placeholder="voce@dominio.com"
+              className={fieldErrors.email || emailError ? "border-destructive focus-visible:ring-destructive" : undefined}
+            />
           </Field>
-          <Field label="Senha" required>
-            <PasswordInput value={d.password} onChange={(e) => set("password", e.target.value)} placeholder="Mínimo 6 caracteres" />
+          <Field
+            label="Senha"
+            required
+            error={fieldErrors.password}
+            fieldRef={(el) => { fieldRefs.current.password = el; }}
+          >
+            <PasswordInput
+              value={d.password}
+              onChange={(e) => set("password", e.target.value)}
+              placeholder="Mínimo 6 caracteres"
+              className={fieldErrors.password ? "border-destructive focus-visible:ring-destructive" : undefined}
+            />
           </Field>
-          <Field label="CPF" required>
-            <Input value={d.cpf} onChange={(e) => set("cpf", e.target.value)} placeholder="000.000.000-00" />
-            {(cpfError || (d.cpf && !isValidCPF(d.cpf))) && (
-              <p className="mt-1 text-[11px] text-destructive">CPF inválido. Verifique e tente novamente.</p>
-            )}
+          <Field
+            label="CPF"
+            required
+            error={fieldErrors.cpf}
+            fieldRef={(el) => { fieldRefs.current.cpf = el; }}
+          >
+            <Input
+              value={d.cpf}
+              onChange={(e) => set("cpf", e.target.value)}
+              placeholder="000.000.000-00"
+              className={fieldErrors.cpf ? "border-destructive focus-visible:ring-destructive" : undefined}
+            />
           </Field>
-          <Field label="Telefone / WhatsApp" required>
-            <Input value={d.phone} onChange={(e) => set("phone", e.target.value)} placeholder="(21) 9 0000-0000" />
+          <Field
+            label="Telefone / WhatsApp"
+            required
+            error={fieldErrors.phone}
+            fieldRef={(el) => { fieldRefs.current.phone = el; }}
+          >
+            <Input
+              value={d.phone}
+              onChange={(e) => set("phone", e.target.value)}
+              placeholder="(21) 9 0000-0000"
+              className={fieldErrors.phone ? "border-destructive focus-visible:ring-destructive" : undefined}
+            />
           </Field>
 
-          <ConductPledge accepted={d.accept} onToggle={() => set("accept", !d.accept)} />
+          <div ref={(el) => { fieldRefs.current.accept = el; }}>
+            <ConductPledge accepted={d.accept} onToggle={() => set("accept", !d.accept)} error={!!fieldErrors.accept} />
+            {fieldErrors.accept && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.accept}</p>}
+          </div>
 
-          <label className="flex cursor-pointer items-start gap-3 rounded-md border border-gold/30 bg-gold/5 p-4 text-[12px] leading-relaxed text-foreground/80">
-            <button
-              type="button"
-              onClick={() => set("cpfDeclaration", !d.cpfDeclaration)}
-              aria-pressed={d.cpfDeclaration}
-              className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border transition-colors ${
-                d.cpfDeclaration ? "border-gold bg-gold" : "border-border"
+          <div ref={(el) => { fieldRefs.current.cpfDeclaration = el; }}>
+            <label
+              className={`flex cursor-pointer items-start gap-3 rounded-md border p-4 text-[12px] leading-relaxed text-foreground/80 ${
+                fieldErrors.cpfDeclaration ? "border-destructive bg-destructive/5" : "border-gold/30 bg-gold/5"
               }`}
             >
-              {d.cpfDeclaration && <Check className="size-3 text-primary-foreground" />}
-            </button>
-            <span>
-              Declaro que o CPF informado é meu e que todas as informações fornecidas são verdadeiras, sob pena das
-              sanções legais cabíveis.
-            </span>
-          </label>
+              <button
+                type="button"
+                onClick={() => set("cpfDeclaration", !d.cpfDeclaration)}
+                aria-pressed={d.cpfDeclaration}
+                className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                  d.cpfDeclaration
+                    ? "border-gold bg-gold"
+                    : fieldErrors.cpfDeclaration
+                      ? "border-destructive"
+                      : "border-border"
+                }`}
+              >
+                {d.cpfDeclaration && <Check className="size-3 text-primary-foreground" />}
+              </button>
+              <span>
+                Declaro que o CPF informado é meu e que todas as informações fornecidas são verdadeiras, sob pena das
+                sanções legais cabíveis.
+              </span>
+            </label>
+            {fieldErrors.cpfDeclaration && (
+              <p className="mt-1 text-[11px] text-destructive">{fieldErrors.cpfDeclaration}</p>
+            )}
+          </div>
 
           <button
             type="submit"
-            disabled={!ok || submitting}
+            disabled={submitting}
             className="group flex w-full items-center justify-center gap-2 rounded-md bg-gradient-gold px-6 py-4 text-sm font-medium uppercase tracking-[0.2em] text-primary-foreground shadow-gold transition-transform active:scale-[0.98] disabled:opacity-30 disabled:shadow-none"
           >
             {submitting ? "Criando…" : "Criar minha conta"}
@@ -263,14 +337,27 @@ function ClientRegistration() {
   );
 }
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: ReactNode }) {
+function Field({
+  label,
+  required,
+  error,
+  fieldRef,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  fieldRef?: (el: HTMLDivElement | null) => void;
+  children: ReactNode;
+}) {
   return (
-    <div>
+    <div ref={fieldRef}>
       <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-muted-foreground">
         {label}
         {required && <span className="text-destructive"> *</span>}
       </label>
       {children}
+      {error && <p className="mt-1 text-[11px] text-destructive">{error}</p>}
     </div>
   );
 }
