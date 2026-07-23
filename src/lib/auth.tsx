@@ -11,7 +11,7 @@ type AuthCtx = {
     email: string,
     password: string,
     nome: string,
-    extra?: { cpf?: string; telefone?: string },
+    extra?: { cpf?: string; telefone?: string; cidade?: string; estado?: string },
   ) => Promise<{ error: string | null; needsEmailConfirmation?: boolean; emailExists?: boolean }>;
   signOut: () => Promise<void>;
   resendConfirmation: (email: string) => Promise<{ error: string | null }>;
@@ -85,6 +85,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           tipo: "cliente",
           cpf: extra?.cpf || null,
           telefone: extra?.telefone || null,
+          cidade: extra?.cidade || null,
+          estado: extra?.estado || null,
         });
       }
       return { error: null, needsEmailConfirmation: !data.session };

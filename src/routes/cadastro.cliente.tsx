@@ -22,8 +22,8 @@ export const Route = createFileRoute("/cadastro/cliente")({
   component: ClientRegistration,
 });
 
-type FieldKey = "name" | "email" | "password" | "cpf" | "phone" | "accept" | "cpfDeclaration";
-const FIELD_ORDER: FieldKey[] = ["name", "email", "password", "cpf", "phone", "accept", "cpfDeclaration"];
+type FieldKey = "name" | "email" | "password" | "cpf" | "phone" | "cidade" | "estado" | "accept" | "cpfDeclaration";
+const FIELD_ORDER: FieldKey[] = ["name", "email", "password", "cpf", "phone", "cidade", "estado", "accept", "cpfDeclaration"];
 
 function ClientRegistration() {
   const navigate = useNavigate();
@@ -41,6 +41,8 @@ function ClientRegistration() {
     password: "",
     cpf: "",
     phone: "",
+    cidade: "",
+    estado: "",
     accept: false,
     cpfDeclaration: false,
   });
@@ -62,6 +64,8 @@ function ClientRegistration() {
     if (d.password.length < 6) errs.password = t("cc.passwordTooShort");
     if (!isValidCPF(d.cpf)) errs.cpf = t("cc.cpfInvalid");
     if (!d.phone.trim()) errs.phone = t("cc.required");
+    if (!d.cidade.trim()) errs.cidade = t("cc.required");
+    if (!d.estado.trim()) errs.estado = t("cc.required");
     if (!d.accept) errs.accept = t("cc.acceptRequired");
     if (!d.cpfDeclaration) errs.cpfDeclaration = t("cc.cpfDeclarationRequired");
     return errs;
@@ -87,6 +91,8 @@ function ClientRegistration() {
       const { error, needsEmailConfirmation, emailExists } = await signUp(d.email, d.password, d.name, {
         cpf: d.cpf,
         telefone: d.phone,
+        cidade: d.cidade,
+        estado: d.estado,
       });
       if (error) {
         if (emailExists) {
@@ -252,6 +258,36 @@ function ClientRegistration() {
               className={fieldErrors.phone ? "border-destructive focus-visible:ring-destructive" : undefined}
             />
           </Field>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field
+              label={t("cc.city")}
+              required
+              error={fieldErrors.cidade}
+              fieldRef={(el) => { fieldRefs.current.cidade = el; }}
+            >
+              <Input
+                value={d.cidade}
+                onChange={(e) => set("cidade", e.target.value)}
+                placeholder={t("cc.cityPlaceholder")}
+                className={fieldErrors.cidade ? "border-destructive focus-visible:ring-destructive" : undefined}
+              />
+            </Field>
+            <Field
+              label={t("cc.state")}
+              required
+              error={fieldErrors.estado}
+              fieldRef={(el) => { fieldRefs.current.estado = el; }}
+            >
+              <Input
+                value={d.estado}
+                onChange={(e) => set("estado", e.target.value.toUpperCase())}
+                placeholder={t("cc.statePlaceholder")}
+                maxLength={2}
+                className={fieldErrors.estado ? "border-destructive focus-visible:ring-destructive" : undefined}
+              />
+            </Field>
+          </div>
 
           <div ref={(el) => { fieldRefs.current.accept = el; }}>
             <ConductPledge accepted={d.accept} onToggle={() => set("accept", !d.accept)} error={!!fieldErrors.accept} />

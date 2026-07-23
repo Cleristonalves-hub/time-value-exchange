@@ -32,6 +32,7 @@ type FormData = {
   password: string;
   phone: string;
   city: string;
+  state: string;
   bio: string;
   niche: string;
   specialty: string;
@@ -56,6 +57,7 @@ type FieldKey =
   | "password"
   | "phone"
   | "city"
+  | "state"
   | "document"
   | "cpfDeclaration"
   | "niche"
@@ -75,7 +77,7 @@ type FieldKey =
   | "delinquencyAck";
 
 const STEP_FIELD_ORDER: FieldKey[][] = [
-  ["fullName", "email", "password", "phone", "city", "document", "cpfDeclaration"],
+  ["fullName", "email", "password", "phone", "city", "state", "document", "cpfDeclaration"],
   ["niche", "specialty", "bio"],
   ["credential", "experience", "portfolioUrl", "registrationNumber"],
   ["platform", "minBid", "availableDays", "endTime", "pixKey", "conduct", "truthPledge", "delinquencyAck"],
@@ -132,7 +134,7 @@ function SpecialistRegistration() {
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const fieldRefs = useRef<Partial<Record<FieldKey, HTMLDivElement | null>>>({});
   const [data, setData] = useState<FormData>({
-    fullName: "", email: "", password: "", phone: "", city: "",
+    fullName: "", email: "", password: "", phone: "", city: "", state: "",
     bio: "", niche: "", specialty: "", credential: "", experience: "",
     portfolioUrl: "", registrationNumber: "",
     platform: "", duration: "60", languages: "Português",
@@ -181,6 +183,7 @@ function SpecialistRegistration() {
       password: "",
       phone: existing.phone,
       city: existing.city,
+      state: existing.state,
       bio: existing.bio,
       niche: existing.niche,
       specialty: existing.specialty,
@@ -244,6 +247,7 @@ function SpecialistRegistration() {
       if (!user && data.password.length < 6) errs.password = t("ce.passwordTooShort");
       if (!data.phone.trim()) errs.phone = t("ce.required");
       if (!data.city.trim()) errs.city = t("ce.required");
+      if (!data.state.trim()) errs.state = t("ce.required");
       if (!isValidCpfCnpj(data.document)) {
         errs.document = data.document.replace(/\D/g, "").length === 14 ? t("ce.cnpjInvalid") : t("ce.cpfInvalid");
       }
@@ -336,6 +340,7 @@ function SpecialistRegistration() {
       email: data.email,
       phone: data.phone,
       city: data.city,
+      state: data.state,
       niche: data.niche,
       specialty: data.specialty,
       bio: data.bio,
@@ -411,6 +416,13 @@ function SpecialistRegistration() {
           <ValoreLogo className="text-2xl" />
           <span className="w-5" />
         </div>
+
+        {step === 0 && (
+          <div className="mt-8">
+            <h1 className="font-display text-2xl text-foreground">{t("ce.pageTitle")}</h1>
+            <p className="mt-2 text-sm text-muted-foreground">{t("ce.pageSubtitle")}</p>
+          </div>
+        )}
 
         <div className="mt-8">
           <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
@@ -508,19 +520,35 @@ function SpecialistRegistration() {
                   className={fieldErrors.phone ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
               </Field>
-              <Field
-                label={t("ce.city")}
-                required
-                error={fieldErrors.city}
-                fieldRef={(el) => { fieldRefs.current.city = el; }}
-              >
-                <Input
-                  value={data.city}
-                  onChange={(e) => set("city", e.target.value)}
-                  placeholder={t("ce.cityPlaceholder")}
-                  className={fieldErrors.city ? "border-destructive focus-visible:ring-destructive" : undefined}
-                />
-              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field
+                  label={t("ce.city")}
+                  required
+                  error={fieldErrors.city}
+                  fieldRef={(el) => { fieldRefs.current.city = el; }}
+                >
+                  <Input
+                    value={data.city}
+                    onChange={(e) => set("city", e.target.value)}
+                    placeholder={t("ce.cityPlaceholder")}
+                    className={fieldErrors.city ? "border-destructive focus-visible:ring-destructive" : undefined}
+                  />
+                </Field>
+                <Field
+                  label={t("ce.state")}
+                  required
+                  error={fieldErrors.state}
+                  fieldRef={(el) => { fieldRefs.current.state = el; }}
+                >
+                  <Input
+                    value={data.state}
+                    onChange={(e) => set("state", e.target.value.toUpperCase())}
+                    placeholder={t("ce.statePlaceholder")}
+                    maxLength={2}
+                    className={fieldErrors.state ? "border-destructive focus-visible:ring-destructive" : undefined}
+                  />
+                </Field>
+              </div>
               <Field
                 label={t("ce.document")}
                 required

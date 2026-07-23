@@ -9,6 +9,7 @@ export type Specialist = {
   email: string;
   phone: string;
   city: string;
+  state: string;
   niche: string;
   specialty: string;
   bio: string;
@@ -106,6 +107,7 @@ type SpecialistRow = {
   email: string | null;
   telefone: string | null;
   cidade: string | null;
+  estado: string | null;
   nicho: string | null;
   especialidade: string | null;
   bio: string | null;
@@ -217,6 +219,7 @@ const toSpecialist = (r: SpecialistRow): Specialist => ({
   email: r.email ?? "",
   phone: r.telefone ?? "",
   city: r.cidade ?? "",
+  state: r.estado ?? "",
   niche: r.nicho ?? "",
   specialty: r.especialidade ?? "",
   bio: r.bio ?? "",
@@ -526,6 +529,7 @@ export async function addSpecialist(
       email: input.email,
       telefone: input.phone,
       cidade: input.city,
+      estado: input.state,
       nicho: input.niche,
       especialidade: input.specialty,
       bio: input.bio,
@@ -571,6 +575,7 @@ export async function updateSpecialist(
       email: input.email,
       telefone: input.phone,
       cidade: input.city,
+      estado: input.state,
       nicho: input.niche,
       especialidade: input.specialty,
       bio: input.bio,
@@ -749,6 +754,23 @@ export async function addFeedback(input: Omit<Feedback, "id" | "createdAt">) {
 export async function updateUserAvatar(userId: string, url: string) {
   const { error } = await supabase.from("usuarios").update({ avatar_url: url }).eq("id", userId);
   if (error) console.error("updateUserAvatar:", error);
+}
+
+// Edição de perfil para clientes (usuários sem cadastro de especialista) —
+// especialistas editam via o formulário completo em /cadastro/especialista.
+export async function updateUserProfile(
+  userId: string,
+  input: { nome: string; telefone: string; cidade: string },
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("usuarios")
+    .update({ nome: input.nome, telefone: input.telefone, cidade: input.cidade })
+    .eq("id", userId);
+  if (error) {
+    console.error("updateUserProfile:", error);
+    return false;
+  }
+  return true;
 }
 
 export async function deleteMyAccount(userId: string): Promise<boolean> {

@@ -5,8 +5,9 @@ import { WarningBadge } from "@/components/ConductPledge";
 import { ShieldAlert, Camera, LogOut, Trash2, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
-import { uploadAvatar, updateUserAvatar, deleteMyAccount, useMySpecialist, useRejectionReasons } from "@/lib/store";
+import { uploadAvatar, updateUserAvatar, updateUserProfile, deleteMyAccount, useMySpecialist, useRejectionReasons } from "@/lib/store";
 import { useT } from "@/lib/i18n";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -42,8 +43,15 @@ function ProfilePage() {
   const navigate = useNavigate();
   const tier: 0 | 1 | 2 | 3 = 0;
   const [nome, setNome] = useState<string>("");
+  const [telefone, setTelefone] = useState<string>("");
+  const [cidade, setCidade] = useState<string>("");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [editingClient, setEditingClient] = useState(false);
+  const [editNome, setEditNome] = useState("");
+  const [editTelefone, setEditTelefone] = useState("");
+  const [editCidade, setEditCidade] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
 
   const especialista = useMySpecialist(user?.id, user?.email ?? undefined);
   const reprovado = especialista?.status === "reprovado";
@@ -58,14 +66,47 @@ function ProfilePage() {
     if (!user) return;
     supabase
       .from("usuarios")
-      .select("nome, avatar_url")
+      .select("nome, avatar_url, telefone, cidade")
       .eq("id", user.id)
       .maybeSingle()
       .then(({ data }) => {
         setNome(data?.nome ?? user.user_metadata?.nome ?? "");
         setAvatar(data?.avatar_url ?? null);
+        setTelefone(data?.telefone ?? "");
+        setCidade(data?.cidade ?? "");
       });
   }, [user]);
+
+  function onOpenEditProfile() {
+    if (especialista) {
+      navigate({ to: "/cadastro/especialista" });
+      return;
+    }
+    setEditNome(nome);
+    setEditTelefone(telefone);
+    setEditCidade(cidade);
+    setEditingClient(true);
+  }
+
+  async function onSaveClientProfile() {
+    if (!user) return;
+    setSavingProfile(true);
+    const ok = await updateUserProfile(user.id, {
+      nome: editNome,
+      telefone: editTelefone,
+      cidade: editCidade,
+    });
+    setSavingProfile(false);
+    if (ok) {
+      setNome(editNome);
+      setTelefone(editTelefone);
+      setCidade(editCidade);
+      setEditingClient(false);
+      toast.success(t("pf.profileUpdated"));
+    } else {
+      toast.error(t("pf.profileUpdateError"));
+    }
+  }
 
   async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -142,32 +183,64 @@ function ProfilePage() {
           <div className="mt-4 flex justify-center">
             <WarningBadge tier={tier} />
           </div>
+          <button
+            onClick={onOpenEditProfile}
+            className="mt-4 rounded-md border border-gold/40 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-gold hover:bg-gold/5"
+          >
+            {t("pf.editProfile")}
+          </button>
         </div>
+
+        {editingClient && (
+          <div className="mt-6 rounded-2xl border border-gold/30 bg-surface p-5">
+            <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("pf.editProfile")}</h2>
+            <div className="mt-4 space-y-4">
+              <EditField label={t("cc.fullName")}>
+                <Input value={editNome} onChange={(e) => setEditNome(e.target.value)} />
+              </EditField>
+              <EditField label={t("cc.phone")}>
+                <Input value={editTelefone} onChange={(e) => setEditTelefone(e.target.value)} placeholder={t("cc.phonePlaceholder")} />
+              </EditField>
+              <EditField label={t("cc.city")}>
+                <Input value={editCidade} onChange={(e) => setEditCidade(e.target.value)} placeholder={t("cc.cityPlaceholder")} />
+              </EditField>
+            </div>
+            <div className="mt-5 flex gap-2">
+              <button
+                onClick={onSaveClientProfile}
+                disabled={savingProfile}
+                className="flex-1 rounded-md bg-gradient-gold py-2 text-xs font-semibold uppercase tracking-widest text-primary-foreground shadow-gold disabled:opacity-50"
+              >
+                {savingProfile ? t("common.saving") : t("common.save")}
+              </button>
+              <button
+                onClick={() => setEditingClient(false)}
+                className="flex-1 rounded-md border border-border py-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground"
+              >
+                {t("common.cancel")}
+              </button>
+            </div>
+          </div>
+        )}
 
         {especialista && !reprovado && (
           <div className="mt-6 rounded-2xl border border-gold/30 bg-surface p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("pf.specialistRegistration")}</h2>
-                <p className="mt-1 text-sm text-foreground">
-                  {t("pf.status")}:{" "}
-                  <span className="text-gold">
-                    {especialista.status === "verificado"
-                      ? t("pf.statusVerified")
-                      : especialista.status === "suspenso"
-                        ? t("pf.statusSuspended")
-                        : t("pf.statusNew")}
-                  </span>
-                </p>
-              </div>
-              <button
-                onClick={() => navigate({ to: "/cadastro/especialista" })}
-                className="shrink-0 rounded-md border border-gold/40 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-gold hover:bg-gold/5"
-              >
-                {t("pf.editProfile")}
-              </button>
-            </div>
-            {(especialista.status === "novo" || especialista.status === "verificado") && (
+            <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("pf.specialistRegistration")}</h2>
+            <p className="mt-1 text-sm text-foreground">
+              {t("pf.status")}:{" "}
+              <span className="text-gold">
+                {especialista.status === "verificado"
+                  ? t("pf.statusVerified")
+                  : especialista.status === "suspenso"
+                    ? t("pf.statusSuspended")
+                    : t("pf.statusNew")}
+              </span>
+            </p>
+            {/* Visível para qualquer status que não seja suspenso (reprovado já é
+                filtrado pelo `!reprovado` acima) — não usar allow-list aqui para
+                não esconder o botão silenciosamente se um novo status for
+                introduzido no futuro. */}
+            {especialista.status !== "suspenso" && (
               <button
                 onClick={() => navigate({ to: "/criar-leilao" })}
                 className="mt-3 w-full rounded-md bg-gradient-gold py-2 text-xs font-semibold uppercase tracking-widest text-primary-foreground shadow-gold hover:opacity-90"
@@ -273,6 +346,15 @@ function ProfilePage() {
       </div>
       <BottomNav />
     </main>
+  );
+}
+
+function EditField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-muted-foreground">{label}</label>
+      {children}
+    </div>
   );
 }
 
