@@ -521,10 +521,15 @@ export async function uploadAvatar(file: File, prefix = "user"): Promise<string 
 
 export async function addSpecialist(
   input: Omit<Specialist, "id" | "status" | "createdAt" | "badgeCancelamentoAte" | "suspensoAte" | "motivoPenalidade">,
+  usuarioId?: string,
 ): Promise<Specialist | null> {
   const { data, error } = await supabase
     .from("especialistas")
     .insert({
+      // Sem isso, a linha nunca fica vinculada ao usuário autenticado — o que
+      // quebra tanto a política de RLS de auto-edição ("self_update", que
+      // depende de usuario_id = auth.uid()) quanto a busca em useMySpecialist.
+      usuario_id: usuarioId ?? null,
       nome: input.fullName,
       email: input.email,
       telefone: input.phone,

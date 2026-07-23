@@ -724,6 +724,17 @@ const DICT: Record<string, Entry> = {
     "بمجرد التأكيد، ستنتقل هذه الشاشة تلقائيًا إلى بقية خطوات التسجيل دون الحاجة لتسجيل الدخول مجددًا.",
   ),
   "ce.profilePublished": D("Perfil publicado.", "Profile published.", "Perfil publicado.", "Profil publié.", "Profil veröffentlicht.", "Profilo pubblicato.", "プロフィールが公開されました。", "资料已发布。", "تم نشر الملف الشخصي."),
+  "ce.updateError": D(
+    "Não foi possível atualizar seu perfil. Tente novamente.",
+    "Couldn't update your profile. Please try again.",
+    "No se pudo actualizar tu perfil. Inténtalo de nuevo.",
+    "Impossible de mettre à jour votre profil. Veuillez réessayer.",
+    "Ihr Profil konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
+    "Impossibile aggiornare il tuo profilo. Riprova.",
+    "プロフィールを更新できませんでした。もう一度お試しください。",
+    "无法更新您的资料，请重试。",
+    "تعذر تحديث ملفك الشخصي. يرجى المحاولة مرة أخرى.",
+  ),
   "ce.successEditTitle": D("Cadastro atualizado", "Profile updated", "Perfil actualizado", "Profil mis à jour", "Profil aktualisiert", "Profilo aggiornato", "プロフィールが更新されました", "资料已更新", "تم تحديث الملف الشخصي"),
   "ce.successNewTitle": D("Perfil publicado", "Profile published", "Perfil publicado", "Profil publié", "Profil veröffentlicht", "Profilo pubblicato", "プロフィールが公開されました", "资料已发布", "تم نشر الملف الشخصي"),
   "ce.successEditBody": D(

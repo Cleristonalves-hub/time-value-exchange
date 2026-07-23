@@ -360,11 +360,15 @@ function SpecialistRegistration() {
       pixKey: data.pixKey,
     };
     if (editingId) {
-      await updateSpecialist(editingId, payload);
+      const updated = await updateSpecialist(editingId, payload);
       setSubmitting(false);
-      setDone(true);
+      if (updated) {
+        setDone(true);
+      } else {
+        toast.error(t("ce.updateError"));
+      }
     } else {
-      await addSpecialist(payload);
+      await addSpecialist(payload, user?.id);
       setSubmitting(false);
       toast.success(t("ce.profilePublished"));
       navigate({ to: "/criar-leilao" });
