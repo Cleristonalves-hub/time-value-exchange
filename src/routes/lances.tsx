@@ -25,6 +25,14 @@ function LancesPage() {
   const especialista = useMySpecialist(user?.id, user?.email ?? undefined);
   const [showArea, setShowArea] = useState(false);
 
+  // TODO(debug temporário): remover depois de confirmar em produção que a
+  // Área do Profissional aparece corretamente para especialistas reais.
+  console.log("[DEBUG /lances] useMySpecialist ->", {
+    userId: user?.id,
+    userEmail: user?.email,
+    especialista,
+  });
+
   return (
     <RequireAuth>
       <main className="min-h-screen pb-24">

@@ -408,7 +408,7 @@ export function useMyCard(usuarioId: string | undefined): Cartao | null {
 // bloquear cadastro duplicado). `excludeId` permite ignorar o próprio registro
 // ao validar uma edição.
 export async function specialistEmailExists(email: string, excludeId?: string): Promise<boolean> {
-  let query = supabase.from("especialistas").select("id").eq("email", email).limit(1);
+  let query = supabase.from("especialistas").select("id").ilike("email", email).limit(1);
   if (excludeId) query = query.neq("id", excludeId);
   const { data, error } = await query;
   if (error) {
@@ -420,6 +420,11 @@ export async function specialistEmailExists(email: string, excludeId?: string): 
 
 // Busca o cadastro de especialista do usuário logado (por usuario_id ou, como
 // fallback, pelo e-mail — nem todo fluxo de insert popula usuario_id hoje).
+// O e-mail usa `ilike` (case-insensitive) porque o Supabase Auth sempre
+// normaliza `auth.users.email` para minúsculas, mas `especialistas.email` é
+// gravado com a capitalização exata que o especialista digitou no cadastro —
+// um `.eq` exato aqui faria o fallback falhar silenciosamente sempre que a
+// linha não tiver usuario_id preenchido e o e-mail tiver alguma letra maiúscula.
 export function useMySpecialist(usuarioId: string | undefined, email: string | undefined) {
   const { data } = useQuery({
     queryKey: [...K.mySpecialist, usuarioId ?? "", email ?? ""],
@@ -428,11 +433,11 @@ export function useMySpecialist(usuarioId: string | undefined, email: string | u
     queryFn: async () => {
       let query = supabase.from("especialistas").select("*").order("created_at", { ascending: false }).limit(1);
       if (usuarioId && email) {
-        query = query.or(`usuario_id.eq.${usuarioId},email.eq.${email}`);
+        query = query.or(`usuario_id.eq.${usuarioId},email.ilike.${email}`);
       } else if (usuarioId) {
         query = query.eq("usuario_id", usuarioId);
       } else if (email) {
-        query = query.eq("email", email);
+        query = query.ilike("email", email);
       }
       const { data, error } = await query.maybeSingle();
       if (error) throw error;
@@ -577,7 +582,7 @@ export async function addSpecialist(
       // depende de usuario_id = auth.uid()) quanto a busca em useMySpecialist.
       usuario_id: usuarioId ?? null,
       nome: input.fullName,
-      email: input.email,
+      email: input.email.trim().toLowerCase(),
       telefone: input.phone,
       cidade: input.city,
       estado: input.state,
@@ -623,7 +628,7 @@ export async function updateSpecialist(
     .from("especialistas")
     .update({
       nome: input.fullName,
-      email: input.email,
+      email: input.email.trim().toLowerCase(),
       telefone: input.phone,
       cidade: input.city,
       estado: input.state,
