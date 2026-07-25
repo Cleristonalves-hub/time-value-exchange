@@ -203,6 +203,7 @@ function ClientRegistration() {
               value={d.name}
               onChange={(e) => set("name", e.target.value)}
               placeholder={t("cc.namePlaceholder")}
+              maxLength={100}
               className={fieldErrors.name ? "border-destructive focus-visible:ring-destructive" : undefined}
             />
           </Field>
@@ -275,6 +276,7 @@ function ClientRegistration() {
                 value={d.cidade}
                 onChange={(e) => set("cidade", e.target.value)}
                 placeholder={t("cc.cityPlaceholder")}
+                maxLength={100}
                 className={fieldErrors.cidade ? "border-destructive focus-visible:ring-destructive" : undefined}
               />
             </Field>

@@ -73,13 +73,13 @@ function FeedbackPage() {
 
         <div className="mt-6 space-y-4">
           <Field label={t("fb.yourName")}>
-            <input value={name} onChange={(e) => setName(e.target.value)} className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-gold" />
+            <input value={name} onChange={(e) => setName(e.target.value)} maxLength={100} className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-gold" />
           </Field>
           <Field label={t("fb.emailOptional")}>
-            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-gold" />
+            <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" maxLength={254} className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-gold" />
           </Field>
           <Field label={t("fb.message")}>
-            <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={5} className="w-full resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-gold" />
+            <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={5} maxLength={1000} className="w-full resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-gold" />
           </Field>
         </div>
 

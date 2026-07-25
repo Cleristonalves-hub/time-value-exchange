@@ -12,7 +12,7 @@ import { addSpecialist, updateSpecialist, registrationLabel, uploadAvatar, useMy
 import { useAuth } from "@/lib/auth";
 import { useT, nicheLabel, WEEKDAY_LABEL_KEY } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
-import { isValidCpfCnpj, isFullName } from "@/lib/validators";
+import { isValidCpfCnpj, isFullName, isSafeHttpUrl } from "@/lib/validators";
 import { maskCpfCnpj, maskPhone } from "@/lib/masks";
 import { toast } from "sonner";
 
@@ -105,15 +105,6 @@ const TIME_OPTIONS: string[] = (() => {
   }
   return out;
 })();
-
-const isUrl = (s: string) => {
-  try {
-    const u = new URL(s);
-    return u.protocol === "http:" || u.protocol === "https:";
-  } catch {
-    return false;
-  }
-};
 
 function SpecialistRegistration() {
   const navigate = useNavigate();
@@ -262,7 +253,7 @@ function SpecialistRegistration() {
     if (s === 2) {
       if (!data.credential.trim()) errs.credential = t("ce.required");
       if (!data.experience.trim()) errs.experience = t("ce.required");
-      if (!isUrl(data.portfolioUrl)) errs.portfolioUrl = t("ce.portfolioInvalid");
+      if (!isSafeHttpUrl(data.portfolioUrl)) errs.portfolioUrl = t("ce.portfolioInvalid");
       if (regLabel && !data.registrationNumber.trim()) errs.registrationNumber = t("ce.required");
     }
     if (s === 3) {
@@ -483,6 +474,7 @@ function SpecialistRegistration() {
                   value={data.fullName}
                   onChange={(e) => set("fullName", e.target.value)}
                   placeholder={t("ce.namePlaceholder")}
+                  maxLength={100}
                   className={fieldErrors.fullName ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
               </Field>
@@ -542,6 +534,7 @@ function SpecialistRegistration() {
                     value={data.city}
                     onChange={(e) => set("city", e.target.value)}
                     placeholder={t("ce.cityPlaceholder")}
+                    maxLength={100}
                     className={fieldErrors.city ? "border-destructive focus-visible:ring-destructive" : undefined}
                   />
                 </Field>
@@ -627,6 +620,7 @@ function SpecialistRegistration() {
                   value={data.specialty}
                   onChange={(e) => set("specialty", e.target.value)}
                   placeholder={t("ce.specialtyPlaceholder")}
+                  maxLength={100}
                   className={fieldErrors.specialty ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
               </Field>
@@ -640,6 +634,7 @@ function SpecialistRegistration() {
                   value={data.bio}
                   onChange={(e) => set("bio", e.target.value)}
                   placeholder={t("ce.bioPlaceholder")}
+                  maxLength={500}
                   className={`min-h-[110px] ${fieldErrors.bio ? "border-destructive focus-visible:ring-destructive" : ""}`}
                 />
                 <p className="mt-1 text-[11px] text-muted-foreground">{t("ce.bioCounter", { n: data.bio.length })}</p>
@@ -659,6 +654,7 @@ function SpecialistRegistration() {
                   value={data.credential}
                   onChange={(e) => set("credential", e.target.value)}
                   placeholder={t("ce.credentialPlaceholder")}
+                  maxLength={200}
                   className={fieldErrors.credential ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
               </Field>

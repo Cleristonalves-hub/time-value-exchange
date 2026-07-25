@@ -197,7 +197,7 @@ function ProfilePage() {
             <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("pf.editProfile")}</h2>
             <div className="mt-4 space-y-4">
               <EditField label={t("cc.fullName")}>
-                <Input value={editNome} onChange={(e) => setEditNome(e.target.value)} />
+                <Input value={editNome} onChange={(e) => setEditNome(e.target.value)} maxLength={100} />
               </EditField>
               <EditField label={t("cc.phone")}>
                 <Input
@@ -209,7 +209,7 @@ function ProfilePage() {
                 />
               </EditField>
               <EditField label={t("cc.city")}>
-                <Input value={editCidade} onChange={(e) => setEditCidade(e.target.value)} placeholder={t("cc.cityPlaceholder")} />
+                <Input value={editCidade} onChange={(e) => setEditCidade(e.target.value)} placeholder={t("cc.cityPlaceholder")} maxLength={100} />
               </EditField>
             </div>
             <div className="mt-5 flex gap-2">

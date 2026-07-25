@@ -20,6 +20,13 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Env files and secrets — nunca commitar credenciais
+.env
+.env.local
+.env.production
+*.secret
+supabase/.temp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

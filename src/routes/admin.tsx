@@ -13,6 +13,7 @@ import { auctions, formatBRL } from "@/lib/auctions";
 import { useIsAdmin } from "@/lib/useIsAdmin";
 import { useAuth } from "@/lib/auth";
 import { useT, nicheLabel } from "@/lib/i18n";
+import { isSafeHttpUrl } from "@/lib/validators";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — Valore" }] }),
@@ -183,9 +184,15 @@ function SpecialistsTab({ items, reviews }: { items: ReturnType<typeof useSpecia
                 )}
                 <p className="text-[11px] text-muted-foreground">{s.email} · {s.city}</p>
                 {s.portfolioUrl && (
-                  <a href={s.portfolioUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block truncate text-[11px] text-gold underline-offset-4 hover:underline">
-                    {s.portfolioUrl}
-                  </a>
+                  isSafeHttpUrl(s.portfolioUrl) ? (
+                    <a href={s.portfolioUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block truncate text-[11px] text-gold underline-offset-4 hover:underline">
+                      {s.portfolioUrl}
+                    </a>
+                  ) : (
+                    <p className="mt-1 truncate text-[11px] text-destructive" title={t("ad.unsafeLink")}>
+                      {s.portfolioUrl}
+                    </p>
+                  )
                 )}
                 {neg > 0 && (
                   <p className="mt-2 text-[11px] text-destructive">{neg} {t("ad.negativeReviews")}</p>

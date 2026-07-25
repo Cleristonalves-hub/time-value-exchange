@@ -110,6 +110,7 @@ function ReportDialog({ target, onClose }: { target: string; onClose: () => void
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               placeholder={t("rd.detailsPlaceholder")}
+              maxLength={500}
               className="mt-4 min-h-[90px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-gold"
             />
 

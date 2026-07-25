@@ -25,6 +25,7 @@
 // com browser headless) não for implementada.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { checkRateLimit } from "../_shared/rateLimit.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -294,6 +295,8 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
     return jsonResponse({ error: "method not allowed" }, 405);
   }
+  const limited = checkRateLimit(req, 30, "trust-engine");
+  if (limited) return limited;
 
   // Defesa extra: a chamada deve vir autenticada com o service_role key
   // (é o que o Database Webhook do Supabase envia por padrão).

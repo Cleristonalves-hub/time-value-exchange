@@ -49,3 +49,35 @@ export function isValidCpfCnpj(raw: string): boolean {
 export function isFullName(raw: string): boolean {
   return raw.trim().split(/\s+/).filter(Boolean).length >= 2;
 }
+
+// Limites de tamanho para campos de texto livre — usados tanto no atributo
+// HTML maxLength quanto na validação antes do submit, para não depender só
+// do navegador (alguém pode montar o POST manualmente sem passar pelo input).
+export const MAX_LENGTHS = {
+  nome: 100,
+  bio: 500,
+  cidade: 100,
+  especialidade: 100,
+  credencial: 200,
+  experiencia: 500,
+  titulo: 100,
+  descricao: 1000,
+  comentario: 500,
+  motivo: 500,
+  mensagem: 1000,
+} as const;
+
+// Só permite http/https — usado antes de renderizar um valor vindo do banco
+// como `href`. A validação no formulário de cadastro já bloqueia protocolos
+// como `javascript:`, mas ela não protege contra uma linha inserida direto
+// via API (bypassando o form) nem contra dados legados — então quem renderiza
+// o link (ex.: o painel /admin) precisa validar de novo antes de usar como href.
+export function isSafeHttpUrl(raw: string | null | undefined): boolean {
+  if (!raw) return false;
+  try {
+    const u = new URL(raw);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}

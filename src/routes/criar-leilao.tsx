@@ -168,6 +168,7 @@ function CriarLeilaoPage() {
                 clearFieldError("titulo");
               }}
               placeholder={t("cl.titlePlaceholder")}
+              maxLength={100}
               className={fieldErrors.titulo ? "border-destructive focus-visible:ring-destructive" : undefined}
             />
           </Field>
@@ -177,6 +178,7 @@ function CriarLeilaoPage() {
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
               placeholder={t("cl.descriptionPlaceholder")}
+              maxLength={1000}
               className="min-h-[110px]"
             />
           </Field>

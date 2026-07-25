@@ -22,6 +22,7 @@
 // state machine funciona; só a cobrança de fato precisa do Access Token.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { checkRateLimit } from "../_shared/rateLimit.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -283,9 +284,16 @@ async function processarPagamentosVencidos() {
 
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return jsonResponse({ error: "method not allowed" }, 405);
-  if (CRON_SECRET) {
-    const provided = req.headers.get("x-cron-secret");
-    if (provided !== CRON_SECRET) return jsonResponse({ error: "unauthorized" }, 401);
+  const limited = checkRateLimit(req, 5, "processar-inadimplencia");
+  if (limited) return limited;
+
+  // BUG corrigido: antes, se PROCESSAR_INADIMPLENCIA_SECRET não estivesse
+  // configurada (CRON_SECRET undefined), o `if (CRON_SECRET)` pulava a
+  // checagem inteira e QUALQUER chamada passava sem autenticação — fail-open
+  // em vez de fail-closed. Agora a ausência do secret também bloqueia.
+  const provided = req.headers.get("x-cron-secret");
+  if (!CRON_SECRET || provided !== CRON_SECRET) {
+    return jsonResponse({ error: "unauthorized" }, 401);
   }
 
   try {

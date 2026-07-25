@@ -19,6 +19,7 @@
 // pessoa poderia forjar chamadas e gastar sua cota do Resend.
 
 import { Webhook } from "npm:standardwebhooks@1.0.0";
+import { checkRateLimit } from "../_shared/rateLimit.ts";
 
 // Formato do secret gerado pelo Dashboard: "v1,whsec_<base64>". A lib
 // standardwebhooks espera só a parte base64, sem o prefixo "v1,whsec_".
@@ -154,6 +155,8 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
     return errorResponse("method not allowed", 405);
   }
+  const limited = checkRateLimit(req, 30, "send-auth-email");
+  if (limited) return limited;
   if (!HOOK_SECRET) {
     console.error("SEND_EMAIL_HOOK_SECRET não configurada.");
     return errorResponse("hook not configured", 500);

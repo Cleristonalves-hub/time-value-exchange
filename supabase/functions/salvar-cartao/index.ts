@@ -13,6 +13,8 @@
 // (Customer + Card na API do MP) que resolve isso.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { checkRateLimit } from "../_shared/rateLimit.ts";
+import { checkOrigin } from "../_shared/csrf.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -59,6 +61,10 @@ async function buscarOuCriarCustomer(email: string): Promise<string> {
 
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return jsonResponse({ error: "method not allowed" }, 405);
+  const limited = checkRateLimit(req, 5, "salvar-cartao");
+  if (limited) return limited;
+  const originBlocked = checkOrigin(req);
+  if (originBlocked) return originBlocked;
 
   if (!MP_ACCESS_TOKEN) {
     return jsonResponse(
