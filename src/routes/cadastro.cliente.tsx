@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/auth";
 import { useT } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { isValidCPF, isFullName } from "@/lib/validators";
+import { maskCPF, maskPhone } from "@/lib/masks";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/cadastro/cliente")({
@@ -240,8 +241,10 @@ function ClientRegistration() {
           >
             <Input
               value={d.cpf}
-              onChange={(e) => set("cpf", e.target.value)}
+              onChange={(e) => set("cpf", maskCPF(e.target.value))}
               placeholder={t("cc.cpfPlaceholder")}
+              inputMode="numeric"
+              maxLength={14}
               className={fieldErrors.cpf ? "border-destructive focus-visible:ring-destructive" : undefined}
             />
           </Field>
@@ -253,8 +256,10 @@ function ClientRegistration() {
           >
             <Input
               value={d.phone}
-              onChange={(e) => set("phone", e.target.value)}
+              onChange={(e) => set("phone", maskPhone(e.target.value))}
               placeholder={t("cc.phonePlaceholder")}
+              inputMode="numeric"
+              maxLength={15}
               className={fieldErrors.phone ? "border-destructive focus-visible:ring-destructive" : undefined}
             />
           </Field>

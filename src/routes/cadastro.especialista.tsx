@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/auth";
 import { useT, nicheLabel, WEEKDAY_LABEL_KEY } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { isValidCpfCnpj, isFullName } from "@/lib/validators";
+import { maskCpfCnpj, maskPhone } from "@/lib/masks";
 import { toast } from "sonner";
 
 
@@ -181,7 +182,7 @@ function SpecialistRegistration() {
       fullName: existing.fullName,
       email: existing.email,
       password: "",
-      phone: existing.phone,
+      phone: maskPhone(existing.phone),
       city: existing.city,
       state: existing.state,
       bio: existing.bio,
@@ -198,7 +199,7 @@ function SpecialistRegistration() {
       availableDays: existing.availableDays,
       startTime: existing.startTime || "09:00",
       endTime: existing.endTime || "18:00",
-      document: existing.document,
+      document: maskCpfCnpj(existing.document),
       pixKey: existing.pixKey,
     });
   }, [existing, editingId]);
@@ -519,8 +520,10 @@ function SpecialistRegistration() {
               >
                 <Input
                   value={data.phone}
-                  onChange={(e) => set("phone", e.target.value)}
+                  onChange={(e) => set("phone", maskPhone(e.target.value))}
                   placeholder={t("ce.phonePlaceholder")}
+                  inputMode="numeric"
+                  maxLength={15}
                   className={fieldErrors.phone ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
               </Field>
@@ -561,8 +564,10 @@ function SpecialistRegistration() {
               >
                 <Input
                   value={data.document}
-                  onChange={(e) => set("document", e.target.value)}
+                  onChange={(e) => set("document", maskCpfCnpj(e.target.value))}
                   placeholder={t("ce.documentPlaceholder")}
+                  inputMode="numeric"
+                  maxLength={18}
                   className={fieldErrors.document ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
               </Field>

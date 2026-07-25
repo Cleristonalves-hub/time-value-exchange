@@ -262,6 +262,7 @@ const K = {
   leilao: ["leilao"] as const,
   lances: ["lances"] as const,
   myCard: ["my-card"] as const,
+  myLeiloes: ["my-leiloes"] as const,
 };
 
 // ------- Hooks -------
@@ -337,6 +338,51 @@ export function useLances(leilaoId: string | undefined): Lance[] {
     },
   });
   return data ?? [];
+}
+
+export type MyLeiloesStats = {
+  leiloes: Leilao[];
+  totalLancesRecebidos: number;
+  totalGanho: number;
+};
+
+// Leilões (em qualquer status) criados pelo especialista logado, usados na
+// "Área do Profissional" de /lances — junto com estatísticas básicas
+// (total de lances recebidos em todos os leilões, e total ganho nos leilões
+// já encerrados com vencedor).
+export function useMyLeiloes(especialistaId: string | undefined): MyLeiloesStats {
+  const { data } = useQuery({
+    queryKey: [...K.myLeiloes, especialistaId ?? ""],
+    enabled: !!especialistaId,
+    staleTime: 10_000,
+    queryFn: async (): Promise<MyLeiloesStats> => {
+      const { data: leiloesData, error: leiloesError } = await supabase
+        .from("leiloes")
+        .select("*")
+        .eq("especialista_id", especialistaId)
+        .order("created_at", { ascending: false });
+      if (leiloesError) throw leiloesError;
+      const leiloes = (leiloesData as LeilaoRow[]).map(toLeilao);
+
+      const leilaoIds = leiloes.map((l) => l.id);
+      let totalLancesRecebidos = 0;
+      if (leilaoIds.length > 0) {
+        const { count, error: lancesError } = await supabase
+          .from("lances")
+          .select("id", { count: "exact", head: true })
+          .in("leilao_id", leilaoIds);
+        if (lancesError) throw lancesError;
+        totalLancesRecebidos = count ?? 0;
+      }
+
+      const totalGanho = leiloes
+        .filter((l) => l.status === "encerrado" && l.vencedorUsuarioId)
+        .reduce((sum, l) => sum + (l.lanceAtual ?? 0), 0);
+
+      return { leiloes, totalLancesRecebidos, totalGanho };
+    },
+  });
+  return data ?? { leiloes: [], totalLancesRecebidos: 0, totalGanho: 0 };
 }
 
 // Cartão tokenizado do usuário logado — acesso a leilões é bloqueado sem um.

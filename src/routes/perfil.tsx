@@ -6,6 +6,7 @@ import { ShieldAlert, Camera, LogOut, Trash2, AlertTriangle } from "lucide-react
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadAvatar, updateUserAvatar, updateUserProfile, deleteMyAccount, useMySpecialist, useRejectionReasons } from "@/lib/store";
+import { maskPhone } from "@/lib/masks";
 import { useT } from "@/lib/i18n";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -72,7 +73,7 @@ function ProfilePage() {
       .then(({ data }) => {
         setNome(data?.nome ?? user.user_metadata?.nome ?? "");
         setAvatar(data?.avatar_url ?? null);
-        setTelefone(data?.telefone ?? "");
+        setTelefone(data?.telefone ? maskPhone(data.telefone) : "");
         setCidade(data?.cidade ?? "");
       });
   }, [user]);
@@ -199,7 +200,13 @@ function ProfilePage() {
                 <Input value={editNome} onChange={(e) => setEditNome(e.target.value)} />
               </EditField>
               <EditField label={t("cc.phone")}>
-                <Input value={editTelefone} onChange={(e) => setEditTelefone(e.target.value)} placeholder={t("cc.phonePlaceholder")} />
+                <Input
+                  value={editTelefone}
+                  onChange={(e) => setEditTelefone(maskPhone(e.target.value))}
+                  placeholder={t("cc.phonePlaceholder")}
+                  inputMode="numeric"
+                  maxLength={15}
+                />
               </EditField>
               <EditField label={t("cc.city")}>
                 <Input value={editCidade} onChange={(e) => setEditCidade(e.target.value)} placeholder={t("cc.cityPlaceholder")} />
