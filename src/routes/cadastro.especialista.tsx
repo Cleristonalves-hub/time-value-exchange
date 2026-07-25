@@ -369,10 +369,14 @@ function SpecialistRegistration() {
         toast.error(t("ce.updateError"));
       }
     } else {
-      await addSpecialist(payload, user?.id);
+      const saved = await addSpecialist(payload, user?.id);
       setSubmitting(false);
-      toast.success(t("ce.profilePublished"));
-      navigate({ to: "/criar-leilao" });
+      if (saved) {
+        toast.success(t("ce.profilePublished"));
+        navigate({ to: "/criar-leilao" });
+      } else {
+        toast.error(t("ce.updateError"));
+      }
     }
   };
 
