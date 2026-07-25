@@ -447,6 +447,32 @@ export function useMySpecialist(usuarioId: string | undefined, email: string | u
   return data ?? null;
 }
 
+// Segunda tentativa, só por e-mail — rede de segurança para telas como
+// /lances: se useMySpecialist(usuarioId, email) vier null (por exemplo, uma
+// linha antiga sem usuario_id vinculado e cujo e-mail por algum motivo não
+// bateu no fallback embutido), esta consulta independente ainda encontra o
+// cadastro do especialista pelo e-mail da sessão. Só dispara quando `email`
+// é passado — o chamador deve passar `undefined` se já tiver um resultado.
+export function useSpecialistByEmail(email: string | undefined) {
+  const { data } = useQuery({
+    queryKey: [...K.mySpecialist, "by-email", email ?? ""],
+    enabled: !!email,
+    staleTime: 15_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("especialistas")
+        .select("*")
+        .ilike("email", email!)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? toSpecialist(data as SpecialistRow) : null;
+    },
+  });
+  return data ?? null;
+}
+
 // Busca os critérios que reprovaram um especialista, gravados pelo Trust Engine
 // na tabela admin_notifications.
 export function useRejectionReasons(especialistaId: string | null): RejectionCriterion[] {

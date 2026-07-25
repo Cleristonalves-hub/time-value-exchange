@@ -5,7 +5,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { RequireAuth } from "@/components/RequireAuth";
 import { Countdown } from "@/components/Countdown";
 import { useAuth } from "@/lib/auth";
-import { useActiveLeiloes, useMySpecialist, useMyLeiloes, type Leilao, type LeilaoComEspecialista } from "@/lib/store";
+import { useActiveLeiloes, useMySpecialist, useSpecialistByEmail, useMyLeiloes, type Leilao, type LeilaoComEspecialista } from "@/lib/store";
 import { formatBRL, formatEndsAt } from "@/lib/auctions";
 import { useT, nicheLabel, leilaoStatusLabel } from "@/lib/i18n";
 
@@ -22,7 +22,11 @@ function LancesPage() {
   // Consulta real ao banco por usuario_id — a "Área do Profissional" só
   // aparece para quem de fato tem um registro em `especialistas` vinculado
   // ao usuário logado, nunca por uma flag de sessão/local.
-  const especialista = useMySpecialist(user?.id, user?.email ?? undefined);
+  const especialistaPrincipal = useMySpecialist(user?.id, user?.email ?? undefined);
+  // Rede de segurança: se a busca principal vier null, tenta de novo só pelo
+  // e-mail antes de decidir que o usuário não é especialista.
+  const especialistaFallback = useSpecialistByEmail(!especialistaPrincipal ? user?.email ?? undefined : undefined);
+  const especialista = especialistaPrincipal ?? especialistaFallback;
   const [showArea, setShowArea] = useState(false);
 
   // TODO(debug temporário): remover depois de confirmar em produção que a
@@ -30,6 +34,8 @@ function LancesPage() {
   console.log("[DEBUG /lances] useMySpecialist ->", {
     userId: user?.id,
     userEmail: user?.email,
+    especialistaPrincipal,
+    especialistaFallback,
     especialista,
   });
 

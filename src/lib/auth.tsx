@@ -12,6 +12,7 @@ type AuthCtx = {
     password: string,
     nome: string,
     extra?: { cpf?: string; telefone?: string; cidade?: string; estado?: string },
+    tipo?: "cliente" | "especialista",
   ) => Promise<{ error: string | null; needsEmailConfirmation?: boolean; emailExists?: boolean }>;
   signOut: () => Promise<void>;
   resendConfirmation: (email: string) => Promise<{ error: string | null }>;
@@ -57,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       return { error: error?.message ?? null };
     },
-    async signUp(email, password, nome, extra) {
+    async signUp(email, password, nome, extra, tipo = "cliente") {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -82,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           id: data.user.id,
           nome,
           email,
-          tipo: "cliente",
+          tipo,
           cpf: extra?.cpf || null,
           telefone: extra?.telefone || null,
           cidade: extra?.cidade || null,

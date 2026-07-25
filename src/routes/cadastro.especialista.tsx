@@ -307,7 +307,7 @@ function SpecialistRegistration() {
         toast.error(message);
         return;
       }
-      const result = await signUp(data.email, data.password, data.fullName, { telefone: data.phone });
+      const result = await signUp(data.email, data.password, data.fullName, { telefone: data.phone }, "especialista");
       setSubmitting(false);
       if (result.error) {
         if (result.emailExists) {
