@@ -16,7 +16,6 @@ import { isValidCpfCnpj, isFullName, isSafeHttpUrl } from "@/lib/validators";
 import { maskCpfCnpj, maskPhone } from "@/lib/masks";
 import { toast } from "sonner";
 
-
 export const Route = createFileRoute("/cadastro/especialista")({
   head: () => ({
     meta: [
@@ -24,8 +23,18 @@ export const Route = createFileRoute("/cadastro/especialista")({
       { name: "description", content: "Disponibilize seu tempo no maior leilão de tempo humano do Brasil." },
     ],
   }),
-  component: SpecialistRegistration,
+  component: SpecialistRegistrationGate,
 });
+
+// Duas telas bem diferentes por trás da mesma rota: quem ainda não tem conta
+// passa pelo wizard de cadastro completo (cria conta + preenche tudo); quem
+// já está logado (cliente virando especialista, ou especialista editando) cai
+// direto na tela de perfil profissional, sem repetir dados que o app já tem.
+function SpecialistRegistrationGate() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  return user ? <SpecialistProfileForm /> : <NewSpecialistWizard />;
+}
 
 type FormData = {
   fullName: string;
@@ -114,7 +123,12 @@ const TIME_OPTIONS: string[] = (() => {
   return out;
 })();
 
-function SpecialistRegistration() {
+// ============================================================================
+// Wizard de cadastro para visitantes ainda sem conta — cria a conta na etapa 0
+// e segue por Nicho / Credenciais / Videochamada. Inalterado por esta reforma:
+// só usuários logados usam a tela nova (SpecialistProfileForm), abaixo.
+// ============================================================================
+function NewSpecialistWizard() {
   const navigate = useNavigate();
   const { user, signUp, resendConfirmation } = useAuth();
   const { t } = useT();
@@ -974,6 +988,703 @@ function SpecialistRegistration() {
           className="group mt-10 flex w-full items-center justify-center gap-2 rounded-md bg-gradient-gold px-6 py-4 text-sm font-medium uppercase tracking-[0.2em] text-primary-foreground shadow-gold transition-transform active:scale-[0.98] disabled:opacity-30 disabled:shadow-none"
         >
           {submitting ? t("ce.sending") : step === STEPS.length - 1 ? t("ce.finish") : t("ce.continue")}
+          <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+        </button>
+
+        <div className="mt-6 flex items-center justify-center gap-4">
+          <Link to="/termos" className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-gold">{t("footer.terms")}</Link>
+          <span className="text-muted-foreground/30">·</span>
+          <Link to="/privacidade" className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-gold">{t("footer.privacy")}</Link>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+// ============================================================================
+// Tela de perfil profissional para quem já está logado — cliente virando
+// especialista, ou especialista editando. Página única, seções fixas, sem
+// repetir dados pessoais que o app já tem (nome/email/telefone/cidade/estado/
+// CPF vêm do cadastro inicial e ficam bloqueados aqui).
+// ============================================================================
+type ProfData = {
+  niche: string;
+  specialty: string;
+  bio: string;
+  credential: string;
+  experience: string;
+  portfolioUrl: string;
+  registrationNumber: string;
+  instagram: string;
+  twitter: string;
+  tiktok: string;
+  youtube: string;
+  platform: "Google Meet" | "Zoom" | "Microsoft Teams" | "";
+  duration: string;
+  languages: string;
+  minBid: string;
+  availableDays: string[];
+  startTime: string;
+  endTime: string;
+  pixKey: string;
+};
+
+// Segue a ordem real das seções na página (Dados pessoais → Profissional →
+// Redes sociais → Leilão → Termos), para "rolar até o primeiro erro" pular
+// sempre para o campo mais acima na tela, não o primeiro do objeto de erros.
+const PROFILE_FIELD_ORDER: FieldKey[] = [
+  "cpfDeclaration", "niche", "specialty", "bio", "credential", "experience", "registrationNumber",
+  "portfolioUrl", "youtube", "platform", "minBid", "availableDays", "endTime", "pixKey",
+  "truthPledge", "conduct", "delinquencyAck",
+];
+
+function SpecialistProfileForm() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { t } = useT();
+  const existing = useMySpecialist(user?.id, user?.email ?? undefined);
+
+  const [personal, setPersonal] = useState({ nome: "", telefone: "", cidade: "", estado: "", cpf: "" });
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [conduct, setConduct] = useState(false);
+  const [truthPledge, setTruthPledge] = useState(false);
+  const [cpfDeclaration, setCpfDeclaration] = useState(false);
+  const [delinquencyAck, setDelinquencyAck] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({});
+  const fieldRefs = useRef<Partial<Record<FieldKey, HTMLDivElement | null>>>({});
+  const [data, setData] = useState<ProfData>({
+    niche: "", specialty: "", bio: "", credential: "", experience: "",
+    portfolioUrl: "", registrationNumber: "",
+    instagram: "", twitter: "", tiktok: "", youtube: "",
+    platform: "", duration: "60", languages: "Português",
+    minBid: "", availableDays: [], startTime: "09:00", endTime: "18:00",
+    pixKey: "",
+  });
+
+  // Dados pessoais somente leitura: vêm do cadastro em `usuarios` (feito em
+  // /cadastro/cliente ou na criação da conta) — nunca editados nesta tela.
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("usuarios")
+      .select("nome, telefone, cidade, estado, cpf")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setPersonal({
+          nome: data?.nome ?? (user.user_metadata?.nome as string | undefined) ?? "",
+          telefone: data?.telefone ?? "",
+          cidade: data?.cidade ?? "",
+          estado: data?.estado ?? "",
+          cpf: data?.cpf ?? "",
+        });
+      });
+  }, [user]);
+
+  // Já tem cadastro de especialista: modo de edição, pré-preenche as
+  // informações profissionais (o envio final vira UPDATE em vez de INSERT).
+  useEffect(() => {
+    if (!existing || editingId) return;
+    setEditingId(existing.id);
+    setPhotoUrl(existing.photoUrl ?? "");
+    setData({
+      niche: existing.niche,
+      specialty: existing.specialty,
+      bio: existing.bio,
+      credential: existing.credential,
+      experience: existing.experience,
+      portfolioUrl: existing.portfolioUrl,
+      registrationNumber: existing.registrationNumber ?? "",
+      instagram: existing.instagram ?? "",
+      twitter: existing.twitter ?? "",
+      tiktok: existing.tiktok ?? "",
+      youtube: existing.youtube ?? "",
+      platform: (existing.platform as ProfData["platform"]) || "",
+      duration: existing.duration,
+      languages: existing.languages,
+      minBid: existing.minBid,
+      availableDays: existing.availableDays,
+      startTime: existing.startTime || "09:00",
+      endTime: existing.endTime || "18:00",
+      pixKey: existing.pixKey,
+    });
+  }, [existing, editingId]);
+
+  // Nome/telefone/cidade/estado/documento: prioriza o que já está no cadastro
+  // de especialista (se estiver editando) e cai para os dados de `usuarios`
+  // (cliente virando especialista, primeira vez).
+  const displayName = existing?.fullName || personal.nome || "";
+  const displayPhone = maskPhone(existing?.phone || personal.telefone || "");
+  const displayCity = existing?.city || personal.cidade || "";
+  const displayState = existing?.state || personal.estado || "";
+  const displayDocument = maskCpfCnpj(existing?.document || personal.cpf || "");
+
+  async function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploading(true);
+    const url = await uploadAvatar(file, `specialist/${user.id}`);
+    setUploading(false);
+    if (url) setPhotoUrl(url);
+  }
+
+  function clearFieldError(key: FieldKey) {
+    setFieldErrors((s) => {
+      if (!s[key]) return s;
+      const next = { ...s };
+      delete next[key];
+      return next;
+    });
+  }
+
+  const set = <K extends keyof ProfData>(k: K, v: ProfData[K]) => {
+    setData((d) => ({ ...d, [k]: v }));
+    clearFieldError(k as unknown as FieldKey);
+  };
+
+  const toggleDay = (code: string) => {
+    setData((d) => ({
+      ...d,
+      availableDays: d.availableDays.includes(code)
+        ? d.availableDays.filter((c) => c !== code)
+        : [...d.availableDays, code],
+    }));
+    clearFieldError("availableDays");
+  };
+
+  const regLabelKey = registrationLabel(data.niche);
+  const regLabel = regLabelKey ? t(regLabelKey) : null;
+
+  function validate(): Partial<Record<FieldKey, string>> {
+    const errs: Partial<Record<FieldKey, string>> = {};
+    if (!data.niche) errs.niche = t("ce.nicheRequired");
+    if (!data.specialty.trim()) errs.specialty = t("ce.required");
+    if (data.bio.trim().length <= 20) errs.bio = t("ce.bioTooShort");
+    if (!data.credential.trim()) errs.credential = t("ce.required");
+    if (!data.experience.trim()) errs.experience = t("ce.required");
+    if (!isSafeHttpUrl(data.portfolioUrl)) errs.portfolioUrl = t("ce.portfolioInvalid");
+    if (data.youtube.trim() && !isSafeHttpUrl(data.youtube)) errs.youtube = t("ce.youtubeInvalid");
+    if (regLabel && !data.registrationNumber.trim()) errs.registrationNumber = t("ce.required");
+    if (!data.platform) errs.platform = t("ce.platformRequired");
+    if (!(Number(data.minBid) > 0)) errs.minBid = t("ce.minBidRequired");
+    if (data.availableDays.length === 0) errs.availableDays = t("ce.daysRequired");
+    if (!(data.startTime < data.endTime)) errs.endTime = t("ce.endTimeError");
+    if (!data.pixKey.trim()) errs.pixKey = t("ce.required");
+    if (!cpfDeclaration) errs.cpfDeclaration = t("ce.cpfDeclarationRequired");
+    if (!conduct) errs.conduct = t("cc.acceptRequired");
+    if (!truthPledge) errs.truthPledge = t("ce.truthPledgeRequired");
+    if (!delinquencyAck) errs.delinquencyAck = t("ce.delinquencyRequired");
+    return errs;
+  }
+
+  function scrollToFirstError(errs: Partial<Record<FieldKey, string>>) {
+    const firstKey = PROFILE_FIELD_ORDER.find((k) => errs[k]);
+    if (firstKey) fieldRefs.current[firstKey]?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  async function onPublish() {
+    const errs = validate();
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      scrollToFirstError(errs);
+      return;
+    }
+    setFieldErrors({});
+    setSubmitting(true);
+    const payload = {
+      fullName: displayName,
+      email: user?.email ?? "",
+      phone: displayPhone,
+      city: displayCity,
+      state: displayState,
+      niche: data.niche,
+      specialty: data.specialty,
+      bio: data.bio,
+      credential: data.credential,
+      experience: data.experience,
+      platform: data.platform || "",
+      duration: data.duration,
+      languages: data.languages,
+      portfolioUrl: data.portfolioUrl,
+      registrationNumber: data.registrationNumber || undefined,
+      instagram: data.instagram || undefined,
+      twitter: data.twitter || undefined,
+      tiktok: data.tiktok || undefined,
+      youtube: data.youtube || undefined,
+      photoUrl: photoUrl || undefined,
+      minBid: data.minBid,
+      availableDays: data.availableDays,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      document: existing?.document || personal.cpf || "",
+      pixKey: data.pixKey,
+    };
+    if (editingId) {
+      const updated = await updateSpecialist(editingId, payload);
+      setSubmitting(false);
+      if (updated) {
+        toast.success(t("pf.profileUpdated"));
+        setDone(true);
+      } else {
+        toast.error(t("ce.updateError"));
+      }
+    } else {
+      const saved = await addSpecialist(payload, user?.id);
+      setSubmitting(false);
+      if (saved) {
+        toast.success(t("ce.profilePublished"));
+        navigate({ to: "/criar-leilao" });
+      } else {
+        toast.error(t("ce.updateError"));
+      }
+    }
+  }
+
+  if (done) return <SuccessScreen isEdit={!!editingId} />;
+
+  return (
+    <main className="min-h-screen px-6 pb-24 pt-10">
+      <div className="mx-auto max-w-lg">
+        <div className="flex items-center justify-between">
+          <button onClick={() => navigate({ to: "/perfil" })} className="text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="size-5" />
+          </button>
+          <ValoreLogo className="text-2xl" />
+          <span className="w-5" />
+        </div>
+
+        <div className="mt-8">
+          <h1 className="font-display text-3xl text-foreground">{t("ce.loggedInTitle")}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{t("ce.loggedInSubtitle")}</p>
+        </div>
+
+        <div className="mt-8 flex flex-col items-center gap-3">
+          <div className="relative">
+            {photoUrl ? (
+              <img src={photoUrl} alt="" className="h-28 w-28 rounded-full object-cover ring-2 ring-gold/40" />
+            ) : (
+              <div className="h-28 w-28 rounded-full border border-dashed border-gold/40 bg-gold/5" />
+            )}
+            <label className="absolute -bottom-1 -right-1 flex size-9 cursor-pointer items-center justify-center rounded-full border border-gold/50 bg-background text-gold hover:bg-gold/10">
+              <Camera className="size-4" />
+              <input type="file" accept="image/*" className="hidden" onChange={onPickPhoto} disabled={uploading} />
+            </label>
+          </div>
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
+            {uploading ? t("ce.uploading") : t("ce.photoOptional")}
+          </p>
+        </div>
+
+        {/* Seção 1 — Dados pessoais (somente leitura) */}
+        <section className="mt-10">
+          <h2 className="text-[10px] uppercase tracking-[0.3em] text-gold">{t("ce.section1Title")}</h2>
+          <div className="mt-4 space-y-4">
+            <Field label={t("ce.fullName")}>
+              <Input value={displayName} disabled />
+            </Field>
+            <Field label={t("ce.email")}>
+              <Input value={user?.email ?? ""} disabled />
+            </Field>
+            <Field label={t("ce.phone")}>
+              <Input value={displayPhone} disabled />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label={t("ce.city")}>
+                <Input value={displayCity} disabled />
+              </Field>
+              <Field label={t("ce.state")}>
+                <Input value={displayState} disabled />
+              </Field>
+            </div>
+            <Field label={t("ce.document")}>
+              <Input value={displayDocument} disabled />
+            </Field>
+          </div>
+          <p className="mt-3 text-[11px] text-muted-foreground">{t("ce.section1Note")}</p>
+
+          <div ref={(el) => { fieldRefs.current.cpfDeclaration = el; }} className="mt-4">
+            <label
+              className={`flex cursor-pointer items-start gap-3 rounded-md border p-4 text-[12px] leading-relaxed text-foreground/80 ${
+                fieldErrors.cpfDeclaration ? "border-destructive bg-destructive/5" : "border-gold/30 bg-gold/5"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={cpfDeclaration}
+                onChange={() => {
+                  setCpfDeclaration((v) => !v);
+                  clearFieldError("cpfDeclaration");
+                }}
+                className="mt-0.5 size-4 accent-[color:var(--gold)]"
+              />
+              <span>{t("ce.cpfDeclaration")}</span>
+            </label>
+            {fieldErrors.cpfDeclaration && (
+              <p className="mt-1 text-[11px] text-destructive">{fieldErrors.cpfDeclaration}</p>
+            )}
+          </div>
+        </section>
+
+        {/* Seção 2 — Informações profissionais */}
+        <section className="mt-10">
+          <h2 className="text-[10px] uppercase tracking-[0.3em] text-gold">{t("ce.section2Title")}</h2>
+          <div className="mt-4 space-y-4">
+            <div ref={(el) => { fieldRefs.current.niche = el; }}>
+              <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                {t("ce.selectNiche")}<span className="text-destructive"> *</span>
+              </label>
+              <select
+                value={data.niche}
+                onChange={(e) => set("niche", e.target.value)}
+                className={`h-10 w-full rounded-md border bg-background px-3 text-sm ${fieldErrors.niche ? "border-destructive" : "border-border"}`}
+              >
+                <option value="">{t("ce.selectNichePlaceholder")}</option>
+                {nicheOptions.map((n) => (
+                  <option key={n} value={n}>{nicheLabel(t, n)}</option>
+                ))}
+              </select>
+              {fieldErrors.niche && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.niche}</p>}
+            </div>
+            <Field
+              label={t("ce.professionalTitle")}
+              required
+              error={fieldErrors.specialty}
+              fieldRef={(el) => { fieldRefs.current.specialty = el; }}
+            >
+              <Input
+                value={data.specialty}
+                onChange={(e) => set("specialty", e.target.value)}
+                placeholder={t("ce.professionalTitlePlaceholder")}
+                maxLength={100}
+                className={fieldErrors.specialty ? "border-destructive focus-visible:ring-destructive" : undefined}
+              />
+            </Field>
+            <Field
+              label={t("ce.bio")}
+              required
+              error={fieldErrors.bio}
+              fieldRef={(el) => { fieldRefs.current.bio = el; }}
+            >
+              <Textarea
+                value={data.bio}
+                onChange={(e) => set("bio", e.target.value)}
+                placeholder={t("ce.bioPlaceholder")}
+                maxLength={500}
+                className={`min-h-[110px] ${fieldErrors.bio ? "border-destructive focus-visible:ring-destructive" : ""}`}
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">{t("ce.bioCounter", { n: data.bio.length })}</p>
+            </Field>
+            <Field
+              label={t("ce.credential")}
+              required
+              error={fieldErrors.credential}
+              fieldRef={(el) => { fieldRefs.current.credential = el; }}
+            >
+              <Input
+                value={data.credential}
+                onChange={(e) => set("credential", e.target.value)}
+                placeholder={t("ce.credentialPlaceholder")}
+                maxLength={200}
+                className={fieldErrors.credential ? "border-destructive focus-visible:ring-destructive" : undefined}
+              />
+            </Field>
+            <Field
+              label={t("ce.experience")}
+              required
+              error={fieldErrors.experience}
+              fieldRef={(el) => { fieldRefs.current.experience = el; }}
+            >
+              <Input
+                type="number"
+                value={data.experience}
+                onChange={(e) => set("experience", e.target.value)}
+                placeholder="15"
+                className={fieldErrors.experience ? "border-destructive focus-visible:ring-destructive" : undefined}
+              />
+            </Field>
+            {regLabel && (
+              <Field
+                label={regLabel}
+                required
+                error={fieldErrors.registrationNumber}
+                fieldRef={(el) => { fieldRefs.current.registrationNumber = el; }}
+              >
+                <Input
+                  value={data.registrationNumber}
+                  onChange={(e) => set("registrationNumber", e.target.value)}
+                  placeholder={t("ce.registrationNumberPlaceholder")}
+                  className={fieldErrors.registrationNumber ? "border-destructive focus-visible:ring-destructive" : undefined}
+                />
+              </Field>
+            )}
+          </div>
+        </section>
+
+        {/* Seção 3 — Redes sociais e presença online */}
+        <section className="mt-10">
+          <h2 className="text-[10px] uppercase tracking-[0.3em] text-gold">{t("ce.section3Title")}</h2>
+          <div className="mt-4 space-y-4">
+            <Field
+              label={t("ce.portfolio")}
+              required
+              error={fieldErrors.portfolioUrl}
+              fieldRef={(el) => { fieldRefs.current.portfolioUrl = el; }}
+            >
+              <Input
+                value={data.portfolioUrl}
+                onChange={(e) => set("portfolioUrl", e.target.value)}
+                placeholder={t("ce.portfolioPlaceholder")}
+                type="url"
+                className={fieldErrors.portfolioUrl ? "border-destructive focus-visible:ring-destructive" : undefined}
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">{t("ce.portfolioHelp")}</p>
+            </Field>
+            <Field
+              label={t("ce.instagram")}
+              error={fieldErrors.instagram}
+              fieldRef={(el) => { fieldRefs.current.instagram = el; }}
+            >
+              <Input
+                value={data.instagram}
+                onChange={(e) => set("instagram", e.target.value)}
+                placeholder={t("ce.socialHandlePlaceholder")}
+                maxLength={50}
+                className={fieldErrors.instagram ? "border-destructive focus-visible:ring-destructive" : undefined}
+              />
+            </Field>
+            <Field
+              label={t("ce.twitter")}
+              error={fieldErrors.twitter}
+              fieldRef={(el) => { fieldRefs.current.twitter = el; }}
+            >
+              <Input
+                value={data.twitter}
+                onChange={(e) => set("twitter", e.target.value)}
+                placeholder={t("ce.socialHandlePlaceholder")}
+                maxLength={50}
+                className={fieldErrors.twitter ? "border-destructive focus-visible:ring-destructive" : undefined}
+              />
+            </Field>
+            <Field
+              label={t("ce.tiktok")}
+              error={fieldErrors.tiktok}
+              fieldRef={(el) => { fieldRefs.current.tiktok = el; }}
+            >
+              <Input
+                value={data.tiktok}
+                onChange={(e) => set("tiktok", e.target.value)}
+                placeholder={t("ce.socialHandlePlaceholder")}
+                maxLength={50}
+                className={fieldErrors.tiktok ? "border-destructive focus-visible:ring-destructive" : undefined}
+              />
+            </Field>
+            <Field
+              label={t("ce.youtube")}
+              error={fieldErrors.youtube}
+              fieldRef={(el) => { fieldRefs.current.youtube = el; }}
+            >
+              <Input
+                value={data.youtube}
+                onChange={(e) => set("youtube", e.target.value)}
+                placeholder={t("ce.youtubePlaceholder")}
+                type="url"
+                className={fieldErrors.youtube ? "border-destructive focus-visible:ring-destructive" : undefined}
+              />
+            </Field>
+          </div>
+        </section>
+
+        {/* Seção 4 — Configurações do leilão */}
+        <section className="mt-10">
+          <h2 className="text-[10px] uppercase tracking-[0.3em] text-gold">{t("ce.section4Title")}</h2>
+          <div className="mt-4 space-y-4">
+            <div ref={(el) => { fieldRefs.current.platform = el; }}>
+              <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("ce.platform")}</label>
+              <div className="space-y-2">
+                {platformIds.map((p) => {
+                  const active = data.platform === p;
+                  return (
+                    <button key={p} type="button" onClick={() => set("platform", p)}
+                      className={`flex w-full items-center gap-3 rounded-md border px-4 py-4 text-left transition-all ${active ? "border-gold bg-gold/10 shadow-gold" : fieldErrors.platform ? "border-destructive" : "border-border hover:border-gold/40"}`}>
+                      <Video className={`size-5 ${active ? "text-gold" : "text-muted-foreground"}`} />
+                      <div className="flex-1">
+                        <div className={`text-sm font-medium ${active ? "text-gold" : "text-foreground"}`}>{p}</div>
+                        <div className="text-[11px] text-muted-foreground">{t(platformSubKeys[p])}</div>
+                      </div>
+                      {active && <Check className="size-4 text-gold" />}
+                    </button>
+                  );
+                })}
+              </div>
+              {fieldErrors.platform && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.platform}</p>}
+            </div>
+            <Field label={t("ce.duration")}>
+              <Input type="number" value={data.duration} onChange={(e) => set("duration", e.target.value)} />
+            </Field>
+            <Field label={t("ce.languages")}>
+              <Input value={data.languages} onChange={(e) => set("languages", e.target.value)} placeholder={t("ce.languagesPlaceholder")} />
+            </Field>
+            <Field
+              label={t("ce.minBid")}
+              required
+              error={fieldErrors.minBid}
+              fieldRef={(el) => { fieldRefs.current.minBid = el; }}
+            >
+              <Input
+                type="number"
+                min="0"
+                value={data.minBid}
+                onChange={(e) => set("minBid", e.target.value)}
+                placeholder="500"
+                className={fieldErrors.minBid ? "border-destructive focus-visible:ring-destructive" : undefined}
+              />
+            </Field>
+            <div ref={(el) => { fieldRefs.current.availableDays = el; }}>
+              <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("ce.availableDays")}</label>
+              <div className="flex flex-wrap gap-2">
+                {WEEKDAY_CODES.map((code) => {
+                  const active = data.availableDays.includes(code);
+                  return (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() => toggleDay(code)}
+                      className={`rounded-md border px-3 py-2 text-xs transition-all ${active ? "border-gold bg-gold/10 text-gold shadow-gold" : fieldErrors.availableDays ? "border-destructive text-foreground/80" : "border-border text-foreground/80 hover:border-gold/40"}`}
+                    >
+                      {t(WEEKDAY_LABEL_KEY[code])}
+                    </button>
+                  );
+                })}
+              </div>
+              {fieldErrors.availableDays && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.availableDays}</p>}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label={t("ce.startTime")} required>
+                <select
+                  value={data.startTime}
+                  onChange={(e) => set("startTime", e.target.value)}
+                  className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
+                >
+                  {TIME_OPTIONS.map((time) => (
+                    <option key={time} value={time}>{time}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field
+                label={t("ce.endTime")}
+                required
+                error={fieldErrors.endTime}
+                fieldRef={(el) => { fieldRefs.current.endTime = el; }}
+              >
+                <select
+                  value={data.endTime}
+                  onChange={(e) => set("endTime", e.target.value)}
+                  className={`h-10 w-full rounded-md border bg-background px-3 text-sm ${fieldErrors.endTime ? "border-destructive" : "border-border"}`}
+                >
+                  {TIME_OPTIONS.map((time) => (
+                    <option key={time} value={time}>{time}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
+            <Field
+              label={t("ce.pixKey")}
+              required
+              error={fieldErrors.pixKey}
+              fieldRef={(el) => { fieldRefs.current.pixKey = el; }}
+            >
+              <Input
+                value={data.pixKey}
+                onChange={(e) => set("pixKey", e.target.value)}
+                placeholder={t("ce.pixKeyPlaceholder")}
+                className={fieldErrors.pixKey ? "border-destructive focus-visible:ring-destructive" : undefined}
+              />
+            </Field>
+          </div>
+        </section>
+
+        {/* Termos finais */}
+        <section className="mt-10 space-y-4">
+          <div ref={(el) => { fieldRefs.current.truthPledge = el; }}>
+            <label
+              className={`flex cursor-pointer items-start gap-3 rounded-md border p-4 text-[12px] leading-relaxed text-foreground/80 ${
+                fieldErrors.truthPledge ? "border-destructive bg-destructive/5" : "border-gold/30 bg-gold/5"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={truthPledge}
+                onChange={() => {
+                  setTruthPledge((v) => !v);
+                  clearFieldError("truthPledge");
+                }}
+                className="mt-0.5 size-4 accent-[color:var(--gold)]"
+              />
+              <span>{t("ce.truthPledge")}</span>
+            </label>
+            {fieldErrors.truthPledge && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.truthPledge}</p>}
+          </div>
+
+          <div ref={(el) => { fieldRefs.current.conduct = el; }}>
+            <ConductPledge
+              accepted={conduct}
+              onToggle={() => {
+                setConduct(!conduct);
+                clearFieldError("conduct");
+              }}
+              error={!!fieldErrors.conduct}
+            />
+            {fieldErrors.conduct && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.conduct}</p>}
+          </div>
+
+          <div
+            ref={(el) => { fieldRefs.current.delinquencyAck = el; }}
+            className={`rounded-xl border p-5 ${fieldErrors.delinquencyAck ? "border-destructive bg-destructive/5" : "border-warning/40 bg-warning/5"}`}
+          >
+            <div className="flex items-center gap-2 text-warning">
+              <AlertTriangle className="size-4" />
+              <span className="text-[10px] uppercase tracking-[0.3em]">{t("ce.importantTitle")}</span>
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-foreground/80">{t("ce.importantIntro")}</p>
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-xs leading-relaxed text-foreground/80">
+              <li>{t("ce.importantBullet1")}</li>
+              <li>{t("ce.importantBullet2")}</li>
+              <li>{t("ce.importantBullet3")}</li>
+              <li>{t("ce.importantBullet4")}</li>
+            </ul>
+
+            <label className="mt-5 flex cursor-pointer items-start gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setDelinquencyAck((v) => !v);
+                  clearFieldError("delinquencyAck");
+                }}
+                aria-pressed={delinquencyAck}
+                className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                  delinquencyAck ? "border-warning bg-warning" : fieldErrors.delinquencyAck ? "border-destructive" : "border-border"
+                }`}
+              >
+                {delinquencyAck && <Check className="size-3 text-primary-foreground" />}
+              </button>
+              <span className="text-xs leading-relaxed text-foreground/80">{t("ce.delinquencyAck")}</span>
+            </label>
+            {fieldErrors.delinquencyAck && (
+              <p className="mt-1 text-[11px] text-destructive">{fieldErrors.delinquencyAck}</p>
+            )}
+          </div>
+        </section>
+
+        <button
+          onClick={onPublish}
+          disabled={submitting}
+          className="group mt-10 flex w-full items-center justify-center gap-2 rounded-md bg-gradient-gold px-6 py-4 text-sm font-medium uppercase tracking-[0.2em] text-primary-foreground shadow-gold transition-transform active:scale-[0.98] disabled:opacity-30 disabled:shadow-none"
+        >
+          {submitting ? t("ce.sending") : editingId ? t("ce.saveChanges") : t("ce.publishProfile")}
           <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
         </button>
 
