@@ -41,6 +41,10 @@ type FormData = {
   experience: string;
   portfolioUrl: string;
   registrationNumber: string;
+  instagram: string;
+  twitter: string;
+  tiktok: string;
+  youtube: string;
   platform: "Google Meet" | "Zoom" | "Microsoft Teams" | "";
   duration: string;
   languages: string;
@@ -68,6 +72,10 @@ type FieldKey =
   | "experience"
   | "portfolioUrl"
   | "registrationNumber"
+  | "instagram"
+  | "twitter"
+  | "tiktok"
+  | "youtube"
   | "platform"
   | "minBid"
   | "availableDays"
@@ -80,7 +88,7 @@ type FieldKey =
 const STEP_FIELD_ORDER: FieldKey[][] = [
   ["fullName", "email", "password", "phone", "city", "state", "document", "cpfDeclaration"],
   ["niche", "specialty", "bio"],
-  ["credential", "experience", "portfolioUrl", "registrationNumber"],
+  ["credential", "experience", "portfolioUrl", "instagram", "twitter", "tiktok", "youtube", "registrationNumber"],
   ["platform", "minBid", "availableDays", "endTime", "pixKey", "conduct", "truthPledge", "delinquencyAck"],
 ];
 
@@ -129,6 +137,7 @@ function SpecialistRegistration() {
     fullName: "", email: "", password: "", phone: "", city: "", state: "",
     bio: "", niche: "", specialty: "", credential: "", experience: "",
     portfolioUrl: "", registrationNumber: "",
+    instagram: "", twitter: "", tiktok: "", youtube: "",
     platform: "", duration: "60", languages: "Português",
     minBid: "", availableDays: [], startTime: "09:00", endTime: "18:00",
     document: "", pixKey: "",
@@ -183,6 +192,10 @@ function SpecialistRegistration() {
       experience: existing.experience,
       portfolioUrl: existing.portfolioUrl,
       registrationNumber: existing.registrationNumber ?? "",
+      instagram: existing.instagram ?? "",
+      twitter: existing.twitter ?? "",
+      tiktok: existing.tiktok ?? "",
+      youtube: existing.youtube ?? "",
       platform: (existing.platform as FormData["platform"]) || "",
       duration: existing.duration,
       languages: existing.languages,
@@ -263,6 +276,7 @@ function SpecialistRegistration() {
       if (!data.credential.trim()) errs.credential = t("ce.required");
       if (!data.experience.trim()) errs.experience = t("ce.required");
       if (!isSafeHttpUrl(data.portfolioUrl)) errs.portfolioUrl = t("ce.portfolioInvalid");
+      if (data.youtube.trim() && !isSafeHttpUrl(data.youtube)) errs.youtube = t("ce.youtubeInvalid");
       if (regLabel && !data.registrationNumber.trim()) errs.registrationNumber = t("ce.required");
     }
     if (s === 3) {
@@ -352,6 +366,10 @@ function SpecialistRegistration() {
       languages: data.languages,
       portfolioUrl: data.portfolioUrl,
       registrationNumber: data.registrationNumber || undefined,
+      instagram: data.instagram || undefined,
+      twitter: data.twitter || undefined,
+      tiktok: data.tiktok || undefined,
+      youtube: data.youtube || undefined,
       photoUrl: photoUrl || undefined,
       minBid: data.minBid,
       availableDays: data.availableDays,
@@ -697,6 +715,58 @@ function SpecialistRegistration() {
                   className={fieldErrors.portfolioUrl ? "border-destructive focus-visible:ring-destructive" : undefined}
                 />
                 <p className="mt-1 text-[11px] text-muted-foreground">{t("ce.portfolioHelp")}</p>
+              </Field>
+              <Field
+                label={t("ce.instagram")}
+                error={fieldErrors.instagram}
+                fieldRef={(el) => { fieldRefs.current.instagram = el; }}
+              >
+                <Input
+                  value={data.instagram}
+                  onChange={(e) => set("instagram", e.target.value)}
+                  placeholder={t("ce.socialHandlePlaceholder")}
+                  maxLength={50}
+                  className={fieldErrors.instagram ? "border-destructive focus-visible:ring-destructive" : undefined}
+                />
+              </Field>
+              <Field
+                label={t("ce.twitter")}
+                error={fieldErrors.twitter}
+                fieldRef={(el) => { fieldRefs.current.twitter = el; }}
+              >
+                <Input
+                  value={data.twitter}
+                  onChange={(e) => set("twitter", e.target.value)}
+                  placeholder={t("ce.socialHandlePlaceholder")}
+                  maxLength={50}
+                  className={fieldErrors.twitter ? "border-destructive focus-visible:ring-destructive" : undefined}
+                />
+              </Field>
+              <Field
+                label={t("ce.tiktok")}
+                error={fieldErrors.tiktok}
+                fieldRef={(el) => { fieldRefs.current.tiktok = el; }}
+              >
+                <Input
+                  value={data.tiktok}
+                  onChange={(e) => set("tiktok", e.target.value)}
+                  placeholder={t("ce.socialHandlePlaceholder")}
+                  maxLength={50}
+                  className={fieldErrors.tiktok ? "border-destructive focus-visible:ring-destructive" : undefined}
+                />
+              </Field>
+              <Field
+                label={t("ce.youtube")}
+                error={fieldErrors.youtube}
+                fieldRef={(el) => { fieldRefs.current.youtube = el; }}
+              >
+                <Input
+                  value={data.youtube}
+                  onChange={(e) => set("youtube", e.target.value)}
+                  placeholder={t("ce.youtubePlaceholder")}
+                  type="url"
+                  className={fieldErrors.youtube ? "border-destructive focus-visible:ring-destructive" : undefined}
+                />
               </Field>
               {regLabel && (
                 <Field

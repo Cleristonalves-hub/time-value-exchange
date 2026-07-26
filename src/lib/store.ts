@@ -20,6 +20,10 @@ export type Specialist = {
   languages: string;
   portfolioUrl: string;
   registrationNumber?: string;
+  instagram?: string;
+  twitter?: string;
+  tiktok?: string;
+  youtube?: string;
   photoUrl?: string;
   minBid: string;
   availableDays: string[];
@@ -118,6 +122,10 @@ type SpecialistRow = {
   idiomas: string | null;
   linkedin_url: string | null;
   registro_profissional: string | null;
+  instagram: string | null;
+  twitter: string | null;
+  tiktok: string | null;
+  youtube: string | null;
   avatar_url: string | null;
   lance_minimo: string | null;
   disponibilidade_semanal: string | null;
@@ -230,6 +238,10 @@ const toSpecialist = (r: SpecialistRow): Specialist => ({
   languages: r.idiomas ?? "",
   portfolioUrl: r.linkedin_url ?? "",
   registrationNumber: r.registro_profissional ?? undefined,
+  instagram: r.instagram ?? undefined,
+  twitter: r.twitter ?? undefined,
+  tiktok: r.tiktok ?? undefined,
+  youtube: r.youtube ?? undefined,
   photoUrl: r.avatar_url ?? undefined,
   minBid: r.lance_minimo ?? "",
   availableDays: r.dias_disponibilidade ?? [],
@@ -622,6 +634,10 @@ export async function addSpecialist(
       idiomas: input.languages,
       linkedin_url: input.portfolioUrl,
       registro_profissional: input.registrationNumber ?? null,
+      instagram: input.instagram ?? null,
+      twitter: input.twitter ?? null,
+      tiktok: input.tiktok ?? null,
+      youtube: input.youtube ?? null,
       avatar_url: input.photoUrl ?? null,
       lance_minimo: input.minBid || null,
       dias_disponibilidade: input.availableDays.length ? input.availableDays : null,
@@ -668,6 +684,10 @@ export async function updateSpecialist(
       idiomas: input.languages,
       linkedin_url: input.portfolioUrl,
       registro_profissional: input.registrationNumber ?? null,
+      instagram: input.instagram ?? null,
+      twitter: input.twitter ?? null,
+      tiktok: input.tiktok ?? null,
+      youtube: input.youtube ?? null,
       avatar_url: input.photoUrl ?? null,
       lance_minimo: input.minBid || null,
       dias_disponibilidade: input.availableDays.length ? input.availableDays : null,
