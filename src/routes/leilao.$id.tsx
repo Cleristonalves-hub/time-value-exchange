@@ -107,7 +107,11 @@ function AuctionDetail() {
           <span className="inline-block rounded-sm border border-gold/40 bg-background/60 px-3 py-1 text-[10px] uppercase tracking-widest text-gold backdrop-blur">
             {leilao.especialista?.nicho || t("lz.specialistFallback")}
           </span>
-          <h1 className="mt-3 font-display text-3xl leading-tight">{leilao.especialista?.nome || t("lz.specialistFallback")}</h1>
+          <h1 className="mt-3 font-display text-3xl leading-tight">
+            <Link to="/especialista/$id" params={{ id: leilao.especialistaId }} className="hover:underline">
+              {leilao.especialista?.nome || t("lz.specialistFallback")}
+            </Link>
+          </h1>
           <p className="text-sm text-foreground/80">{leilao.titulo}</p>
         </div>
       </div>

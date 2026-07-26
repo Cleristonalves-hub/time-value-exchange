@@ -295,6 +295,26 @@ export function useSpecialists(): Specialist[] {
   return data ?? [];
 }
 
+// Perfil público de um especialista específico, usado na tela de perfil
+// acessada a partir de /explorar ou de um leilão.
+export function useSpecialist(id: string | undefined): Specialist | null {
+  const { data } = useQuery({
+    queryKey: [...K.specialists, "one", id ?? ""],
+    enabled: !!id,
+    staleTime: 15_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("especialistas")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? toSpecialist(data as SpecialistRow) : null;
+    },
+  });
+  return data ?? null;
+}
+
 // Leilões reais ativos, com os dados do especialista embutidos — usados na
 // parte inferior da home ("Especialistas disponíveis agora").
 export function useActiveLeiloes(): LeilaoComEspecialista[] {

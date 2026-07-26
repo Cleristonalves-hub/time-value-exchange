@@ -521,6 +521,7 @@ const DICT: Record<string, Entry> = {
   "ce.instagram": D("Instagram", "Instagram", "Instagram", "Instagram", "Instagram", "Instagram", "Instagram", "Instagram", "إنستغرام"),
   "ce.twitter": D("X / Twitter", "X / Twitter", "X / Twitter", "X / Twitter", "X / Twitter", "X / Twitter", "X / Twitter", "X / Twitter", "X / تويتر"),
   "ce.tiktok": D("TikTok", "TikTok", "TikTok", "TikTok", "TikTok", "TikTok", "TikTok", "TikTok", "تيك توك"),
+  "sl.linkedin": D("LinkedIn", "LinkedIn", "LinkedIn", "LinkedIn", "LinkedIn", "LinkedIn", "LinkedIn", "LinkedIn", "لينكد إن"),
   "ce.youtube": D("YouTube", "YouTube", "YouTube", "YouTube", "YouTube", "YouTube", "YouTube", "YouTube", "يوتيوب"),
   "ce.socialHandlePlaceholder": D("@seuusuario", "@yourusername", "@tuusuario", "@votrenomdutilisateur", "@ihrbenutzername", "@iltuoutente", "@your_username", "@你的用户名", "@اسم_المستخدم"),
   "ce.youtubePlaceholder": D(
@@ -979,6 +980,9 @@ const DICT: Record<string, Entry> = {
   "lz.notFound": D("Leilão não encontrado.", "Auction not found.", "Subasta no encontrada.", "Enchère introuvable.", "Auktion nicht gefunden.", "Asta non trovata.", "オークションが見つかりません。", "未找到该拍卖。", "المزاد غير موجود."),
   "lz.backToAuctions": D("Voltar aos leilões", "Back to auctions", "Volver a las subastas", "Retour aux enchères", "Zurück zu den Auktionen", "Torna alle aste", "オークション一覧に戻る", "返回拍卖列表", "العودة إلى المزادات"),
   "lz.back": D("Voltar", "Back", "Volver", "Retour", "Zurück", "Indietro", "戻る", "返回", "رجوع"),
+  "sp.notFound": D("Especialista não encontrado.", "Specialist not found.", "Especialista no encontrado.", "Spécialiste introuvable.", "Spezialist nicht gefunden.", "Specialista non trovato.", "専門家が見つかりません。", "未找到该专家。", "المتخصص غير موجود."),
+  "sp.backToExplore": D("Voltar para Explorar", "Back to Explore", "Volver a Explorar", "Retour à Explorer", "Zurück zu Entdecken", "Torna a Esplora", "「探す」に戻る", "返回探索页面", "العودة إلى استكشاف"),
+  "sp.back": D("Voltar", "Back", "Volver", "Retour", "Zurück", "Indietro", "戻る", "返回", "رجوع"),
   "lz.specialistFallback": D("Especialista", "Specialist", "Especialista", "Spécialiste", "Spezialist", "Specialista", "専門家", "专家", "مختص"),
   "lz.cancelAuction": D("Cancelar leilão", "Cancel auction", "Cancelar subasta", "Annuler l'enchère", "Auktion stornieren", "Annulla asta", "オークションをキャンセル", "取消拍卖", "إلغاء المزاد"),
   "lz.status": D("Status: {status}", "Status: {status}", "Estado: {status}", "Statut : {status}", "Status: {status}", "Stato: {status}", "ステータス：{status}", "状态：{status}", "الحالة: {status}"),

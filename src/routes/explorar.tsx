@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Search, BadgeCheck, Sparkles } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
@@ -95,30 +95,32 @@ function SpecialistCard({ s }: { s: Specialist }) {
   const { t } = useT();
   const verified = s.status === "verificado";
   return (
-    <li className="rounded-xl border border-border/60 bg-surface p-4">
-      <div className="flex items-start gap-3">
-        {s.photoUrl ? (
-          <img src={s.photoUrl} alt="" className="size-12 shrink-0 rounded-full object-cover ring-1 ring-gold/30" />
-        ) : (
-          <div className="size-12 shrink-0 rounded-full bg-gradient-gold" />
-        )}
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-display text-lg leading-tight">{s.fullName}</h3>
-            {verified ? (
-              <span className="inline-flex items-center gap-1 rounded-full border border-success/40 bg-success/5 px-2 py-0.5 text-[10px] uppercase tracking-widest text-success">
-                <BadgeCheck className="size-3" /> {t("ex.verified")}
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold/5 px-2 py-0.5 text-[10px] uppercase tracking-widest text-gold">
-                <Sparkles className="size-3" /> {t("ex.new")}
-              </span>
-            )}
+    <li className="rounded-xl border border-border/60 bg-surface transition-colors hover:border-gold/40">
+      <Link to="/especialista/$id" params={{ id: s.id }} className="block p-4">
+        <div className="flex items-start gap-3">
+          {s.photoUrl ? (
+            <img src={s.photoUrl} alt="" className="size-12 shrink-0 rounded-full object-cover ring-1 ring-gold/30" />
+          ) : (
+            <div className="size-12 shrink-0 rounded-full bg-gradient-gold" />
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-display text-lg leading-tight">{s.fullName}</h3>
+              {verified ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-success/40 bg-success/5 px-2 py-0.5 text-[10px] uppercase tracking-widest text-success">
+                  <BadgeCheck className="size-3" /> {t("ex.verified")}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold/5 px-2 py-0.5 text-[10px] uppercase tracking-widest text-gold">
+                  <Sparkles className="size-3" /> {t("ex.new")}
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-gold">{nicheLabel(t, s.niche)} · {s.specialty}</p>
+            <p className="mt-1 truncate text-[11px] text-muted-foreground">{s.credential}</p>
           </div>
-          <p className="mt-1 text-xs text-gold">{nicheLabel(t, s.niche)} · {s.specialty}</p>
-          <p className="mt-1 truncate text-[11px] text-muted-foreground">{s.credential}</p>
         </div>
-      </div>
+      </Link>
     </li>
   );
 }
