@@ -195,6 +195,15 @@ function SpecialistRegistration() {
     });
   }, [existing, editingId]);
 
+  // Usuário já logado (ex.: cliente que quer virar especialista) mas ainda
+  // sem cadastro de especialista: pré-preenche o email da sessão — os campos
+  // de email/senha não aparecem nesse caso, já existe uma conta.
+  useEffect(() => {
+    if (!user || existing || data.email) return;
+    setData((d) => ({ ...d, email: user.email ?? "" }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, existing]);
+
   async function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -479,34 +488,36 @@ function SpecialistRegistration() {
                 />
               </Field>
 
-              <Field
-                label={t("ce.email")}
-                required
-                error={fieldErrors.email}
-                fieldRef={(el) => { fieldRefs.current.email = el; }}
-              >
-                <Input
-                  type="email"
-                  value={data.email}
-                  onChange={(e) => set("email", e.target.value)}
-                  placeholder={t("ce.emailPlaceholder")}
-                  className={fieldErrors.email ? "border-destructive focus-visible:ring-destructive" : undefined}
-                />
-              </Field>
-              {!editingId && (
-                <Field
-                  label={t("ce.password")}
-                  required
-                  error={fieldErrors.password}
-                  fieldRef={(el) => { fieldRefs.current.password = el; }}
-                >
-                  <PasswordInput
-                    value={data.password}
-                    onChange={(e) => set("password", e.target.value)}
-                    placeholder={t("ce.passwordPlaceholder")}
-                    className={fieldErrors.password ? "border-destructive focus-visible:ring-destructive" : undefined}
-                  />
-                </Field>
+              {!user && (
+                <>
+                  <Field
+                    label={t("ce.email")}
+                    required
+                    error={fieldErrors.email}
+                    fieldRef={(el) => { fieldRefs.current.email = el; }}
+                  >
+                    <Input
+                      type="email"
+                      value={data.email}
+                      onChange={(e) => set("email", e.target.value)}
+                      placeholder={t("ce.emailPlaceholder")}
+                      className={fieldErrors.email ? "border-destructive focus-visible:ring-destructive" : undefined}
+                    />
+                  </Field>
+                  <Field
+                    label={t("ce.password")}
+                    required
+                    error={fieldErrors.password}
+                    fieldRef={(el) => { fieldRefs.current.password = el; }}
+                  >
+                    <PasswordInput
+                      value={data.password}
+                      onChange={(e) => set("password", e.target.value)}
+                      placeholder={t("ce.passwordPlaceholder")}
+                      className={fieldErrors.password ? "border-destructive focus-visible:ring-destructive" : undefined}
+                    />
+                  </Field>
+                </>
               )}
               <Field
                 label={t("ce.phone")}

@@ -230,6 +230,18 @@ function ProfilePage() {
           </div>
         )}
 
+        {!especialista && (
+          <div className="mt-6 rounded-2xl border border-gold/30 bg-surface p-5 text-center">
+            <p className="text-sm text-foreground">{t("pf.wantSpecialistMsg")}</p>
+            <button
+              onClick={() => navigate({ to: "/cadastro/especialista" })}
+              className="mt-3 w-full rounded-md border border-gold/40 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-gold hover:bg-gold/5"
+            >
+              {t("pf.becomeSpecialist")}
+            </button>
+          </div>
+        )}
+
         {especialista && !reprovado && (
           <div className="mt-6 rounded-2xl border border-gold/30 bg-surface p-5">
             <h2 className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground">{t("pf.specialistRegistration")}</h2>
