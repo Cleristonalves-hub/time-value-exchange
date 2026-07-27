@@ -7,7 +7,10 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadAvatar, updateUserAvatar, updateUserProfile, deleteMyAccount, useMySpecialist, useRejectionReasons } from "@/lib/store";
 import { maskPhone } from "@/lib/masks";
+import { isValidAvatarSize } from "@/lib/validators";
 import { useT } from "@/lib/i18n";
+import { useSessionTimeout } from "@/lib/useSessionTimeout";
+import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,6 +56,7 @@ function ProfilePage() {
   const [editTelefone, setEditTelefone] = useState("");
   const [editCidade, setEditCidade] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
+  const { showWarning, continueSession } = useSessionTimeout(!!user);
 
   const especialista = useMySpecialist(user?.id, user?.email ?? undefined);
   const reprovado = especialista?.status === "reprovado";
@@ -112,6 +116,11 @@ function ProfilePage() {
   async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+    if (!isValidAvatarSize(file)) {
+      toast.error(t("pf.photoTooLarge"));
+      e.target.value = "";
+      return;
+    }
     setBusy(true);
     const url = await uploadAvatar(file, `user/${user.id}`);
     if (url) {
@@ -364,6 +373,7 @@ function ProfilePage() {
         </section>
       </div>
       <BottomNav />
+      <SessionTimeoutWarning show={showWarning} onContinue={continueSession} />
     </main>
   );
 }

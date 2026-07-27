@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { ShieldCheck, Check, X, Flag, MessageSquare, Gavel, Users, Lock } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ShieldCheck, Check, X, Flag, MessageSquare, Gavel, Users, Lock, ScrollText } from "lucide-react";
 import {
   useSpecialists,
   useReports,
   useReviews,
   useFeedbacks,
+  useAuditLogs,
   setSpecialistStatus,
   type SpecialistStatus,
 } from "@/lib/store";
@@ -14,6 +15,8 @@ import { useIsAdmin } from "@/lib/useIsAdmin";
 import { useAuth } from "@/lib/auth";
 import { useT, nicheLabel } from "@/lib/i18n";
 import { isSafeHttpUrl } from "@/lib/validators";
+import { useSessionTimeout } from "@/lib/useSessionTimeout";
+import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Admin — Valore" }] }),
@@ -81,7 +84,7 @@ function AdminGate() {
 }
 
 
-type Tab = "especialistas" | "denuncias" | "leiloes" | "feedback";
+type Tab = "especialistas" | "denuncias" | "leiloes" | "feedback" | "logs";
 
 function AdminPanel({ onLogout }: { onLogout: () => void }) {
   const { t } = useT();
@@ -89,13 +92,18 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
   const reports = useReports();
   const reviews = useReviews();
   const feedbacks = useFeedbacks();
+  const auditLogs = useAuditLogs();
   const [tab, setTab] = useState<Tab>("especialistas");
+  // AdminPanel só renderiza depois que AdminGate já confirmou sessão + role
+  // admin, então o timeout sempre está habilitado aqui.
+  const { showWarning, continueSession } = useSessionTimeout(true);
 
   const tabs: { id: Tab; label: string; icon: React.ElementType; count: number }[] = [
     { id: "especialistas", label: t("ad.specialists"), icon: Users, count: specialists.length },
     { id: "denuncias", label: t("ad.reports"), icon: Flag, count: reports.length },
     { id: "leiloes", label: t("ad.auctions"), icon: Gavel, count: auctions.length },
     { id: "feedback", label: t("ad.feedback"), icon: MessageSquare, count: feedbacks.length },
+    { id: "logs", label: t("ad.auditLogs"), icon: ScrollText, count: auditLogs.length },
   ];
 
   return (
@@ -133,10 +141,12 @@ function AdminPanel({ onLogout }: { onLogout: () => void }) {
           {tab === "denuncias" && <ReportsTab items={reports} />}
           {tab === "leiloes" && <AuctionsTab />}
           {tab === "feedback" && <FeedbackTab items={feedbacks} />}
+          {tab === "logs" && <AuditLogsTab items={auditLogs} />}
         </div>
 
         <p className="mt-8 text-center text-[10px] text-muted-foreground">{t("ad.storageNote")}</p>
       </div>
+      <SessionTimeoutWarning show={showWarning} onContinue={continueSession} />
     </main>
   );
 }
@@ -200,17 +210,17 @@ function SpecialistsTab({ items, reviews }: { items: ReturnType<typeof useSpecia
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
-              <ActionBtn onClick={() => setSpecialistStatus(s.id, "verificado")} kind="gold">
+              <ActionBtn onClick={() => setSpecialistStatus(s.id, "verificado", s.status)} kind="gold">
                 <Check className="size-3.5" /> {t("ad.approve")}
               </ActionBtn>
-              <ActionBtn onClick={() => setSpecialistStatus(s.id, "reprovado")} kind="ghost">
+              <ActionBtn onClick={() => setSpecialistStatus(s.id, "reprovado", s.status)} kind="ghost">
                 <X className="size-3.5" /> {t("ad.reject")}
               </ActionBtn>
-              <ActionBtn onClick={() => setSpecialistStatus(s.id, "suspenso")} kind="danger">
+              <ActionBtn onClick={() => setSpecialistStatus(s.id, "suspenso", s.status)} kind="danger">
                 {t("ad.suspend")}
               </ActionBtn>
               {s.status === "suspenso" && (
-                <ActionBtn onClick={() => setSpecialistStatus(s.id, "verificado")} kind="ghost">
+                <ActionBtn onClick={() => setSpecialistStatus(s.id, "verificado", s.status)} kind="ghost">
                   {t("ad.reactivate")}
                 </ActionBtn>
               )}
@@ -301,6 +311,93 @@ function FeedbackTab({ items }: { items: ReturnType<typeof useFeedbacks> }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+const AUDIT_ACAO_LABEL_KEY: Record<string, string> = {
+  aprovar_especialista: "ad.acaoAprovar",
+  reprovar_especialista: "ad.acaoReprovar",
+  suspender_especialista: "ad.acaoSuspender",
+  atualizar_status_especialista: "ad.acaoAtualizarStatus",
+};
+
+function AuditLogsTab({ items }: { items: ReturnType<typeof useAuditLogs> }) {
+  const { t } = useT();
+  const [acaoFilter, setAcaoFilter] = useState("");
+  const [fromFilter, setFromFilter] = useState("");
+  const [toFilter, setToFilter] = useState("");
+
+  const acaoOptions = useMemo(() => Array.from(new Set(items.map((l) => l.acao))), [items]);
+
+  const filtered = useMemo(() => {
+    return items.filter((l) => {
+      if (acaoFilter && l.acao !== acaoFilter) return false;
+      if (fromFilter && l.createdAt < new Date(fromFilter).getTime()) return false;
+      if (toFilter && l.createdAt > new Date(toFilter).getTime() + 24 * 60 * 60 * 1000 - 1) return false;
+      return true;
+    });
+  }, [items, acaoFilter, fromFilter, toFilter]);
+
+  return (
+    <div>
+      <div className="flex flex-wrap gap-2">
+        <select
+          value={acaoFilter}
+          onChange={(e) => setAcaoFilter(e.target.value)}
+          className="h-9 rounded-md border border-border bg-surface px-2 text-xs"
+        >
+          <option value="">{t("ad.allActions")}</option>
+          {acaoOptions.map((a) => (
+            <option key={a} value={a}>{AUDIT_ACAO_LABEL_KEY[a] ? t(AUDIT_ACAO_LABEL_KEY[a]) : a}</option>
+          ))}
+        </select>
+        <input
+          type="date"
+          value={fromFilter}
+          onChange={(e) => setFromFilter(e.target.value)}
+          className="h-9 rounded-md border border-border bg-surface px-2 text-xs"
+          aria-label={t("ad.filterFrom")}
+        />
+        <input
+          type="date"
+          value={toFilter}
+          onChange={(e) => setToFilter(e.target.value)}
+          className="h-9 rounded-md border border-border bg-surface px-2 text-xs"
+          aria-label={t("ad.filterTo")}
+        />
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="mt-3">
+          <Empty text={t("ad.noAuditLogs")} />
+        </div>
+      ) : (
+        <ul className="mt-3 space-y-2">
+          {filtered.map((l) => (
+            <li key={l.id} className="rounded-xl border border-border/60 bg-surface p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-gold">
+                    {AUDIT_ACAO_LABEL_KEY[l.acao] ? t(AUDIT_ACAO_LABEL_KEY[l.acao]) : l.acao}
+                  </p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {l.alvoTipo} · {l.alvoId ?? "—"}
+                  </p>
+                  {!!l.detalhes && (
+                    <p className="mt-1 truncate text-[11px] text-muted-foreground/80">
+                      {JSON.stringify(l.detalhes)}
+                    </p>
+                  )}
+                </div>
+                <p className="shrink-0 text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {new Date(l.createdAt).toLocaleString("pt-BR")}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

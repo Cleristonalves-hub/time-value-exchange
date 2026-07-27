@@ -19,7 +19,8 @@
 // pessoa poderia forjar chamadas e gastar sua cota do Resend.
 
 import { Webhook } from "npm:standardwebhooks@1.0.0";
-import { checkRateLimit } from "../_shared/rateLimit.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { checkRateLimitDb } from "../_shared/rateLimitDb.ts";
 
 // Formato do secret gerado pelo Dashboard: "v1,whsec_<base64>". A lib
 // standardwebhooks espera só a parte base64, sem o prefixo "v1,whsec_".
@@ -28,6 +29,10 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const RESEND_FROM = "contato@valore.services";
 // Injetada automaticamente em toda Edge Function pelo runtime do Supabase.
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+// Cliente só para a checagem de rate limit (check_rate_limit) — esta função
+// não tocava no banco antes disso, o resto do fluxo continua igual.
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 interface HookUser {
   email: string;
@@ -155,7 +160,7 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
     return errorResponse("method not allowed", 405);
   }
-  const limited = checkRateLimit(req, 30, "send-auth-email");
+  const limited = await checkRateLimitDb(req, supabase, "send-auth-email", 10);
   if (limited) return limited;
   if (!HOOK_SECRET) {
     console.error("SEND_EMAIL_HOOK_SECRET não configurada.");

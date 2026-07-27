@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { useMySpecialist, createLeilao } from "@/lib/store";
 import { useT, nicheLabel } from "@/lib/i18n";
+import { sanitizeText } from "@/lib/sanitize";
+import { useSessionTimeout } from "@/lib/useSessionTimeout";
+import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/criar-leilao")({
@@ -26,6 +29,7 @@ function CriarLeilaoPage() {
   const { t } = useT();
   const navigate = useNavigate();
   const especialista = useMySpecialist(user?.id, user?.email ?? undefined);
+  const { showWarning, continueSession } = useSessionTimeout(!!user);
 
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
@@ -85,7 +89,7 @@ function CriarLeilaoPage() {
     const created = await createLeilao({
       especialistaId: especialista.id,
       titulo: titulo.trim(),
-      descricao: descricao.trim(),
+      descricao: sanitizeText(descricao),
       lanceMinimo: Number(lanceMinimo),
       dataInicio: new Date(dataInicio).getTime(),
       dataFim: new Date(dataFim).getTime(),
@@ -265,6 +269,7 @@ function CriarLeilaoPage() {
           </Button>
         </form>
       </div>
+      <SessionTimeoutWarning show={showWarning} onContinue={continueSession} />
     </main>
   );
 }

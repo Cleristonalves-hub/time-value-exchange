@@ -244,12 +244,141 @@ Origin barra uma classe menor de abuso (chamada direta do browser a partir de
 um domínio não reconhecido) sem quebrar chamadas server-to-server (que não
 mandam `Origin`).
 
-## 6. O que ainda precisa de ação manual
+## 6. Sessão, auditoria e hardening adicional (2026-07-27)
 
-- [ ] **Rodar `supabase db push --linked`** para aplicar as 3 migrations
-      novas desta sessão: `20260725150000_backfill_usuario_id_especialistas.sql`,
+### Timeout de sessão por inatividade
+
+`src/lib/useSessionTimeout.ts` monitora clique, scroll, teclado, mouse e
+toque. Sem nenhum deles por 30 minutos, chama `supabase.auth.signOut()`
+automaticamente. 2 minutos antes, mostra um aviso ("Sua sessão expirará em 2
+minutos por inatividade.") com botão "Continuar logado" — a partir do
+momento em que o aviso aparece, atividade passiva (ex.: o mouse encostar sem
+querer) **não** reresseta o timer sozinha, só o clique explícito no botão
+(senão o aviso nunca ficaria na tela tempo suficiente para alguém notar).
+A UI do aviso foi extraída para `src/components/SessionTimeoutWarning.tsx`
+para poder ser reusada em mais de um lugar. Descobri que nem toda página
+protegida usa `RequireAuth` — `admin.tsx`, `perfil.tsx`, `criar-leilao.tsx` e
+a tela de perfil de especialista logado (`cadastro.especialista.tsx`) têm
+cada uma seu próprio gate de autenticação (checagens `if (!user)`/`isAdmin`
+inline, com telas de "convidado"/"acesso negado" próprias) em vez de usar o
+componente compartilhado. Por isso o timeout foi aplicado em 5 lugares, não
+só um: `RequireAuth` (cobre a maioria das rotas) + as 4 páginas com gate
+próprio, cada uma chamando `useSessionTimeout` e renderizando
+`<SessionTimeoutWarning>` diretamente. Se uma página nova for criada com seu
+próprio gate de auth em vez de `RequireAuth`, lembre de repetir esse padrão.
+
+### Logs de auditoria no admin
+
+Nova tabela `public.audit_logs` (`admin_id`, `acao`, `alvo_tipo`, `alvo_id`,
+`detalhes` jsonb, `created_at`) — ver
+`supabase/migrations/20260727100000_add_audit_logs.sql`. RLS habilitada com
+só duas policies: `admin_read` (só quem tem role admin lê) e `admin_insert`
+(só admin insere, e só atribuído a si mesmo — `admin_id = auth.uid()`); sem
+policy de UPDATE/DELETE, então o log é imutável mesmo para o próprio admin.
+
+`setSpecialistStatus()` em `src/lib/store.ts` agora grava um log a cada
+chamada (aprovar/reprovar/suspender/reativar especialista) — é a única ação
+administrativa que de fato existe hoje no painel. A aba "Leilões" do
+`/admin` só lista dados fictícios sem nenhum botão de ação, então **não
+existe hoje uma função real de "admin cancela leilão" para logar** — não
+inventei uma para não misturar uma feature nova com esta tarefa de
+auditoria. Se essa função for adicionada depois, aplique o mesmo padrão
+(`logAdminAction` já é reutilizável).
+
+Nova aba "Logs de Auditoria" em `/admin` (`AuditLogsTab` em
+`src/routes/admin.tsx`), com filtro por tipo de ação e por intervalo de
+datas — filtragem feita no client sobre os últimos 200 logs (não há
+paginação ainda; se o volume crescer muito, vale mover o filtro para a query
+do Supabase).
+
+### Rate limiting real, com estado no banco
+
+O rate limiting anterior (`_shared/rateLimit.ts`) era só em memória, por
+instância — um cold start zerava o contador e instâncias concorrentes nem
+compartilhavam contagem. Para as 4 funções citadas no pedido
+(`trust-engine`, `send-auth-email`, `dar-lance`, `salvar-cartao`), troquei
+por um limitador real: tabela `public.rate_limits` + função Postgres
+`check_rate_limit()` (`security definer`, upsert atômico via `ON CONFLICT`
+— duas requisições concorrentes para a mesma chave nunca perdem incremento
+porque o Postgres toma um lock de linha na chave durante o upsert). Limite:
+10 requisições por IP por minuto; ao exceder, HTTP 429 com
+`"Muitas requisições. Tente novamente em 1 minuto."` — ver
+`supabase/functions/_shared/rateLimitDb.ts` e a migration
+`20260727110000_add_rate_limits.sql`.
+
+`cancelar-leilao` e `processar-inadimplencia` **não** foram citadas no
+pedido e continuam no limitador antigo em memória (10/min e 5/min,
+respectivamente) — não migradas para evitar mudar comportamento não pedido.
+Isso deixa duas mecânicas de rate limit coexistindo no projeto; se fizer
+sentido, migrar as duas restantes para `rateLimitDb` depois é só trocar o
+import e adicionar `await`.
+
+Se a chamada RPC falhar (erro de infraestrutura), a função **deixa passar**
+— decisão deliberada de disponibilidade sobre rigor: um bug no rate limiter
+não deve derrubar `dar-lance`/`salvar-cartao` inteiras. O erro fica no log
+da função.
+
+### Sanitização de HTML em bio/descrição
+
+`src/lib/sanitize.ts` usa `DOMPurify` (dependência nova, `npm install
+dompurify`) para remover **toda** marcação HTML (não só `<script>`/`<iframe>`
+— um campo de bio/descrição em textarea simples não tem motivo legítimo para
+conter qualquer tag) antes de enviar ao Supabase. Aplicado em `data.bio` (as
+duas telas de cadastro de especialista) e `descricao` do leilão
+(`criar-leilao.tsx`).
+
+Importante: hoje isso é **defesa em profundidade, não correção de um bug
+explorável** — o React já escapa esses valores por padrão ao renderizar
+(`{bio}` como children de JSX nunca executa HTML), e o único
+`dangerouslySetInnerHTML` do projeto (`chart.tsx`) não usa dado do usuário.
+O valor real aqui é garantir que o dado GRAVADO já vem limpo, para o caso de
+uma tela futura passar a renderizar como HTML de verdade. Confirmei que
+`dompurify` não quebra o SSR do TanStack Start (só é chamado dentro de
+handlers de submit, nunca no top-level do módulo nem durante a renderização
+inicial) — testado ao vivo em `/cadastro/especialista` e `/criar-leilao`.
+
+### Limite de 5MB no upload de foto
+
+`src/lib/validators.ts::isValidAvatarSize()` (constante `MAX_AVATAR_BYTES =
+5 * 1024 * 1024`) — checado nas 3 telas que fazem upload de avatar
+(`perfil.tsx`, e as duas variantes de `cadastro.especialista.tsx`) antes de
+sequer começar o upload, mostrando um erro específico ("A foto deve ter no
+máximo 5MB.") em vez de gastar banda com um arquivo que seria rejeitado.
+Também reforçado dentro de `uploadAvatar()` em `store.ts` como segunda linha
+de defesa, para qualquer chamador futuro que esqueça a checagem na tela. O
+bucket do Storage em si não tem limite de tamanho configurado — este
+controle é só client-side.
+
+### Duas partes do pedido original que **não** foram implementadas como pedido
+
+- **"Rejeitar caracteres como `'`, `--`, `;` em campos de texto livre"**:
+  não implementado. SQL injection não se aplica a este projeto — todo
+  acesso a dado passa por `supabase-js`/PostgREST, que já usa queries
+  parametrizadas (confirmado por grep em `src/` e `supabase/functions/`,
+  nenhuma SQL concatenada em lugar nenhum). Bloquear esses caracteres
+  quebraria texto legítimo (nomes como "O'Brien", bios com "segunda-feira --
+  horário especial", etc.) sem adicionar proteção real — seria só um falso
+  senso de segurança. Confirmado com o usuário antes de pular esta parte.
+- **Subresource Integrity no script do Mercado Pago**
+  (`https://sdk.mercadopago.com/js/v2`, em `src/routes/cartao.tsx`): não
+  implementado. SRI exige que o hash bata exatamente com os bytes do
+  arquivo servido; essa URL não é versionada — o Mercado Pago pode
+  atualizar o conteúdo a qualquer momento sem aviso, e um hash fixo faria o
+  SDK parar de carregar (quebrando o fluxo de pagamento) assim que isso
+  acontecesse. Não tenho como calcular o hash real de um arquivo que muda
+  sem versão fixa, então inventar um valor seria pior que não ter SRI
+  nenhum. Se o Mercado Pago algum dia expuser uma URL versionada/imutável
+  para o SDK, SRI passa a fazer sentido ali. Confirmado com o usuário antes
+  de pular esta parte.
+
+## 7. O que ainda precisa de ação manual
+
+- [ ] **Rodar `supabase db push --linked`** para aplicar as migrations
+      novas: `20260725150000_backfill_usuario_id_especialistas.sql`,
       `20260725160000_fix_especialistas_rls.sql`,
-      `20260725170000_security_audit_rls_hardening.sql`.
+      `20260725170000_security_audit_rls_hardening.sql`,
+      `20260727100000_add_audit_logs.sql`,
+      `20260727110000_add_rate_limits.sql`.
 - [ ] **Apagar o registro de teste** criado durante o diagnóstico do bug de
       INSERT: `delete from public.especialistas where id = '6e307f8f-bfed-4197-8e56-251ab1792a9a';`
 - [ ] **Confirmar `PROCESSAR_INADIMPLENCIA_SECRET`** está configurada
@@ -261,9 +390,15 @@ mandam `Origin`).
 - [ ] **Configurar WAF / Rate Limiting Rules no Cloudflare** (ou equivalente
       no provedor real) — o rate limit em memória das Edge Functions é só
       uma primeira barreira, não substitui proteção na borda.
-- [ ] **Considerar um rate limit distribuído de verdade** (Upstash Redis,
-      ou o rate limiting nativo do provedor de Edge Functions) se o tráfego
-      justificar.
+- [ ] ~~Considerar um rate limit distribuído de verdade~~ — feito para
+      `trust-engine`/`send-auth-email`/`dar-lance`/`salvar-cartao` (tabela
+      `rate_limits` + `check_rate_limit()`, ver seção 6). `cancelar-leilao` e
+      `processar-inadimplencia` ainda usam o limitador em memória — migrar
+      também se fizer sentido.
+- [ ] **`rate_limits` não tem limpeza automática** — a tabela só cresce (uma
+      linha por chave `função:IP` já vista). Para tráfego alto, considere um
+      job periódico (`pg_cron`) apagando linhas com `window_start` antigo, ou
+      um índice/rotina de limpeza.
 - [ ] **Rodar `supabase db diff` periodicamente** para pegar drift entre o
       que está commitado e o que está de fato no banco — a própria auditoria
       encontrou uma policy que já tinha divergido silenciosamente.
@@ -274,6 +409,8 @@ mandam `Origin`).
 - [ ] Padronizar o prefixo de upload de avatar (`user/<id>/...` vs
       `specialist/...`) por consistência (não é falha de segurança após o
       fix do owner_id, só organização).
+- [ ] **Adicionar paginação em "Logs de Auditoria"** (`/admin`) se o volume
+      de ações passar dos 200 registros hoje buscados de uma vez.
 - [ ] Pentest/revisão de segurança externa antes de qualquer lançamento
       maior — esta auditoria foi feita por leitura de código e testes
       pontuais via API, não substitui uma revisão profissional completa.

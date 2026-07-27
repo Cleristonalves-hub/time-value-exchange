@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
+import { useSessionTimeout } from "@/lib/useSessionTimeout";
+import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
 
 // Guard 100% client-side. Não usamos `beforeLoad` no router porque a sessão do
 // Supabase só existe no localStorage do navegador (sem cookie) — o servidor
@@ -12,6 +14,7 @@ import { useAuth } from "@/lib/auth";
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const { showWarning, continueSession } = useSessionTimeout(!loading && !!user);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -20,5 +23,10 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   }, [loading, user, navigate]);
 
   if (loading || !user) return null;
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <SessionTimeoutWarning show={showWarning} onContinue={continueSession} />
+    </>
+  );
 }

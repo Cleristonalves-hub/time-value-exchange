@@ -67,6 +67,16 @@ export const MAX_LENGTHS = {
   mensagem: 1000,
 } as const;
 
+// Tamanho máximo de foto de perfil aceito antes de enviar ao Supabase
+// Storage — checado no client para não gastar upload/banda com um arquivo
+// que seria rejeitado de qualquer forma (o bucket em si não tem limite
+// configurado, então sem isso um arquivo de qualquer tamanho passaria).
+export const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
+
+export function isValidAvatarSize(file: File): boolean {
+  return file.size <= MAX_AVATAR_BYTES;
+}
+
 // Só permite http/https — usado antes de renderizar um valor vindo do banco
 // como `href`. A validação no formulário de cadastro já bloqueia protocolos
 // como `javascript:`, mas ela não protege contra uma linha inserida direto

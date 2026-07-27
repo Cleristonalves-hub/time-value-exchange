@@ -12,8 +12,11 @@ import { addSpecialist, updateSpecialist, registrationLabel, uploadAvatar, useMy
 import { useAuth } from "@/lib/auth";
 import { useT, nicheLabel, WEEKDAY_LABEL_KEY } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
-import { isValidCpfCnpj, isFullName, isSafeHttpUrl } from "@/lib/validators";
+import { isValidCpfCnpj, isFullName, isSafeHttpUrl, isValidAvatarSize } from "@/lib/validators";
 import { maskCpfCnpj, maskPhone } from "@/lib/masks";
+import { sanitizeText } from "@/lib/sanitize";
+import { useSessionTimeout } from "@/lib/useSessionTimeout";
+import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/cadastro/especialista")({
@@ -234,6 +237,11 @@ function NewSpecialistWizard() {
   async function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!isValidAvatarSize(file)) {
+      toast.error(t("pf.photoTooLarge"));
+      e.target.value = "";
+      return;
+    }
     setUploading(true);
     const url = await uploadAvatar(file, "specialist");
     setUploading(false);
@@ -372,7 +380,7 @@ function NewSpecialistWizard() {
       state: data.state,
       niche: data.niche,
       specialty: data.specialty,
-      bio: data.bio,
+      bio: sanitizeText(data.bio),
       credential: data.credential,
       experience: data.experience,
       platform: data.platform || "",
@@ -1043,6 +1051,9 @@ function SpecialistProfileForm() {
   const { user } = useAuth();
   const { t } = useT();
   const existing = useMySpecialist(user?.id, user?.email ?? undefined);
+  // SpecialistProfileForm só renderiza para usuário logado (decidido em
+  // SpecialistRegistrationGate), então o timeout sempre está habilitado aqui.
+  const { showWarning, continueSession } = useSessionTimeout(true);
 
   const [personal, setPersonal] = useState({ nome: "", telefone: "", cidade: "", estado: "", cpf: "" });
   const [photoUrl, setPhotoUrl] = useState("");
@@ -1126,6 +1137,11 @@ function SpecialistProfileForm() {
   async function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+    if (!isValidAvatarSize(file)) {
+      toast.error(t("pf.photoTooLarge"));
+      e.target.value = "";
+      return;
+    }
     setUploading(true);
     const url = await uploadAvatar(file, `specialist/${user.id}`);
     setUploading(false);
@@ -1203,7 +1219,7 @@ function SpecialistProfileForm() {
       state: displayState,
       niche: data.niche,
       specialty: data.specialty,
-      bio: data.bio,
+      bio: sanitizeText(data.bio),
       credential: data.credential,
       experience: data.experience,
       platform: data.platform || "",
@@ -1694,6 +1710,7 @@ function SpecialistProfileForm() {
           <Link to="/privacidade" className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground hover:text-gold">{t("footer.privacy")}</Link>
         </div>
       </div>
+      <SessionTimeoutWarning show={showWarning} onContinue={continueSession} />
     </main>
   );
 }

@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { isValidAvatarSize, MAX_AVATAR_BYTES } from "@/lib/validators";
 
 export type SpecialistStatus = "novo" | "verificado" | "suspenso" | "reprovado";
 
@@ -262,6 +263,36 @@ export type RejectionCriterion = {
   detalhe: string;
 };
 
+export type AuditLog = {
+  id: string;
+  adminId: string | null;
+  acao: string;
+  alvoTipo: string;
+  alvoId: string | null;
+  detalhes: unknown;
+  createdAt: number;
+};
+
+type AuditLogRow = {
+  id: string;
+  admin_id: string | null;
+  acao: string;
+  alvo_tipo: string;
+  alvo_id: string | null;
+  detalhes: unknown;
+  created_at: string;
+};
+
+const toAuditLog = (r: AuditLogRow): AuditLog => ({
+  id: r.id,
+  adminId: r.admin_id,
+  acao: r.acao,
+  alvoTipo: r.alvo_tipo,
+  alvoId: r.alvo_id,
+  detalhes: r.detalhes,
+  createdAt: new Date(r.created_at).getTime(),
+});
+
 // ------- Query keys -------
 const K = {
   specialists: ["specialists"] as const,
@@ -275,6 +306,7 @@ const K = {
   lances: ["lances"] as const,
   myCard: ["my-card"] as const,
   myLeiloes: ["my-leiloes"] as const,
+  auditLogs: ["audit-logs"] as const,
 };
 
 // ------- Hooks -------
@@ -614,6 +646,13 @@ function openMailto(subject: string, body: string) {
 }
 
 export async function uploadAvatar(file: File, prefix = "user"): Promise<string | null> {
+  // Segunda linha de defesa — as telas já checam isto antes de chamar esta
+  // função (para dar um erro específico sem gastar upload), mas qualquer
+  // chamador futuro que esquecer a checagem ainda fica protegido aqui.
+  if (!isValidAvatarSize(file)) {
+    console.error("uploadAvatar: arquivo maior que o limite de", MAX_AVATAR_BYTES, "bytes");
+    return null;
+  }
   const ext = file.name.split(".").pop() || "jpg";
   const path = `${prefix}/${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage.from("avatars").upload(path, file, {
@@ -735,10 +774,68 @@ export async function updateSpecialist(
   return updated;
 }
 
-export async function setSpecialistStatus(id: string, status: SpecialistStatus) {
+// Registra uma ação do painel admin em audit_logs. Nunca lança — uma falha
+// ao logar não deve impedir a ação em si (já concluída quando isto roda).
+async function logAdminAction(
+  acao: string,
+  alvoTipo: string,
+  alvoId: string,
+  detalhes?: Record<string, unknown>,
+) {
+  const { data: userData } = await supabase.auth.getUser();
+  const adminId = userData.user?.id;
+  if (!adminId) return;
+  const { error } = await supabase.from("audit_logs").insert({
+    admin_id: adminId,
+    acao,
+    alvo_tipo: alvoTipo,
+    alvo_id: alvoId,
+    detalhes: detalhes ?? null,
+  });
+  if (error) console.error("logAdminAction:", error);
+}
+
+const SPECIALIST_STATUS_ACAO: Record<SpecialistStatus, string> = {
+  novo: "atualizar_status_especialista",
+  verificado: "aprovar_especialista",
+  reprovado: "reprovar_especialista",
+  suspenso: "suspender_especialista",
+};
+
+export async function setSpecialistStatus(
+  id: string,
+  status: SpecialistStatus,
+  previousStatus?: SpecialistStatus,
+) {
   const { error } = await supabase.from("especialistas").update({ status }).eq("id", id);
-  if (error) console.error("setSpecialistStatus:", error);
+  if (error) {
+    console.error("setSpecialistStatus:", error);
+    return;
+  }
   invalidate(K.specialists);
+  await logAdminAction(SPECIALIST_STATUS_ACAO[status], "especialista", id, {
+    status_anterior: previousStatus ?? null,
+    status_novo: status,
+  });
+}
+
+// Histórico de ações do painel admin, com filtros opcionais por ação e
+// intervalo de datas (created_at, formato ISO).
+export function useAuditLogs(filters?: { acao?: string; from?: string; to?: string }): AuditLog[] {
+  const { data } = useQuery({
+    queryKey: [...K.auditLogs, filters?.acao ?? "", filters?.from ?? "", filters?.to ?? ""],
+    queryFn: async () => {
+      let query = supabase.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(200);
+      if (filters?.acao) query = query.eq("acao", filters.acao);
+      if (filters?.from) query = query.gte("created_at", filters.from);
+      if (filters?.to) query = query.lte("created_at", filters.to);
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data as AuditLogRow[]).map(toAuditLog);
+    },
+    staleTime: 10_000,
+  });
+  return data ?? [];
 }
 
 type NovoLeilaoInput = Omit<
