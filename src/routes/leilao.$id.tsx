@@ -245,7 +245,23 @@ function AuctionDetail() {
             <p className="mt-2 text-center text-sm text-muted-foreground">{t("lz.bidValueLabel")}</p>
             <p className="text-center font-display text-3xl text-gradient-gold">{formatBRL(bid)}</p>
 
-            <div className="mt-5 rounded-md border border-destructive/30 bg-destructive/5 p-4 text-xs leading-relaxed text-foreground/80">
+            <div className="mt-5 space-y-1.5 rounded-md border border-border/60 bg-background/40 p-4 text-xs">
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span>{t("lz.bidTotalLabel")}</span>
+                <span className="font-mono tabular-nums text-foreground">{formatBRL(bid)}</span>
+              </div>
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span>{t("lz.serviceFeeLabel")}</span>
+                <span className="font-mono tabular-nums text-foreground">{formatBRL(bid * 0.2)}</span>
+              </div>
+              <div className="mt-1 flex items-center justify-between border-t border-border/60 pt-1.5 font-semibold">
+                <span className="text-foreground">{t("lz.finalChargeLabel")}</span>
+                <span className="font-mono tabular-nums text-gold">{formatBRL(bid)}</span>
+              </div>
+              <p className="pt-1 text-[10px] leading-relaxed text-muted-foreground">{t("lz.serviceFeeNote")}</p>
+            </div>
+
+            <div className="mt-3 rounded-md border border-destructive/30 bg-destructive/5 p-4 text-xs leading-relaxed text-foreground/80">
               {t("lz.irrevocableNotice")}
             </div>
 

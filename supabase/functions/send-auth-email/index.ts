@@ -107,13 +107,28 @@ const DEFAULT_TEMPLATE: Template = {
   cta: "Continuar",
 };
 
+// Identificação do operador + link de descadastro — exigido em todo email
+// transacional (LGPD/CDC: identificação clara de quem envia, e uma forma
+// simples de gerenciar/cancelar notificações).
+const OPERATOR_LINE = "67.226.051 CLERISTON ALVES DOS SANTOS — contato@valore.services";
+const UNSUBSCRIBE_LINE = "Para cancelar notificações, acesse seu perfil em valore.services/perfil";
+
+const FOOTER_HTML = `
+    <hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0 12px;">
+    <p style="color:#999;font-size:11px;line-height:1.5;">
+      ${UNSUBSCRIBE_LINE}<br>
+      ${OPERATOR_LINE}
+    </p>
+`;
+const FOOTER_TEXT = `\n\n---\n${UNSUBSCRIBE_LINE}\n${OPERATOR_LINE}`;
+
 function montarEmail(user: HookUser, emailData: EmailData): { subject: string; html: string; text: string } {
   // Reautenticação usa um código numérico digitado no app, não um link.
   if (emailData.email_action_type === "reauthentication") {
     return {
       subject: "Seu código de confirmação - Valore",
-      html: `<p>Seu código de confirmação é:</p><p style="font-size:24px;font-weight:bold;letter-spacing:4px;">${emailData.token}</p><p>Se não foi você quem solicitou, ignore este email.</p>`,
-      text: `Seu código de confirmação é: ${emailData.token}\nSe não foi você quem solicitou, ignore este email.`,
+      html: `<p>Seu código de confirmação é:</p><p style="font-size:24px;font-weight:bold;letter-spacing:4px;">${emailData.token}</p><p>Se não foi você quem solicitou, ignore este email.</p>${FOOTER_HTML}`,
+      text: `Seu código de confirmação é: ${emailData.token}\nSe não foi você quem solicitou, ignore este email.${FOOTER_TEXT}`,
     };
   }
 
@@ -131,9 +146,10 @@ function montarEmail(user: HookUser, emailData: EmailData): { subject: string; h
       </p>
       <p style="color:#666;font-size:12px;">Se o botão não funcionar, copie e cole este link no navegador:<br>${verifyUrl}</p>
       <p style="color:#666;font-size:12px;">Se não foi você quem solicitou, ignore este email.</p>
+      ${FOOTER_HTML}
     </div>
   `;
-  const text = `${template.heading}\n\n${template.intro}\n\n${verifyUrl}\n\nSe não foi você quem solicitou, ignore este email.`;
+  const text = `${template.heading}\n\n${template.intro}\n\n${verifyUrl}\n\nSe não foi você quem solicitou, ignore este email.${FOOTER_TEXT}`;
 
   return { subject: template.subject, html, text };
 }

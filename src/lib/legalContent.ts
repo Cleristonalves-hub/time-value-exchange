@@ -18,6 +18,8 @@ export type LegalDoc = {
 };
 
 const CONTACT_EMAIL = "contato@valore.services";
+const RAZAO_SOCIAL = "67.226.051 CLERISTON ALVES DOS SANTOS";
+const CNPJ = "67.226.051/0001-07";
 
 export const TERMOS: Record<LangCode, LegalDoc> = {
   "pt-BR": {
@@ -28,6 +30,14 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
     otherDocLink: "Política de Privacidade",
     homeLink: "Voltar ao início",
     sections: [
+      {
+        title: "Identificação",
+        list: [
+          { label: "Razão social", text: RAZAO_SOCIAL },
+          { label: "CNPJ", text: CNPJ },
+          { label: "Contato", text: CONTACT_EMAIL },
+        ],
+      },
       {
         title: "1. Aceitação dos Termos",
         paragraphs: [
@@ -57,6 +67,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
         ],
       },
       {
+        title: "4.1 Irretratabilidade do Lance",
+        paragraphs: [
+          "Ao confirmar um lance, o cliente assume compromisso de compra irrevogável e irretratável. A desistência após a confirmação do lance vencedor sujeita o cliente a uma multa de 20% (vinte por cento) sobre o valor do lance, sem prejuízo das demais medidas de cobrança previstas nestes Termos.",
+        ],
+      },
+      {
         title: "5. Sessões e Cancelamentos",
         list: [
           { text: "O vencedor deve agendar a sessão em até 7 dias após o encerramento do leilão." },
@@ -78,6 +94,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
         ],
       },
       {
+        title: "5.3 Cancelamento pelo Especialista e Penalidades",
+        paragraphs: [
+          "O especialista pode cancelar um leilão já publicado. Cancelamentos feitos com mais de 2 horas de antecedência do início da sessão não geram penalidade. Cancelamentos com menos de 2 horas de antecedência resultam na aplicação do selo \"Cancelamento recente\" no perfil do especialista por 7 dias. Ao acumular 3 cancelamentos penalizados dentro do mesmo mês, o especialista terá a conta suspensa automaticamente por 30 dias.",
+        ],
+      },
+      {
         title: "6. Comissão da Plataforma",
         paragraphs: [
           "A Valore retém 20% do valor bruto de cada lance vencedor como comissão de intermediação. O especialista recebe 80% líquido, sujeito às regras fiscais aplicáveis. Saque dos valores disponíveis pode ser solicitado a qualquer momento, com prazo de processamento de até 5 dias úteis.",
@@ -92,6 +114,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
           { text: "Tentativas de fraude, manipulação de lances ou uso de bots;" },
           { text: "Compartilhamento de dados de contato fora da plataforma antes do pagamento;" },
           { text: "Gravação de sessões sem consentimento expresso de ambas as partes." },
+        ],
+      },
+      {
+        title: "7.1 Conteúdo Publicado pelo Usuário",
+        paragraphs: [
+          "O usuário é inteiramente responsável pelo conteúdo que publica na plataforma, incluindo fotos e informações profissionais. A Valore se reserva o direito de remover conteúdo que viole direitos de terceiros mediante notificação.",
         ],
       },
       {
@@ -124,7 +152,7 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
       {
         title: "12. Disposições Gerais",
         paragraphs: [
-          "Estes Termos são regidos pelas leis da República Federativa do Brasil. Fica eleito o foro da Comarca da Capital do Estado do Rio de Janeiro para resolver quaisquer controvérsias. A tolerância de qualquer violação não constituirá renúncia ao direito de exigir o cumprimento futuro.",
+          "Estes Termos são regidos pelas leis da República Federativa do Brasil. Fica eleito o foro da Comarca de Salvador, Bahia, Brasil, para resolver quaisquer controvérsias. A tolerância de qualquer violação não constituirá renúncia ao direito de exigir o cumprimento futuro.",
         ],
       },
       {
@@ -142,6 +170,14 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
     otherDocLink: "Privacy Policy",
     homeLink: "Back to home",
     sections: [
+      {
+        title: "Operator Identification",
+        list: [
+          { label: "Legal name", text: RAZAO_SOCIAL },
+          { label: "Tax ID (CNPJ)", text: CNPJ },
+          { label: "Contact", text: CONTACT_EMAIL },
+        ],
+      },
       {
         title: "1. Acceptance of Terms",
         paragraphs: [
@@ -171,6 +207,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
         ],
       },
       {
+        title: "4.1 Bid Irrevocability",
+        paragraphs: [
+          "By confirming a bid, the client assumes an irrevocable and non-retractable purchase commitment. Withdrawal after a winning bid has been confirmed subjects the client to a penalty of 20% (twenty percent) of the bid amount, without prejudice to the other collection measures set out in these Terms.",
+        ],
+      },
+      {
         title: "5. Sessions and Cancellations",
         list: [
           { text: "The winner must schedule the session within 7 days after the auction closes." },
@@ -192,6 +234,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
         ],
       },
       {
+        title: "5.3 Cancellation by the Specialist and Penalties",
+        paragraphs: [
+          "The specialist may cancel an already published auction. Cancellations made more than 2 hours before the session's start time incur no penalty. Cancellations made less than 2 hours in advance result in a \"Recent Cancellation\" badge on the specialist's profile for 7 days. Upon accumulating 3 penalized cancellations within the same month, the specialist's account will be automatically suspended for 30 days.",
+        ],
+      },
+      {
         title: "6. Platform Commission",
         paragraphs: [
           "Valore retains 20% of the gross value of each winning bid as an intermediation commission. The specialist receives a net 80%, subject to applicable tax rules. Withdrawal of available funds may be requested at any time, with processing taking up to 5 business days.",
@@ -206,6 +254,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
           { text: "Attempts at fraud, bid manipulation, or use of bots;" },
           { text: "Sharing contact information off-platform before payment;" },
           { text: "Recording sessions without the express consent of both parties." },
+        ],
+      },
+      {
+        title: "7.1 User-Published Content",
+        paragraphs: [
+          "The user is fully responsible for the content they publish on the platform, including photos and professional information. Valore reserves the right to remove content that violates third-party rights upon notification.",
         ],
       },
       {
@@ -238,7 +292,7 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
       {
         title: "12. General Provisions",
         paragraphs: [
-          "These Terms are governed by the laws of the Federative Republic of Brazil. The courts of the Capital of the State of Rio de Janeiro are elected to resolve any disputes. Tolerance of any violation does not constitute a waiver of the right to demand future compliance.",
+          "These Terms are governed by the laws of the Federative Republic of Brazil. The courts of Salvador, Bahia, Brazil, are elected to resolve any disputes. Tolerance of any violation does not constitute a waiver of the right to demand future compliance.",
         ],
       },
       {
@@ -256,6 +310,14 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
     otherDocLink: "Política de Privacidad",
     homeLink: "Volver al inicio",
     sections: [
+      {
+        title: "Identificación del Operador",
+        list: [
+          { label: "Razón social", text: RAZAO_SOCIAL },
+          { label: "CNPJ", text: CNPJ },
+          { label: "Contacto", text: CONTACT_EMAIL },
+        ],
+      },
       {
         title: "1. Aceptación de los Términos",
         paragraphs: [
@@ -285,6 +347,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
         ],
       },
       {
+        title: "4.1 Irretractabilidad de la Puja",
+        paragraphs: [
+          "Al confirmar una puja, el cliente asume un compromiso de compra irrevocable e irretractable. El desistimiento después de la confirmación de la puja ganadora somete al cliente a una multa del 20% (veinte por ciento) sobre el valor de la puja, sin perjuicio de las demás medidas de cobro previstas en estos Términos.",
+        ],
+      },
+      {
         title: "5. Sesiones y Cancelaciones",
         list: [
           { text: "El ganador debe agendar la sesión dentro de los 7 días posteriores al cierre de la subasta." },
@@ -306,6 +374,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
         ],
       },
       {
+        title: "5.3 Cancelación por el Especialista y Penalizaciones",
+        paragraphs: [
+          "El especialista puede cancelar una subasta ya publicada. Las cancelaciones realizadas con más de 2 horas de antelación al inicio de la sesión no generan penalización. Las cancelaciones con menos de 2 horas de antelación resultan en la aplicación del distintivo \"Cancelación reciente\" en el perfil del especialista durante 7 días. Al acumular 3 cancelaciones penalizadas dentro del mismo mes, la cuenta del especialista será suspendida automáticamente por 30 días.",
+        ],
+      },
+      {
         title: "6. Comisión de la Plataforma",
         paragraphs: [
           "Valore retiene el 20% del valor bruto de cada puja ganadora como comisión de intermediación. El especialista recibe el 80% neto, sujeto a las normas fiscales aplicables. El retiro de los valores disponibles puede solicitarse en cualquier momento, con un plazo de procesamiento de hasta 5 días hábiles.",
@@ -320,6 +394,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
           { text: "Intentos de fraude, manipulación de pujas o uso de bots;" },
           { text: "Compartir datos de contacto fuera de la plataforma antes del pago;" },
           { text: "Grabar sesiones sin el consentimiento expreso de ambas partes." },
+        ],
+      },
+      {
+        title: "7.1 Contenido Publicado por el Usuario",
+        paragraphs: [
+          "El usuario es enteramente responsable del contenido que publica en la plataforma, incluidas fotos e información profesional. Valore se reserva el derecho de eliminar contenido que infrinja derechos de terceros mediante notificación.",
         ],
       },
       {
@@ -352,7 +432,7 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
       {
         title: "12. Disposiciones Generales",
         paragraphs: [
-          "Estos Términos se rigen por las leyes de la República Federativa de Brasil. Se elige el fuero de la Comarca de la Capital del Estado de Río de Janeiro para resolver cualquier controversia. La tolerancia de cualquier infracción no constituirá una renuncia al derecho de exigir el cumplimiento futuro.",
+          "Estos Términos se rigen por las leyes de la República Federativa de Brasil. Se elige el fuero de la Comarca de Salvador, Bahía, Brasil, para resolver cualquier controversia. La tolerancia de cualquier infracción no constituirá una renuncia al derecho de exigir el cumplimiento futuro.",
         ],
       },
       {
@@ -370,6 +450,14 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
     otherDocLink: "Politique de confidentialité",
     homeLink: "Retour à l'accueil",
     sections: [
+      {
+        title: "Identification de l'Exploitant",
+        list: [
+          { label: "Raison sociale", text: RAZAO_SOCIAL },
+          { label: "CNPJ", text: CNPJ },
+          { label: "Contact", text: CONTACT_EMAIL },
+        ],
+      },
       {
         title: "1. Acceptation des Conditions",
         paragraphs: [
@@ -399,6 +487,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
         ],
       },
       {
+        title: "4.1 Irrévocabilité de l'Offre",
+        paragraphs: [
+          "En confirmant une offre, le client assume un engagement d'achat irrévocable et non rétractable. Tout désistement après la confirmation de l'offre gagnante soumet le client à une pénalité de 20 % (vingt pour cent) du montant de l'offre, sans préjudice des autres mesures de recouvrement prévues dans les présentes Conditions.",
+        ],
+      },
+      {
         title: "5. Sessions et Annulations",
         list: [
           { text: "Le gagnant doit planifier la session dans les 7 jours suivant la clôture de l'enchère." },
@@ -420,6 +514,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
         ],
       },
       {
+        title: "5.3 Annulation par le Spécialiste et Pénalités",
+        paragraphs: [
+          "Le spécialiste peut annuler une enchère déjà publiée. Les annulations effectuées plus de 2 heures avant le début de la session n'entraînent aucune pénalité. Les annulations effectuées moins de 2 heures à l'avance entraînent l'application du badge « Annulation récente » sur le profil du spécialiste pendant 7 jours. Après 3 annulations pénalisées au cours du même mois, le compte du spécialiste sera automatiquement suspendu pendant 30 jours.",
+        ],
+      },
+      {
         title: "6. Commission de la Plateforme",
         paragraphs: [
           "Valore retient 20 % de la valeur brute de chaque offre gagnante à titre de commission d'intermédiation. Le spécialiste reçoit 80 % nets, sous réserve des règles fiscales applicables. Le retrait des fonds disponibles peut être demandé à tout moment, avec un délai de traitement pouvant aller jusqu'à 5 jours ouvrés.",
@@ -434,6 +534,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
           { text: "Tenter de frauder, de manipuler les offres ou d'utiliser des robots ;" },
           { text: "Partager des coordonnées hors plateforme avant le paiement ;" },
           { text: "Enregistrer des sessions sans le consentement exprès des deux parties." },
+        ],
+      },
+      {
+        title: "7.1 Contenu Publié par l'Utilisateur",
+        paragraphs: [
+          "L'utilisateur est entièrement responsable du contenu qu'il publie sur la plateforme, y compris les photos et les informations professionnelles. Valore se réserve le droit de supprimer tout contenu portant atteinte aux droits de tiers sur notification.",
         ],
       },
       {
@@ -466,7 +572,7 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
       {
         title: "12. Dispositions Générales",
         paragraphs: [
-          "Les présentes Conditions sont régies par les lois de la République fédérative du Brésil. Le for de la Comarca de la Capitale de l'État de Rio de Janeiro est élu pour résoudre tout litige. La tolérance d'une violation ne constitue pas une renonciation au droit d'exiger le respect futur.",
+          "Les présentes Conditions sont régies par les lois de la République fédérative du Brésil. Le for de Salvador, Bahia, Brésil, est élu pour résoudre tout litige. La tolérance d'une violation ne constitue pas une renonciation au droit d'exiger le respect futur.",
         ],
       },
       {
@@ -484,6 +590,14 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
     otherDocLink: "Datenschutzerklärung",
     homeLink: "Zurück zur Startseite",
     sections: [
+      {
+        title: "Angaben zum Betreiber",
+        list: [
+          { label: "Firmenname", text: RAZAO_SOCIAL },
+          { label: "CNPJ (brasilianische Steuernummer)", text: CNPJ },
+          { label: "Kontakt", text: CONTACT_EMAIL },
+        ],
+      },
       {
         title: "1. Annahme der Bedingungen",
         paragraphs: [
@@ -513,6 +627,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
         ],
       },
       {
+        title: "4.1 Unwiderruflichkeit des Gebots",
+        paragraphs: [
+          "Mit der Bestätigung eines Gebots geht der Kunde eine unwiderrufliche und nicht rücktrittsfähige Kaufverpflichtung ein. Ein Rücktritt nach Bestätigung des Gewinnergebots führt zu einer Vertragsstrafe von 20 % (zwanzig Prozent) des Gebotsbetrags, unbeschadet der übrigen in diesen Bedingungen vorgesehenen Inkassomaßnahmen.",
+        ],
+      },
+      {
         title: "5. Sitzungen und Stornierungen",
         list: [
           { text: "Der Gewinner muss die Sitzung innerhalb von 7 Tagen nach Auktionsende vereinbaren." },
@@ -534,6 +654,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
         ],
       },
       {
+        title: "5.3 Stornierung durch den Spezialisten und Sanktionen",
+        paragraphs: [
+          "Der Spezialist kann eine bereits veröffentlichte Auktion stornieren. Stornierungen, die mehr als 2 Stunden vor Sitzungsbeginn erfolgen, ziehen keine Strafe nach sich. Stornierungen mit weniger als 2 Stunden Vorlauf führen dazu, dass 7 Tage lang das Abzeichen „Kürzliche Stornierung“ im Profil des Spezialisten angezeigt wird. Bei 3 bestraften Stornierungen innerhalb desselben Monats wird das Konto des Spezialisten automatisch für 30 Tage gesperrt.",
+        ],
+      },
+      {
         title: "6. Plattformprovision",
         paragraphs: [
           "Valore behält 20 % des Bruttowerts jedes Gewinnergebots als Vermittlungsprovision ein. Der Spezialist erhält netto 80 %, vorbehaltlich der geltenden Steuervorschriften. Die Auszahlung verfügbarer Beträge kann jederzeit beantragt werden, mit einer Bearbeitungszeit von bis zu 5 Werktagen.",
@@ -548,6 +674,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
           { text: "Betrugsversuche, Gebotsmanipulation oder die Verwendung von Bots;" },
           { text: "Der Austausch von Kontaktdaten außerhalb der Plattform vor der Zahlung;" },
           { text: "Die Aufzeichnung von Sitzungen ohne die ausdrückliche Zustimmung beider Parteien." },
+        ],
+      },
+      {
+        title: "7.1 Vom Nutzer Veröffentlichte Inhalte",
+        paragraphs: [
+          "Der Nutzer ist allein verantwortlich für die von ihm auf der Plattform veröffentlichten Inhalte, einschließlich Fotos und beruflicher Informationen. Valore behält sich das Recht vor, Inhalte, die Rechte Dritter verletzen, nach entsprechender Benachrichtigung zu entfernen.",
         ],
       },
       {
@@ -580,7 +712,7 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
       {
         title: "12. Allgemeine Bestimmungen",
         paragraphs: [
-          "Diese Bedingungen unterliegen den Gesetzen der Föderativen Republik Brasilien. Für die Beilegung von Streitigkeiten wird der Gerichtsstand der Hauptstadt des Bundesstaates Rio de Janeiro vereinbart. Die Duldung eines Verstoßes stellt keinen Verzicht auf das Recht dar, künftig die Einhaltung zu verlangen.",
+          "Diese Bedingungen unterliegen den Gesetzen der Föderativen Republik Brasilien. Als Gerichtsstand zur Beilegung von Streitigkeiten wird Salvador, Bahia, Brasilien, vereinbart. Die Duldung eines Verstoßes stellt keinen Verzicht auf das Recht dar, künftig die Einhaltung zu verlangen.",
         ],
       },
       {
@@ -598,6 +730,14 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
     otherDocLink: "Informativa sulla Privacy",
     homeLink: "Torna alla home",
     sections: [
+      {
+        title: "Identificazione del Gestore",
+        list: [
+          { label: "Ragione sociale", text: RAZAO_SOCIAL },
+          { label: "CNPJ (codice fiscale brasiliano)", text: CNPJ },
+          { label: "Contatto", text: CONTACT_EMAIL },
+        ],
+      },
       {
         title: "1. Accettazione dei Termini",
         paragraphs: [
@@ -627,6 +767,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
         ],
       },
       {
+        title: "4.1 Irrevocabilità dell'Offerta",
+        paragraphs: [
+          "Confermando un'offerta, il cliente assume un impegno di acquisto irrevocabile e non recedibile. Il recesso dopo la conferma dell'offerta vincente comporta per il cliente una penale del 20% (venti per cento) sul valore dell'offerta, fatte salve le altre misure di recupero previste nei presenti Termini.",
+        ],
+      },
+      {
         title: "5. Sessioni e Cancellazioni",
         list: [
           { text: "Il vincitore deve prenotare la sessione entro 7 giorni dalla chiusura dell'asta." },
@@ -648,6 +794,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
         ],
       },
       {
+        title: "5.3 Cancellazione da Parte dello Specialista e Penali",
+        paragraphs: [
+          "Lo specialista può annullare un'asta già pubblicata. Gli annullamenti effettuati con più di 2 ore di anticipo rispetto all'inizio della sessione non comportano penali. Gli annullamenti con meno di 2 ore di anticipo comportano l'applicazione del badge \"Annullamento recente\" sul profilo dello specialista per 7 giorni. Al raggiungimento di 3 annullamenti penalizzati nello stesso mese, l'account dello specialista sarà sospeso automaticamente per 30 giorni.",
+        ],
+      },
+      {
         title: "6. Commissione della Piattaforma",
         paragraphs: [
           "Valore trattiene il 20% del valore lordo di ogni offerta vincente come commissione di intermediazione. Lo specialista riceve l'80% netto, soggetto alle norme fiscali applicabili. Il prelievo degli importi disponibili può essere richiesto in qualsiasi momento, con tempi di elaborazione fino a 5 giorni lavorativi.",
@@ -662,6 +814,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
           { text: "Tentativi di frode, manipolazione delle offerte o uso di bot;" },
           { text: "Condivisione di dati di contatto fuori dalla piattaforma prima del pagamento;" },
           { text: "Registrazione delle sessioni senza il consenso espresso di entrambe le parti." },
+        ],
+      },
+      {
+        title: "7.1 Contenuto Pubblicato dall'Utente",
+        paragraphs: [
+          "L'utente è interamente responsabile dei contenuti che pubblica sulla piattaforma, comprese foto e informazioni professionali. Valore si riserva il diritto di rimuovere contenuti che violino i diritti di terzi previa notifica.",
         ],
       },
       {
@@ -694,7 +852,7 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
       {
         title: "12. Disposizioni Generali",
         paragraphs: [
-          "Questi Termini sono regolati dalle leggi della Repubblica Federativa del Brasile. Viene eletto il foro della Comarca della Capitale dello Stato di Rio de Janeiro per risolvere eventuali controversie. La tolleranza di qualsiasi violazione non costituirà rinuncia al diritto di esigere il rispetto futuro.",
+          "Questi Termini sono regolati dalle leggi della Repubblica Federativa del Brasile. Viene eletto il foro di Salvador, Bahia, Brasile, per risolvere eventuali controversie. La tolleranza di qualsiasi violazione non costituirà rinuncia al diritto di esigere il rispetto futuro.",
         ],
       },
       {
@@ -712,6 +870,14 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
     otherDocLink: "プライバシーポリシー",
     homeLink: "ホームに戻る",
     sections: [
+      {
+        title: "運営者情報",
+        list: [
+          { label: "商号", text: RAZAO_SOCIAL },
+          { label: "CNPJ（ブラジル法人番号）", text: CNPJ },
+          { label: "連絡先", text: CONTACT_EMAIL },
+        ],
+      },
       {
         title: "1. 規約への同意",
         paragraphs: [
@@ -741,6 +907,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
         ],
       },
       {
+        title: "4.1 入札の取り消し不可性",
+        paragraphs: [
+          "入札を確定することにより、クライアントは取り消し不可能かつ撤回不可能な購入義務を負います。落札確定後の取り消しは、入札額の20％（二十パーセント）の違約金の対象となり、これは本規約に定めるその他の督促措置を妨げるものではありません。",
+        ],
+      },
+      {
         title: "5. セッションとキャンセル",
         list: [
           { text: "落札者はオークション終了後7日以内にセッションを予約する必要があります。" },
@@ -762,6 +934,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
         ],
       },
       {
+        title: "5.3 専門家によるキャンセルとペナルティ",
+        paragraphs: [
+          "専門家はすでに公開されたオークションをキャンセルできます。セッション開始の2時間以上前に行われたキャンセルにはペナルティは発生しません。2時間未満の前にキャンセルした場合、専門家のプロフィールに7日間「最近のキャンセル」バッジが表示されます。同一月内に3回のペナルティ対象キャンセルが累積した場合、専門家のアカウントは自動的に30日間停止されます。",
+        ],
+      },
+      {
         title: "6. プラットフォーム手数料",
         paragraphs: [
           "Valoreは各落札額の総額から仲介手数料として20%を差し引きます。専門家は該当する税務規則に従い、純額80%を受け取ります。利用可能な資金の出金はいつでも申請可能で、処理には最大5営業日かかります。",
@@ -776,6 +954,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
           { text: "詐欺行為、入札操作、またはボットの使用" },
           { text: "支払い前にプラットフォーム外で連絡先情報を共有すること" },
           { text: "両当事者の明示的な同意なしにセッションを録画すること" },
+        ],
+      },
+      {
+        title: "7.1 ユーザーが公開するコンテンツ",
+        paragraphs: [
+          "ユーザーは、写真や職業情報を含め、プラットフォーム上に公開するコンテンツについて全責任を負います。Valoreは、通知を受けた場合、第三者の権利を侵害するコンテンツを削除する権利を留保します。",
         ],
       },
       {
@@ -808,7 +992,7 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
       {
         title: "12. 一般規定",
         paragraphs: [
-          "本規約はブラジル連邦共和国の法律に準拠します。紛争解決の管轄はリオデジャネイロ州都のコマルカ裁判所とします。違反行為を容認したとしても、将来の遵守を求める権利の放棄とはみなされません。",
+          "本規約はブラジル連邦共和国の法律に準拠します。紛争解決の管轄はブラジル、バイーア州サルバドールの裁判所とします。違反行為を容認したとしても、将来の遵守を求める権利の放棄とはみなされません。",
         ],
       },
       {
@@ -826,6 +1010,14 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
     otherDocLink: "隐私政策",
     homeLink: "返回首页",
     sections: [
+      {
+        title: "运营者信息",
+        list: [
+          { label: "商号", text: RAZAO_SOCIAL },
+          { label: "CNPJ（巴西税号）", text: CNPJ },
+          { label: "联系方式", text: CONTACT_EMAIL },
+        ],
+      },
       {
         title: "1. 条款的接受",
         paragraphs: [
@@ -855,6 +1047,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
         ],
       },
       {
+        title: "4.1 出价不可撤销性",
+        paragraphs: [
+          "确认出价即表示客户承担不可撤销、不可撤回的购买承诺。中标确认后若放弃，客户将被收取出价金额20%（百分之二十）的违约金，且不影响本条款中规定的其他催收措施。",
+        ],
+      },
+      {
         title: "5. 会话与取消",
         list: [
           { text: "中标者须在拍卖结束后7天内预约会话。" },
@@ -876,6 +1074,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
         ],
       },
       {
+        title: "5.3 专家取消及处罚",
+        paragraphs: [
+          "专家可以取消已发布的拍卖。在会话开始前超过2小时进行的取消不产生处罚。少于2小时的取消将导致专家资料上出现为期7天的“近期取消”标记。若在同一月内累计3次受处罚的取消，专家账户将被自动暂停30天。",
+        ],
+      },
+      {
         title: "6. 平台佣金",
         paragraphs: [
           "Valore 就每笔中标金额的总额收取20%作为中介佣金。专家将获得净额80%，须遵守适用的税务规定。可用款项的提现可随时申请，处理时限最长5个工作日。",
@@ -890,6 +1094,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
           { text: "欺诈、操纵出价或使用机器人程序；" },
           { text: "在付款前于平台外分享联系方式；" },
           { text: "未经双方明确同意录制会话。" },
+        ],
+      },
+      {
+        title: "7.1 用户发布的内容",
+        paragraphs: [
+          "用户对其在平台上发布的内容（包括照片和职业信息）承担全部责任。经通知后，Valore 保留删除侵犯第三方权利内容的权利。",
         ],
       },
       {
@@ -922,7 +1132,7 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
       {
         title: "12. 一般规定",
         paragraphs: [
-          "本条款受巴西联邦共和国法律管辖。任何争议均以里约热内卢州首府司法辖区为管辖法院解决。对任何违规行为的容忍不构成放弃要求未来遵守的权利。",
+          "本条款受巴西联邦共和国法律管辖。任何争议均以巴西巴伊亚州萨尔瓦多市司法辖区为管辖法院解决。对任何违规行为的容忍不构成放弃要求未来遵守的权利。",
         ],
       },
       {
@@ -940,6 +1150,14 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
     otherDocLink: "سياسة الخصوصية",
     homeLink: "العودة إلى الرئيسية",
     sections: [
+      {
+        title: "بيانات المشغّل",
+        list: [
+          { label: "الاسم التجاري", text: RAZAO_SOCIAL },
+          { label: "الرقم الضريبي (CNPJ)", text: CNPJ },
+          { label: "التواصل", text: CONTACT_EMAIL },
+        ],
+      },
       {
         title: "1. قبول الشروط",
         paragraphs: [
@@ -969,6 +1187,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
         ],
       },
       {
+        title: "4.1 عدم رجعية العرض",
+        paragraphs: [
+          "بتأكيد العرض، يتحمّل العميل التزامًا لا رجعة فيه وغير قابل للسحب بالشراء. ويؤدي العدول بعد تأكيد العرض الفائز إلى إخضاع العميل لغرامة قدرها 20٪ (عشرون بالمئة) من قيمة العرض، دون الإخلال بإجراءات التحصيل الأخرى المنصوص عليها في هذه الشروط.",
+        ],
+      },
+      {
         title: "5. الجلسات والإلغاءات",
         list: [
           { text: "يجب على الفائز حجز الجلسة خلال 7 أيام من إغلاق المزاد." },
@@ -990,6 +1214,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
         ],
       },
       {
+        title: "5.3 الإلغاء من قِبل المختص والعقوبات",
+        paragraphs: [
+          "يمكن للمختص إلغاء مزاد تم نشره بالفعل. لا تترتب أي عقوبة على الإلغاءات التي تتم قبل أكثر من ساعتين من بدء الجلسة. أما الإلغاءات التي تتم قبل أقل من ساعتين فتؤدي إلى ظهور شارة \"إلغاء حديث\" على ملف المختص لمدة 7 أيام. وعند تراكم 3 إلغاءات معاقَب عليها خلال الشهر نفسه، يُعلَّق حساب المختص تلقائيًا لمدة 30 يومًا.",
+        ],
+      },
+      {
         title: "6. عمولة المنصة",
         paragraphs: [
           "تحتفظ Valore بنسبة 20٪ من القيمة الإجمالية لكل عرض فائز كعمولة وساطة. يحصل المختص على 80٪ صافية، وفقًا للقواعد الضريبية المعمول بها. يمكن طلب سحب المبالغ المتاحة في أي وقت، مع مدة معالجة تصل إلى 5 أيام عمل.",
@@ -1004,6 +1234,12 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
           { text: "محاولات الاحتيال أو التلاعب بالعروض أو استخدام الروبوتات؛" },
           { text: "مشاركة بيانات الاتصال خارج المنصة قبل الدفع؛" },
           { text: "تسجيل الجلسات دون موافقة صريحة من الطرفين." },
+        ],
+      },
+      {
+        title: "7.1 المحتوى الذي ينشره المستخدم",
+        paragraphs: [
+          "يتحمّل المستخدم المسؤولية الكاملة عن المحتوى الذي ينشره على المنصة، بما في ذلك الصور والمعلومات المهنية. تحتفظ Valore بالحق في إزالة أي محتوى ينتهك حقوق الغير عند إخطارها بذلك.",
         ],
       },
       {
@@ -1036,7 +1272,7 @@ export const TERMOS: Record<LangCode, LegalDoc> = {
       {
         title: "12. أحكام عامة",
         paragraphs: [
-          "تخضع هذه الشروط لقوانين جمهورية البرازيل الاتحادية. تُختار محاكم عاصمة ولاية ريو دي جانيرو لحل أي نزاعات. لا يشكل التسامح مع أي انتهاك تنازلاً عن الحق في المطالبة بالامتثال مستقبلاً.",
+          "تخضع هذه الشروط لقوانين جمهورية البرازيل الاتحادية. تُختار محاكم مدينة سلفادور، ولاية باهيا، البرازيل، لحل أي نزاعات. لا يشكل التسامح مع أي انتهاك تنازلاً عن الحق في المطالبة بالامتثال مستقبلاً.",
         ],
       },
       {
@@ -1058,6 +1294,14 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
     homeLink: "Voltar ao início",
     sections: [
       {
+        title: "Identificação do Operador",
+        list: [
+          { label: "Razão social", text: RAZAO_SOCIAL },
+          { label: "CNPJ", text: CNPJ },
+          { label: "Contato", text: CONTACT_EMAIL },
+        ],
+      },
+      {
         title: "1. Introdução",
         paragraphs: [
           "A Valore (“Plataforma”, “nós”, “nos”) valoriza a sua privacidade. Esta Política de Privacidade descreve como coletamos, usamos, armazenamos e protegemos as informações pessoais dos usuários (“você”, “seu”) ao utilizar nossa plataforma de leilão de tempo humano.",
@@ -1065,15 +1309,27 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
       },
       {
         title: "2. Dados que Coletamos",
+        listIntro: "Coletamos os seguintes dados, cada um com uma finalidade específica:",
         list: [
-          { label: "Dados de cadastro", text: "nome completo, e-mail, telefone, cidade e senha." },
-          { label: "Dados profissionais", text: "especialidade, credenciais, bio, anos de experiência e plataforma de videochamada preferida (para especialistas)." },
-          { label: "Dados de transação", text: "histórico de lances, valores pagos e saques solicitados." },
-          { label: "Dados de navegação", text: "endereço IP, tipo de dispositivo, navegador e páginas visitadas." },
+          { label: "Nome completo", text: "usado para identificação e criação da sua conta." },
+          { label: "E-mail", text: "usado para autenticação, comunicação e recuperação de acesso à conta." },
+          { label: "CPF/CNPJ", text: "usado para verificação de identidade e cumprimento de obrigações fiscais e legais." },
+          { label: "Telefone", text: "usado para contato e confirmação de agendamentos." },
+          { label: "Cidade e Estado", text: "usados para exibição no perfil e adequação a exigências regionais." },
+          { label: "Foto de perfil", text: "usada para identificação visual no seu perfil público." },
+          { label: "Registros profissionais (CRM, OAB, CREA etc.)", text: "usados para verificação de credenciais de especialistas." },
+          { label: "LinkedIn e redes sociais", text: "usados para exibir sua presença profissional no perfil público, quando informado." },
+          { label: "Logs de acesso (IP, dispositivo, navegador, páginas visitadas)", text: "usados para segurança, prevenção de fraude e diagnóstico técnico." },
         ],
       },
       {
-        title: "3. Como Usamos seus Dados",
+        title: "3. Não Utilizamos Rastreamento de Terceiros",
+        paragraphs: [
+          "A Valore NÃO utiliza Google Analytics, Meta Pixel ou qualquer outro serviço de rastreamento de terceiros para monitorar seu comportamento de navegação. Coletamos apenas os dados descritos nesta Política, diretamente em nossa própria infraestrutura.",
+        ],
+      },
+      {
+        title: "4. Como Usamos seus Dados",
         listIntro: "Utilizamos suas informações para:",
         list: [
           { text: "Criar e gerenciar sua conta na plataforma;" },
@@ -1085,34 +1341,56 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
         ],
       },
       {
-        title: "4. Compartilhamento de Dados",
+        title: "5. Compartilhamento de Dados",
         listIntro: "Não vendemos seus dados pessoais. Podemos compartilhar informações com:",
         list: [
-          { text: "Processadores de pagamento (Stripe, Pix) para transações financeiras;" },
+          { text: "Processador de pagamento (Mercado Pago) para transações financeiras — a Valore não armazena números de cartão de crédito; os dados de pagamento são processados e armazenados diretamente pelo Mercado Pago;" },
           { text: "Provedores de videochamada (Google Meet, Zoom, Microsoft Teams) para geração de links de sessão;" },
           { text: "Autoridades competentes, quando exigido por lei ou ordem judicial." },
         ],
       },
       {
-        title: "5. Segurança",
+        title: "6. Segurança",
         paragraphs: [
           "Adotamos medidas técnicas e organizacionais para proteger seus dados, incluindo criptografia em trânsito (TLS 1.3), hash de senhas (bcrypt) e armazenamento seguro em servidores certificados. Apesar dos nossos esforços, nenhum sistema é 100% invulnerável. Notificaremos você em caso de incidentes de segurança relevantes.",
         ],
       },
       {
-        title: "6. Seus Direitos",
+        title: "7. Retenção de Dados",
         paragraphs: [
-          `Você tem o direito de acessar, corrigir, excluir ou exportar seus dados pessoais. Para exercer esses direitos, entre em contato pelo e-mail ${CONTACT_EMAIL}. Responderemos em até 15 dias úteis.`,
+          "Mantemos seus dados pessoais enquanto sua conta estiver ativa. Após o encerramento da conta, dados fiscais e de transação são retidos por até 5 (cinco) anos, conforme exigido pela legislação fiscal brasileira. Demais dados são excluídos ou anonimizados ao final desse prazo.",
         ],
       },
       {
-        title: "7. Alterações nesta Política",
+        title: "8. Seus Direitos",
+        listIntro: "Nos termos da Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018), você tem os seguintes direitos sobre seus dados pessoais:",
+        list: [
+          { label: "Acesso", text: "solicitar uma cópia dos dados pessoais que mantemos sobre você." },
+          { label: "Correção", text: "solicitar a correção de dados incompletos, inexatos ou desatualizados." },
+          { label: "Exclusão", text: "solicitar a exclusão de dados tratados com base no seu consentimento." },
+          { label: "Portabilidade", text: "solicitar a transferência dos seus dados a outro fornecedor de serviço." },
+        ],
+      },
+      {
+        title: "9. Encarregado de Dados (DPO)",
+        paragraphs: [
+          `Para exercer os direitos acima ou esclarecer dúvidas sobre o tratamento dos seus dados, entre em contato com o Encarregado de Dados (DPO) da Valore pelo e-mail ${CONTACT_EMAIL}. Responderemos em até 15 dias úteis.`,
+        ],
+      },
+      {
+        title: "10. Base Legal para o Tratamento de Dados",
+        paragraphs: [
+          "Tratamos seus dados pessoais com base no seu consentimento, fornecido no momento do cadastro e aceite destes documentos, e na necessidade de execução do contrato de prestação de serviços da plataforma — incluindo processamento de pagamentos, verificação de credenciais e comunicação sobre leilões e sessões.",
+        ],
+      },
+      {
+        title: "11. Alterações nesta Política",
         paragraphs: [
           "Podemos atualizar esta Política de Privacidade periodicamente. Sempre que houver mudanças materiais, notificaremos você por e-mail ou por meio de aviso na plataforma. O uso continuado da Valore após a publicação das alterações constitui aceitação dos novos termos.",
         ],
       },
       {
-        title: "8. Contato",
+        title: "12. Contato",
         listIntro: "Em caso de dúvidas sobre esta Política de Privacidade, entre em contato:",
         paragraphs: [`E-mail: ${CONTACT_EMAIL}`],
       },
@@ -1127,6 +1405,14 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
     homeLink: "Back to home",
     sections: [
       {
+        title: "Operator Identification",
+        list: [
+          { label: "Legal name", text: RAZAO_SOCIAL },
+          { label: "Tax ID (CNPJ)", text: CNPJ },
+          { label: "Contact", text: CONTACT_EMAIL },
+        ],
+      },
+      {
         title: "1. Introduction",
         paragraphs: [
           "Valore (“Platform”, “we”, “us”) values your privacy. This Privacy Policy describes how we collect, use, store, and protect users' personal information (“you”, “your”) when using our human time auction platform.",
@@ -1134,15 +1420,27 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
       },
       {
         title: "2. Data We Collect",
+        listIntro: "We collect the following data, each for a specific purpose:",
         list: [
-          { label: "Registration data", text: "full name, email, phone, city, and password." },
-          { label: "Professional data", text: "specialty, credentials, bio, years of experience, and preferred video call platform (for specialists)." },
-          { label: "Transaction data", text: "bid history, amounts paid, and requested withdrawals." },
-          { label: "Browsing data", text: "IP address, device type, browser, and pages visited." },
+          { label: "Full name", text: "used for identification and account creation." },
+          { label: "Email", text: "used for authentication, communication, and account recovery." },
+          { label: "CPF/CNPJ (Brazilian tax ID)", text: "used for identity verification and compliance with tax and legal obligations." },
+          { label: "Phone", text: "used for contact and appointment confirmation." },
+          { label: "City and State", text: "used for profile display and compliance with regional requirements." },
+          { label: "Profile photo", text: "used for visual identification on your public profile." },
+          { label: "Professional licenses (CRM, OAB, CREA, etc.)", text: "used to verify specialists' credentials." },
+          { label: "LinkedIn and social media", text: "used to display your professional presence on your public profile, when provided." },
+          { label: "Access logs (IP address, device, browser, pages visited)", text: "used for security, fraud prevention, and technical diagnostics." },
         ],
       },
       {
-        title: "3. How We Use Your Data",
+        title: "3. We Do Not Use Third-Party Tracking",
+        paragraphs: [
+          "Valore does NOT use Google Analytics, Meta Pixel, or any other third-party tracking service to monitor your browsing behavior. We only collect the data described in this Policy, directly on our own infrastructure.",
+        ],
+      },
+      {
+        title: "4. How We Use Your Data",
         listIntro: "We use your information to:",
         list: [
           { text: "Create and manage your account on the platform;" },
@@ -1154,34 +1452,56 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
         ],
       },
       {
-        title: "4. Data Sharing",
+        title: "5. Data Sharing",
         listIntro: "We do not sell your personal data. We may share information with:",
         list: [
-          { text: "Payment processors (Stripe, Pix) for financial transactions;" },
+          { text: "Payment processor (Mercado Pago) for financial transactions — Valore does not store credit card numbers; payment data is processed and stored directly by Mercado Pago;" },
           { text: "Video call providers (Google Meet, Zoom, Microsoft Teams) for generating session links;" },
           { text: "Competent authorities, when required by law or court order." },
         ],
       },
       {
-        title: "5. Security",
+        title: "6. Security",
         paragraphs: [
           "We adopt technical and organizational measures to protect your data, including encryption in transit (TLS 1.3), password hashing (bcrypt), and secure storage on certified servers. Despite our efforts, no system is 100% invulnerable. We will notify you in case of relevant security incidents.",
         ],
       },
       {
-        title: "6. Your Rights",
+        title: "7. Data Retention",
         paragraphs: [
-          `You have the right to access, correct, delete, or export your personal data. To exercise these rights, contact us at ${CONTACT_EMAIL}. We will respond within 15 business days.`,
+          "We retain your personal data for as long as your account remains active. After account closure, tax and transaction data are retained for up to 5 (five) years, as required by Brazilian tax law. Other data is deleted or anonymized at the end of this period.",
         ],
       },
       {
-        title: "7. Changes to this Policy",
+        title: "8. Your Rights",
+        listIntro: "Under Brazil's General Data Protection Law (LGPD — Law No. 13,709/2018), you have the following rights regarding your personal data:",
+        list: [
+          { label: "Access", text: "request a copy of the personal data we hold about you." },
+          { label: "Correction", text: "request correction of incomplete, inaccurate, or outdated data." },
+          { label: "Deletion", text: "request deletion of data processed based on your consent." },
+          { label: "Portability", text: "request the transfer of your data to another service provider." },
+        ],
+      },
+      {
+        title: "9. Data Protection Officer (DPO)",
+        paragraphs: [
+          `To exercise the rights above or to clarify questions about the processing of your data, contact Valore's Data Protection Officer (DPO) at ${CONTACT_EMAIL}. We will respond within 15 business days.`,
+        ],
+      },
+      {
+        title: "10. Legal Basis for Processing",
+        paragraphs: [
+          "We process your personal data based on your consent, given at the time of registration and acceptance of these documents, and on the necessity of performing the platform's service contract — including payment processing, credential verification, and communication about auctions and sessions.",
+        ],
+      },
+      {
+        title: "11. Changes to this Policy",
         paragraphs: [
           "We may update this Privacy Policy periodically. Whenever there are material changes, we will notify you by email or via a notice on the platform. Continued use of Valore after changes are published constitutes acceptance of the new terms.",
         ],
       },
       {
-        title: "8. Contact",
+        title: "12. Contact",
         listIntro: "If you have questions about this Privacy Policy, please contact us:",
         paragraphs: [`Email: ${CONTACT_EMAIL}`],
       },
@@ -1196,6 +1516,14 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
     homeLink: "Volver al inicio",
     sections: [
       {
+        title: "Identificación del Operador",
+        list: [
+          { label: "Razón social", text: RAZAO_SOCIAL },
+          { label: "CNPJ", text: CNPJ },
+          { label: "Contacto", text: CONTACT_EMAIL },
+        ],
+      },
+      {
         title: "1. Introducción",
         paragraphs: [
           "Valore (“Plataforma”, “nosotros”) valora tu privacidad. Esta Política de Privacidad describe cómo recopilamos, usamos, almacenamos y protegemos la información personal de los usuarios (“tú”, “tu”) al utilizar nuestra plataforma de subasta de tiempo humano.",
@@ -1203,15 +1531,27 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
       },
       {
         title: "2. Datos que Recopilamos",
+        listIntro: "Recopilamos los siguientes datos, cada uno con una finalidad específica:",
         list: [
-          { label: "Datos de registro", text: "nombre completo, correo electrónico, teléfono, ciudad y contraseña." },
-          { label: "Datos profesionales", text: "especialidad, credenciales, biografía, años de experiencia y plataforma de videollamada preferida (para especialistas)." },
-          { label: "Datos de transacción", text: "historial de pujas, valores pagados y retiros solicitados." },
-          { label: "Datos de navegación", text: "dirección IP, tipo de dispositivo, navegador y páginas visitadas." },
+          { label: "Nombre completo", text: "utilizado para identificación y creación de tu cuenta." },
+          { label: "Correo electrónico", text: "utilizado para autenticación, comunicación y recuperación de acceso." },
+          { label: "CPF/CNPJ", text: "utilizado para verificación de identidad y cumplimiento de obligaciones fiscales y legales." },
+          { label: "Teléfono", text: "utilizado para contacto y confirmación de citas." },
+          { label: "Ciudad y Estado", text: "utilizados para mostrar en el perfil y cumplir requisitos regionales." },
+          { label: "Foto de perfil", text: "utilizada para identificación visual en tu perfil público." },
+          { label: "Registros profesionales (CRM, OAB, CREA, etc.)", text: "utilizados para verificar las credenciales de los especialistas." },
+          { label: "LinkedIn y redes sociales", text: "utilizados para mostrar tu presencia profesional en el perfil público, cuando se proporcionen." },
+          { label: "Registros de acceso (IP, dispositivo, navegador, páginas visitadas)", text: "utilizados para seguridad, prevención de fraude y diagnóstico técnico." },
         ],
       },
       {
-        title: "3. Cómo Usamos tus Datos",
+        title: "3. No Utilizamos Rastreo de Terceros",
+        paragraphs: [
+          "Valore NO utiliza Google Analytics, Meta Pixel ni ningún otro servicio de rastreo de terceros para monitorear tu comportamiento de navegación. Solo recopilamos los datos descritos en esta Política, directamente en nuestra propia infraestructura.",
+        ],
+      },
+      {
+        title: "4. Cómo Usamos tus Datos",
         listIntro: "Utilizamos tu información para:",
         list: [
           { text: "Crear y gestionar tu cuenta en la plataforma;" },
@@ -1223,34 +1563,56 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
         ],
       },
       {
-        title: "4. Intercambio de Datos",
+        title: "5. Intercambio de Datos",
         listIntro: "No vendemos tus datos personales. Podemos compartir información con:",
         list: [
-          { text: "Procesadores de pago (Stripe, Pix) para transacciones financieras;" },
+          { text: "Procesador de pago (Mercado Pago) para transacciones financieras — Valore no almacena números de tarjeta de crédito; los datos de pago son procesados y almacenados directamente por Mercado Pago;" },
           { text: "Proveedores de videollamada (Google Meet, Zoom, Microsoft Teams) para generar enlaces de sesión;" },
           { text: "Autoridades competentes, cuando lo exija la ley o una orden judicial." },
         ],
       },
       {
-        title: "5. Seguridad",
+        title: "6. Seguridad",
         paragraphs: [
           "Adoptamos medidas técnicas y organizativas para proteger tus datos, incluyendo cifrado en tránsito (TLS 1.3), hash de contraseñas (bcrypt) y almacenamiento seguro en servidores certificados. A pesar de nuestros esfuerzos, ningún sistema es 100% invulnerable. Te notificaremos en caso de incidentes de seguridad relevantes.",
         ],
       },
       {
-        title: "6. Tus Derechos",
+        title: "7. Retención de Datos",
         paragraphs: [
-          `Tienes derecho a acceder, corregir, eliminar o exportar tus datos personales. Para ejercer estos derechos, contáctanos por correo a ${CONTACT_EMAIL}. Responderemos en un plazo de hasta 15 días hábiles.`,
+          "Conservamos tus datos personales mientras tu cuenta permanezca activa. Tras el cierre de la cuenta, los datos fiscales y de transacción se conservan hasta 5 (cinco) años, según lo exige la legislación fiscal brasileña. Los demás datos se eliminan o anonimizan al final de ese plazo.",
         ],
       },
       {
-        title: "7. Cambios en esta Política",
+        title: "8. Tus Derechos",
+        listIntro: "En virtud de la Ley General de Protección de Datos de Brasil (LGPD — Ley n.º 13.709/2018), tienes los siguientes derechos sobre tus datos personales:",
+        list: [
+          { label: "Acceso", text: "solicitar una copia de los datos personales que mantenemos sobre ti." },
+          { label: "Corrección", text: "solicitar la corrección de datos incompletos, inexactos o desactualizados." },
+          { label: "Eliminación", text: "solicitar la eliminación de datos tratados con base en tu consentimiento." },
+          { label: "Portabilidad", text: "solicitar la transferencia de tus datos a otro proveedor de servicios." },
+        ],
+      },
+      {
+        title: "9. Encargado de Protección de Datos (DPO)",
+        paragraphs: [
+          `Para ejercer los derechos anteriores o resolver dudas sobre el tratamiento de tus datos, contacta al Encargado de Protección de Datos (DPO) de Valore por correo a ${CONTACT_EMAIL}. Responderemos en un plazo de hasta 15 días hábiles.`,
+        ],
+      },
+      {
+        title: "10. Base Legal para el Tratamiento",
+        paragraphs: [
+          "Tratamos tus datos personales con base en tu consentimiento, otorgado en el momento del registro y la aceptación de estos documentos, y en la necesidad de ejecución del contrato de prestación de servicios de la plataforma — incluyendo el procesamiento de pagos, la verificación de credenciales y la comunicación sobre subastas y sesiones.",
+        ],
+      },
+      {
+        title: "11. Cambios en esta Política",
         paragraphs: [
           "Podemos actualizar esta Política de Privacidad periódicamente. Siempre que haya cambios materiales, te notificaremos por correo electrónico o mediante un aviso en la plataforma. El uso continuado de Valore tras la publicación de los cambios constituye la aceptación de los nuevos términos.",
         ],
       },
       {
-        title: "8. Contacto",
+        title: "12. Contacto",
         listIntro: "Si tienes dudas sobre esta Política de Privacidad, contáctanos:",
         paragraphs: [`Correo electrónico: ${CONTACT_EMAIL}`],
       },
@@ -1265,6 +1627,14 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
     homeLink: "Retour à l'accueil",
     sections: [
       {
+        title: "Identification de l'Exploitant",
+        list: [
+          { label: "Raison sociale", text: RAZAO_SOCIAL },
+          { label: "CNPJ", text: CNPJ },
+          { label: "Contact", text: CONTACT_EMAIL },
+        ],
+      },
+      {
         title: "1. Introduction",
         paragraphs: [
           "Valore (« Plateforme », « nous ») accorde de l'importance à votre vie privée. Cette Politique de confidentialité décrit comment nous collectons, utilisons, stockons et protégeons les informations personnelles des utilisateurs (« vous », « votre ») lors de l'utilisation de notre plateforme d'enchères de temps humain.",
@@ -1272,15 +1642,27 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
       },
       {
         title: "2. Données que Nous Collectons",
+        listIntro: "Nous collectons les données suivantes, chacune ayant une finalité spécifique :",
         list: [
-          { label: "Données d'inscription", text: "nom complet, e-mail, téléphone, ville et mot de passe." },
-          { label: "Données professionnelles", text: "spécialité, qualifications, bio, années d'expérience et plateforme d'appel vidéo préférée (pour les spécialistes)." },
-          { label: "Données de transaction", text: "historique des offres, montants payés et retraits demandés." },
-          { label: "Données de navigation", text: "adresse IP, type d'appareil, navigateur et pages visitées." },
+          { label: "Nom complet", text: "utilisé pour l'identification et la création de votre compte." },
+          { label: "E-mail", text: "utilisé pour l'authentification, la communication et la récupération d'accès." },
+          { label: "CPF/CNPJ (identifiant fiscal brésilien)", text: "utilisé pour la vérification d'identité et le respect des obligations fiscales et légales." },
+          { label: "Téléphone", text: "utilisé pour le contact et la confirmation des rendez-vous." },
+          { label: "Ville et État", text: "utilisés pour l'affichage du profil et la conformité aux exigences régionales." },
+          { label: "Photo de profil", text: "utilisée pour l'identification visuelle sur votre profil public." },
+          { label: "Qualifications professionnelles (CRM, OAB, CREA, etc.)", text: "utilisées pour vérifier les qualifications des spécialistes." },
+          { label: "LinkedIn et réseaux sociaux", text: "utilisés pour afficher votre présence professionnelle sur votre profil public, lorsqu'ils sont renseignés." },
+          { label: "Journaux d'accès (IP, appareil, navigateur, pages visitées)", text: "utilisés pour la sécurité, la prévention de la fraude et le diagnostic technique." },
         ],
       },
       {
-        title: "3. Comment Nous Utilisons vos Données",
+        title: "3. Nous N'utilisons Aucun Suivi Tiers",
+        paragraphs: [
+          "Valore N'utilise PAS Google Analytics, Meta Pixel ni aucun autre service de suivi tiers pour surveiller votre comportement de navigation. Nous ne collectons que les données décrites dans cette Politique, directement sur notre propre infrastructure.",
+        ],
+      },
+      {
+        title: "4. Comment Nous Utilisons vos Données",
         listIntro: "Nous utilisons vos informations pour :",
         list: [
           { text: "Créer et gérer votre compte sur la plateforme ;" },
@@ -1292,34 +1674,56 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
         ],
       },
       {
-        title: "4. Partage des Données",
+        title: "5. Partage des Données",
         listIntro: "Nous ne vendons pas vos données personnelles. Nous pouvons partager des informations avec :",
         list: [
-          { text: "Des prestataires de paiement (Stripe, Pix) pour les transactions financières ;" },
+          { text: "Un prestataire de paiement (Mercado Pago) pour les transactions financières — Valore ne stocke pas les numéros de carte de crédit ; les données de paiement sont traitées et stockées directement par Mercado Pago ;" },
           { text: "Des fournisseurs d'appel vidéo (Google Meet, Zoom, Microsoft Teams) pour générer les liens de session ;" },
           { text: "Les autorités compétentes, lorsque la loi ou une décision de justice l'exige." },
         ],
       },
       {
-        title: "5. Sécurité",
+        title: "6. Sécurité",
         paragraphs: [
           "Nous adoptons des mesures techniques et organisationnelles pour protéger vos données, notamment le chiffrement en transit (TLS 1.3), le hachage des mots de passe (bcrypt) et un stockage sécurisé sur des serveurs certifiés. Malgré nos efforts, aucun système n'est invulnérable à 100 %. Nous vous informerons en cas d'incidents de sécurité significatifs.",
         ],
       },
       {
-        title: "6. Vos Droits",
+        title: "7. Conservation des Données",
         paragraphs: [
-          `Vous avez le droit d'accéder, de corriger, de supprimer ou d'exporter vos données personnelles. Pour exercer ces droits, contactez-nous à ${CONTACT_EMAIL}. Nous répondrons sous 15 jours ouvrés.`,
+          "Nous conservons vos données personnelles tant que votre compte reste actif. Après la clôture du compte, les données fiscales et de transaction sont conservées jusqu'à 5 (cinq) ans, conformément à la législation fiscale brésilienne. Les autres données sont supprimées ou anonymisées à l'issue de cette période.",
         ],
       },
       {
-        title: "7. Modifications de cette Politique",
+        title: "8. Vos Droits",
+        listIntro: "En vertu de la loi brésilienne de protection des données (LGPD — loi n° 13 709/2018), vous disposez des droits suivants concernant vos données personnelles :",
+        list: [
+          { label: "Accès", text: "demander une copie des données personnelles que nous détenons à votre sujet." },
+          { label: "Rectification", text: "demander la correction de données incomplètes, inexactes ou obsolètes." },
+          { label: "Suppression", text: "demander la suppression des données traitées sur la base de votre consentement." },
+          { label: "Portabilité", text: "demander le transfert de vos données vers un autre prestataire de services." },
+        ],
+      },
+      {
+        title: "9. Délégué à la Protection des Données (DPO)",
+        paragraphs: [
+          `Pour exercer les droits ci-dessus ou pour toute question sur le traitement de vos données, contactez le délégué à la protection des données (DPO) de Valore à ${CONTACT_EMAIL}. Nous répondrons sous 15 jours ouvrés.`,
+        ],
+      },
+      {
+        title: "10. Base Légale du Traitement",
+        paragraphs: [
+          "Nous traitons vos données personnelles sur la base de votre consentement, donné au moment de l'inscription et de l'acceptation de ces documents, ainsi que de la nécessité d'exécuter le contrat de prestation de services de la plateforme — y compris le traitement des paiements, la vérification des qualifications et la communication relative aux enchères et aux sessions.",
+        ],
+      },
+      {
+        title: "11. Modifications de cette Politique",
         paragraphs: [
           "Nous pouvons mettre à jour cette Politique de confidentialité périodiquement. En cas de changements substantiels, nous vous informerons par e-mail ou via un avis sur la plateforme. L'utilisation continue de Valore après la publication des modifications constitue une acceptation des nouvelles conditions.",
         ],
       },
       {
-        title: "8. Contact",
+        title: "12. Contact",
         listIntro: "Pour toute question concernant cette Politique de confidentialité, contactez-nous :",
         paragraphs: [`E-mail : ${CONTACT_EMAIL}`],
       },
@@ -1334,6 +1738,14 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
     homeLink: "Zurück zur Startseite",
     sections: [
       {
+        title: "Angaben zum Betreiber",
+        list: [
+          { label: "Firmenname", text: RAZAO_SOCIAL },
+          { label: "CNPJ (brasilianische Steuernummer)", text: CNPJ },
+          { label: "Kontakt", text: CONTACT_EMAIL },
+        ],
+      },
+      {
         title: "1. Einleitung",
         paragraphs: [
           "Valore („Plattform“, „wir“) legt Wert auf Ihre Privatsphäre. Diese Datenschutzerklärung beschreibt, wie wir personenbezogene Daten der Nutzer („Sie“, „Ihre“) bei der Nutzung unserer Plattform für Auktionen menschlicher Zeit erheben, verwenden, speichern und schützen.",
@@ -1341,15 +1753,27 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
       },
       {
         title: "2. Daten, die Wir Erheben",
+        listIntro: "Wir erheben die folgenden Daten, jeweils zu einem bestimmten Zweck:",
         list: [
-          { label: "Registrierungsdaten", text: "vollständiger Name, E-Mail, Telefon, Stadt und Passwort." },
-          { label: "Berufliche Daten", text: "Spezialisierung, Qualifikationen, Werdegang, Jahre der Erfahrung und bevorzugte Videoanruf-Plattform (für Spezialisten)." },
-          { label: "Transaktionsdaten", text: "Gebotshistorie, gezahlte Beträge und beantragte Auszahlungen." },
-          { label: "Nutzungsdaten", text: "IP-Adresse, Gerätetyp, Browser und besuchte Seiten." },
+          { label: "Vollständiger Name", text: "zur Identifizierung und Kontoerstellung verwendet." },
+          { label: "E-Mail", text: "zur Authentifizierung, Kommunikation und Zugangswiederherstellung verwendet." },
+          { label: "CPF/CNPJ (brasilianische Steuernummer)", text: "zur Identitätsprüfung und Erfüllung steuerlicher und rechtlicher Pflichten verwendet." },
+          { label: "Telefon", text: "zur Kontaktaufnahme und Terminbestätigung verwendet." },
+          { label: "Stadt und Bundesstaat", text: "zur Profilanzeige und Erfüllung regionaler Anforderungen verwendet." },
+          { label: "Profilfoto", text: "zur visuellen Identifizierung in Ihrem öffentlichen Profil verwendet." },
+          { label: "Berufliche Zulassungen (CRM, OAB, CREA usw.)", text: "zur Überprüfung der Qualifikationen von Spezialisten verwendet." },
+          { label: "LinkedIn und soziale Medien", text: "zur Anzeige Ihrer beruflichen Präsenz in Ihrem öffentlichen Profil verwendet, sofern angegeben." },
+          { label: "Zugriffsprotokolle (IP-Adresse, Gerät, Browser, besuchte Seiten)", text: "für Sicherheit, Betrugsprävention und technische Diagnose verwendet." },
         ],
       },
       {
-        title: "3. Wie Wir Ihre Daten Verwenden",
+        title: "3. Wir Verwenden Kein Tracking Dritter",
+        paragraphs: [
+          "Valore verwendet KEINE Google Analytics-, Meta-Pixel- oder sonstigen Tracking-Dienste Dritter zur Überwachung Ihres Surfverhaltens. Wir erheben ausschließlich die in dieser Richtlinie beschriebenen Daten, direkt auf unserer eigenen Infrastruktur.",
+        ],
+      },
+      {
+        title: "4. Wie Wir Ihre Daten Verwenden",
         listIntro: "Wir verwenden Ihre Informationen, um:",
         list: [
           { text: "Ihr Konto auf der Plattform zu erstellen und zu verwalten;" },
@@ -1361,34 +1785,56 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
         ],
       },
       {
-        title: "4. Datenweitergabe",
+        title: "5. Datenweitergabe",
         listIntro: "Wir verkaufen Ihre personenbezogenen Daten nicht. Wir können Informationen weitergeben an:",
         list: [
-          { text: "Zahlungsdienstleister (Stripe, Pix) für Finanztransaktionen;" },
+          { text: "Einen Zahlungsdienstleister (Mercado Pago) für Finanztransaktionen — Valore speichert keine Kreditkartennummern; Zahlungsdaten werden direkt von Mercado Pago verarbeitet und gespeichert;" },
           { text: "Videoanruf-Anbieter (Google Meet, Zoom, Microsoft Teams) zur Erstellung von Sitzungslinks;" },
           { text: "Zuständige Behörden, sofern gesetzlich oder gerichtlich vorgeschrieben." },
         ],
       },
       {
-        title: "5. Sicherheit",
+        title: "6. Sicherheit",
         paragraphs: [
           "Wir ergreifen technische und organisatorische Maßnahmen zum Schutz Ihrer Daten, darunter Verschlüsselung während der Übertragung (TLS 1.3), Passwort-Hashing (bcrypt) und sichere Speicherung auf zertifizierten Servern. Trotz unserer Bemühungen ist kein System zu 100 % unverwundbar. Wir werden Sie im Falle relevanter Sicherheitsvorfälle benachrichtigen.",
         ],
       },
       {
-        title: "6. Ihre Rechte",
+        title: "7. Datenspeicherung",
         paragraphs: [
-          `Sie haben das Recht, auf Ihre personenbezogenen Daten zuzugreifen, sie zu berichtigen, zu löschen oder zu exportieren. Um diese Rechte auszuüben, kontaktieren Sie uns unter ${CONTACT_EMAIL}. Wir werden innerhalb von 15 Werktagen antworten.`,
+          "Wir bewahren Ihre personenbezogenen Daten auf, solange Ihr Konto aktiv ist. Nach Kontoschließung werden Steuer- und Transaktionsdaten gemäß den Vorgaben des brasilianischen Steuerrechts bis zu 5 (fünf) Jahre lang aufbewahrt. Andere Daten werden am Ende dieses Zeitraums gelöscht oder anonymisiert.",
         ],
       },
       {
-        title: "7. Änderungen dieser Richtlinie",
+        title: "8. Ihre Rechte",
+        listIntro: "Gemäß dem brasilianischen Datenschutzgesetz (LGPD — Gesetz Nr. 13.709/2018) haben Sie folgende Rechte bezüglich Ihrer personenbezogenen Daten:",
+        list: [
+          { label: "Zugriff", text: "eine Kopie der über Sie gespeicherten personenbezogenen Daten anfordern." },
+          { label: "Berichtigung", text: "die Berichtigung unvollständiger, ungenauer oder veralteter Daten verlangen." },
+          { label: "Löschung", text: "die Löschung von Daten verlangen, die auf Grundlage Ihrer Einwilligung verarbeitet werden." },
+          { label: "Übertragbarkeit", text: "die Übertragung Ihrer Daten an einen anderen Dienstanbieter verlangen." },
+        ],
+      },
+      {
+        title: "9. Datenschutzbeauftragter (DPO)",
+        paragraphs: [
+          `Um die oben genannten Rechte auszuüben oder Fragen zur Verarbeitung Ihrer Daten zu klären, wenden Sie sich an den Datenschutzbeauftragten (DPO) von Valore unter ${CONTACT_EMAIL}. Wir werden innerhalb von 15 Werktagen antworten.`,
+        ],
+      },
+      {
+        title: "10. Rechtsgrundlage der Verarbeitung",
+        paragraphs: [
+          "Wir verarbeiten Ihre personenbezogenen Daten auf der Grundlage Ihrer Einwilligung, die Sie bei der Registrierung und Annahme dieser Dokumente erteilt haben, sowie aufgrund der Notwendigkeit der Erfüllung des Dienstleistungsvertrags der Plattform — einschließlich Zahlungsabwicklung, Überprüfung von Qualifikationen und Kommunikation über Auktionen und Sitzungen.",
+        ],
+      },
+      {
+        title: "11. Änderungen dieser Richtlinie",
         paragraphs: [
           "Wir können diese Datenschutzerklärung regelmäßig aktualisieren. Bei wesentlichen Änderungen benachrichtigen wir Sie per E-Mail oder über einen Hinweis auf der Plattform. Die fortgesetzte Nutzung von Valore nach Veröffentlichung der Änderungen stellt die Annahme der neuen Bedingungen dar.",
         ],
       },
       {
-        title: "8. Kontakt",
+        title: "12. Kontakt",
         listIntro: "Bei Fragen zu dieser Datenschutzerklärung kontaktieren Sie uns:",
         paragraphs: [`E-Mail: ${CONTACT_EMAIL}`],
       },
@@ -1403,6 +1849,14 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
     homeLink: "Torna alla home",
     sections: [
       {
+        title: "Identificazione del Gestore",
+        list: [
+          { label: "Ragione sociale", text: RAZAO_SOCIAL },
+          { label: "CNPJ (codice fiscale brasiliano)", text: CNPJ },
+          { label: "Contatto", text: CONTACT_EMAIL },
+        ],
+      },
+      {
         title: "1. Introduzione",
         paragraphs: [
           "Valore (“Piattaforma”, “noi”) tiene alla tua privacy. Questa Informativa sulla Privacy descrive come raccogliamo, utilizziamo, conserviamo e proteggiamo le informazioni personali degli utenti (“tu”, “tuo”) nell'utilizzo della nostra piattaforma di asta di tempo umano.",
@@ -1410,15 +1864,27 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
       },
       {
         title: "2. Dati che Raccogliamo",
+        listIntro: "Raccogliamo i seguenti dati, ciascuno con una finalità specifica:",
         list: [
-          { label: "Dati di registrazione", text: "nome completo, email, telefono, città e password." },
-          { label: "Dati professionali", text: "specialità, credenziali, bio, anni di esperienza e piattaforma di videochiamata preferita (per gli specialisti)." },
-          { label: "Dati di transazione", text: "cronologia delle offerte, importi pagati e prelievi richiesti." },
-          { label: "Dati di navigazione", text: "indirizzo IP, tipo di dispositivo, browser e pagine visitate." },
+          { label: "Nome completo", text: "utilizzato per l'identificazione e la creazione del tuo account." },
+          { label: "Email", text: "utilizzata per l'autenticazione, la comunicazione e il recupero dell'accesso." },
+          { label: "CPF/CNPJ (codice fiscale brasiliano)", text: "utilizzato per la verifica dell'identità e il rispetto degli obblighi fiscali e legali." },
+          { label: "Telefono", text: "utilizzato per il contatto e la conferma degli appuntamenti." },
+          { label: "Città e Stato", text: "utilizzati per la visualizzazione nel profilo e la conformità ai requisiti regionali." },
+          { label: "Foto del profilo", text: "utilizzata per l'identificazione visiva nel tuo profilo pubblico." },
+          { label: "Albi professionali (CRM, OAB, CREA, ecc.)", text: "utilizzati per verificare le credenziali degli specialisti." },
+          { label: "LinkedIn e social media", text: "utilizzati per mostrare la tua presenza professionale nel profilo pubblico, quando forniti." },
+          { label: "Log di accesso (IP, dispositivo, browser, pagine visitate)", text: "utilizzati per sicurezza, prevenzione delle frodi e diagnostica tecnica." },
         ],
       },
       {
-        title: "3. Come Utilizziamo i tuoi Dati",
+        title: "3. Non Utilizziamo Tracciamento di Terze Parti",
+        paragraphs: [
+          "Valore NON utilizza Google Analytics, Meta Pixel o qualsiasi altro servizio di tracciamento di terze parti per monitorare il tuo comportamento di navigazione. Raccogliamo solo i dati descritti in questa Informativa, direttamente sulla nostra infrastruttura.",
+        ],
+      },
+      {
+        title: "4. Come Utilizziamo i tuoi Dati",
         listIntro: "Utilizziamo le tue informazioni per:",
         list: [
           { text: "Creare e gestire il tuo account sulla piattaforma;" },
@@ -1430,34 +1896,56 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
         ],
       },
       {
-        title: "4. Condivisione dei Dati",
+        title: "5. Condivisione dei Dati",
         listIntro: "Non vendiamo i tuoi dati personali. Potremmo condividere informazioni con:",
         list: [
-          { text: "Elaboratori di pagamento (Stripe, Pix) per le transazioni finanziarie;" },
+          { text: "Un elaboratore di pagamento (Mercado Pago) per le transazioni finanziarie — Valore non memorizza i numeri delle carte di credito; i dati di pagamento vengono elaborati e conservati direttamente da Mercado Pago;" },
           { text: "Fornitori di videochiamata (Google Meet, Zoom, Microsoft Teams) per generare i link delle sessioni;" },
           { text: "Autorità competenti, quando richiesto dalla legge o da un'ordinanza giudiziaria." },
         ],
       },
       {
-        title: "5. Sicurezza",
+        title: "6. Sicurezza",
         paragraphs: [
           "Adottiamo misure tecniche e organizzative per proteggere i tuoi dati, tra cui crittografia in transito (TLS 1.3), hash delle password (bcrypt) e archiviazione sicura su server certificati. Nonostante i nostri sforzi, nessun sistema è invulnerabile al 100%. Ti informeremo in caso di incidenti di sicurezza rilevanti.",
         ],
       },
       {
-        title: "6. I tuoi Diritti",
+        title: "7. Conservazione dei Dati",
         paragraphs: [
-          `Hai il diritto di accedere, correggere, eliminare o esportare i tuoi dati personali. Per esercitare questi diritti, contattaci all'indirizzo ${CONTACT_EMAIL}. Risponderemo entro 15 giorni lavorativi.`,
+          "Conserviamo i tuoi dati personali finché il tuo account rimane attivo. Dopo la chiusura dell'account, i dati fiscali e di transazione vengono conservati fino a 5 (cinque) anni, come richiesto dalla normativa fiscale brasiliana. Gli altri dati vengono eliminati o anonimizzati al termine di tale periodo.",
         ],
       },
       {
-        title: "7. Modifiche a questa Informativa",
+        title: "8. I tuoi Diritti",
+        listIntro: "Ai sensi della Legge Generale sulla Protezione dei Dati brasiliana (LGPD — Legge n. 13.709/2018), hai i seguenti diritti relativi ai tuoi dati personali:",
+        list: [
+          { label: "Accesso", text: "richiedere una copia dei dati personali che conserviamo su di te." },
+          { label: "Rettifica", text: "richiedere la correzione di dati incompleti, inesatti o obsoleti." },
+          { label: "Cancellazione", text: "richiedere la cancellazione dei dati trattati sulla base del tuo consenso." },
+          { label: "Portabilità", text: "richiedere il trasferimento dei tuoi dati a un altro fornitore di servizi." },
+        ],
+      },
+      {
+        title: "9. Responsabile della Protezione dei Dati (DPO)",
+        paragraphs: [
+          `Per esercitare i diritti sopra indicati o per chiarire dubbi sul trattamento dei tuoi dati, contatta il Responsabile della Protezione dei Dati (DPO) di Valore all'indirizzo ${CONTACT_EMAIL}. Risponderemo entro 15 giorni lavorativi.`,
+        ],
+      },
+      {
+        title: "10. Base Giuridica del Trattamento",
+        paragraphs: [
+          "Trattiamo i tuoi dati personali sulla base del tuo consenso, fornito al momento della registrazione e dell'accettazione di questi documenti, e della necessità di esecuzione del contratto di fornitura dei servizi della piattaforma — incluso il trattamento dei pagamenti, la verifica delle credenziali e la comunicazione su aste e sessioni.",
+        ],
+      },
+      {
+        title: "11. Modifiche a questa Informativa",
         paragraphs: [
           "Potremmo aggiornare periodicamente questa Informativa sulla Privacy. In caso di modifiche sostanziali, ti informeremo via email o tramite un avviso sulla piattaforma. L'uso continuato di Valore dopo la pubblicazione delle modifiche costituisce accettazione dei nuovi termini.",
         ],
       },
       {
-        title: "8. Contatto",
+        title: "12. Contatto",
         listIntro: "In caso di dubbi su questa Informativa sulla Privacy, contattaci:",
         paragraphs: [`Email: ${CONTACT_EMAIL}`],
       },
@@ -1472,6 +1960,14 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
     homeLink: "ホームに戻る",
     sections: [
       {
+        title: "運営者情報",
+        list: [
+          { label: "商号", text: RAZAO_SOCIAL },
+          { label: "CNPJ（ブラジル法人番号）", text: CNPJ },
+          { label: "連絡先", text: CONTACT_EMAIL },
+        ],
+      },
+      {
         title: "1. はじめに",
         paragraphs: [
           "Valore（「プラットフォーム」、「当社」）はお客様のプライバシーを尊重します。本プライバシーポリシーは、人の時間のオークションプラットフォームをご利用いただく際に、当社がユーザー（「お客様」）の個人情報をどのように収集、利用、保存、保護するかを説明するものです。",
@@ -1479,15 +1975,27 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
       },
       {
         title: "2. 収集する情報",
+        listIntro: "当社は以下の情報を、それぞれ特定の目的のために収集します：",
         list: [
-          { label: "登録情報", text: "氏名、メールアドレス、電話番号、都市、パスワード。" },
-          { label: "職業情報", text: "専門分野、資格、経歴、経験年数、希望するビデオ通話プラットフォーム（専門家の場合）。" },
-          { label: "取引情報", text: "入札履歴、支払い金額、出金申請。" },
-          { label: "閲覧情報", text: "IPアドレス、デバイスの種類、ブラウザ、閲覧ページ。" },
+          { label: "氏名", text: "本人確認およびアカウント作成のために使用します。" },
+          { label: "メールアドレス", text: "認証、連絡、アカウント復旧のために使用します。" },
+          { label: "CPF/CNPJ（ブラジルの納税者番号）", text: "本人確認および税務・法的義務の遵守のために使用します。" },
+          { label: "電話番号", text: "連絡および予約確認のために使用します。" },
+          { label: "都市・州", text: "プロフィール表示および地域要件への対応のために使用します。" },
+          { label: "プロフィール写真", text: "公開プロフィールでの視覚的な識別のために使用します。" },
+          { label: "職業登録番号（CRM、OAB、CREAなど）", text: "専門家の資格確認のために使用します。" },
+          { label: "LinkedInおよびSNS", text: "情報が提供された場合、公開プロフィールで職業上のプレゼンスを表示するために使用します。" },
+          { label: "アクセスログ（IPアドレス、デバイス、ブラウザ、閲覧ページ）", text: "セキュリティ、不正防止、技術診断のために使用します。" },
         ],
       },
       {
-        title: "3. 情報の利用方法",
+        title: "3. 第三者トラッキングは使用しません",
+        paragraphs: [
+          "Valoreは、お客様の閲覧行動を追跡するために、Google Analytics、Meta Pixel、その他いかなる第三者のトラッキングサービスも使用していません。当社は本ポリシーに記載されたデータのみを、当社自身のインフラ上で直接収集します。",
+        ],
+      },
+      {
+        title: "4. 情報の利用方法",
         listIntro: "お客様の情報は以下の目的で利用します：",
         list: [
           { text: "プラットフォーム上のアカウントの作成および管理" },
@@ -1499,34 +2007,56 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
         ],
       },
       {
-        title: "4. データの共有",
+        title: "5. データの共有",
         listIntro: "お客様の個人情報を販売することはありません。以下と情報を共有する場合があります：",
         list: [
-          { text: "金融取引のための決済処理業者（Stripe、Pix）" },
+          { text: "金融取引のための決済処理業者（Mercado Pago）— Valoreはクレジットカード番号を保存しません。支払いデータはMercado Pagoによって直接処理・保管されます。" },
           { text: "セッションリンク生成のためのビデオ通話プロバイダー（Google Meet、Zoom、Microsoft Teams）" },
           { text: "法律または裁判所命令により必要な場合の関係当局" },
         ],
       },
       {
-        title: "5. セキュリティ",
+        title: "6. セキュリティ",
         paragraphs: [
           "当社は、転送時の暗号化（TLS 1.3）、パスワードのハッシュ化（bcrypt）、認証済みサーバーでの安全な保管など、技術的および組織的な対策を講じています。これらの取り組みにもかかわらず、100%安全なシステムは存在しません。重大なセキュリティインシデントが発生した場合はお客様に通知します。",
         ],
       },
       {
-        title: "6. お客様の権利",
+        title: "7. データの保持期間",
         paragraphs: [
-          `お客様には、ご自身の個人情報にアクセス、修正、削除、またはエクスポートする権利があります。これらの権利を行使するには、${CONTACT_EMAIL}までご連絡ください。15営業日以内にご返答いたします。`,
+          "お客様のアカウントが有効である限り、個人情報を保持します。アカウント閉鎖後も、ブラジルの税法で義務付けられているとおり、税務および取引データは最大5年間保持されます。その他のデータは、この期間の終了時に削除または匿名化されます。",
         ],
       },
       {
-        title: "7. 本ポリシーの変更",
+        title: "8. お客様の権利",
+        listIntro: "ブラジル一般データ保護法（LGPD — 法律第13,709/2018号）に基づき、お客様には個人情報について以下の権利があります：",
+        list: [
+          { label: "アクセス", text: "当社が保有するお客様の個人情報のコピーを請求すること。" },
+          { label: "訂正", text: "不完全、不正確、または古いデータの訂正を請求すること。" },
+          { label: "削除", text: "同意に基づいて処理されたデータの削除を請求すること。" },
+          { label: "データポータビリティ", text: "お客様のデータを他のサービスプロバイダーに転送するよう請求すること。" },
+        ],
+      },
+      {
+        title: "9. データ保護責任者（DPO）",
+        paragraphs: [
+          `上記の権利を行使する場合、またはお客様のデータの取り扱いについてご質問がある場合は、Valoreのデータ保護責任者（DPO）まで ${CONTACT_EMAIL} でご連絡ください。15営業日以内にご返答いたします。`,
+        ],
+      },
+      {
+        title: "10. 処理の法的根拠",
+        paragraphs: [
+          "当社は、登録時および本書類への同意時に提供されたお客様の同意、ならびに支払い処理、資格確認、オークションおよびセッションに関する連絡を含むプラットフォームのサービス提供契約の履行の必要性に基づき、お客様の個人情報を処理します。",
+        ],
+      },
+      {
+        title: "11. 本ポリシーの変更",
         paragraphs: [
           "当社は本プライバシーポリシーを随時更新することがあります。重要な変更がある場合は、メールまたはプラットフォーム上の通知でお知らせします。変更公開後もValoreを継続してご利用いただくことで、新しい条件に同意したものとみなされます。",
         ],
       },
       {
-        title: "8. お問い合わせ",
+        title: "12. お問い合わせ",
         listIntro: "本プライバシーポリシーに関するご質問は、以下までご連絡ください：",
         paragraphs: [`メール：${CONTACT_EMAIL}`],
       },
@@ -1541,6 +2071,14 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
     homeLink: "返回首页",
     sections: [
       {
+        title: "运营者信息",
+        list: [
+          { label: "商号", text: RAZAO_SOCIAL },
+          { label: "CNPJ（巴西税号）", text: CNPJ },
+          { label: "联系方式", text: CONTACT_EMAIL },
+        ],
+      },
+      {
         title: "1. 简介",
         paragraphs: [
           "Valore（“平台”，“我们”）重视您的隐私。本隐私政策说明了在您使用我们的人类时间拍卖平台时，我们如何收集、使用、存储和保护用户（“您”）的个人信息。",
@@ -1548,15 +2086,27 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
       },
       {
         title: "2. 我们收集的数据",
+        listIntro: "我们收集以下数据，每项均有特定用途：",
         list: [
-          { label: "注册数据", text: "全名、电子邮箱、电话、城市及密码。" },
-          { label: "职业数据", text: "专长、资质、简介、从业年限及首选视频通话平台（针对专家）。" },
-          { label: "交易数据", text: "出价记录、已付款金额及提现申请。" },
-          { label: "浏览数据", text: "IP地址、设备类型、浏览器及访问页面。" },
+          { label: "全名", text: "用于身份识别和账户创建。" },
+          { label: "电子邮箱", text: "用于身份验证、沟通及账户找回。" },
+          { label: "CPF/CNPJ（巴西税号）", text: "用于身份核实及履行税务和法律义务。" },
+          { label: "电话", text: "用于联系及预约确认。" },
+          { label: "城市和州", text: "用于个人资料展示及满足地区要求。" },
+          { label: "个人资料照片", text: "用于在您的公开资料中进行视觉识别。" },
+          { label: "职业注册信息（CRM、OAB、CREA 等）", text: "用于核实专家资质。" },
+          { label: "领英（LinkedIn）及社交媒体", text: "在您提供的情况下，用于在公开资料中展示您的职业形象。" },
+          { label: "访问日志（IP地址、设备、浏览器、访问页面）", text: "用于安全保障、防止欺诈及技术诊断。" },
         ],
       },
       {
-        title: "3. 我们如何使用您的数据",
+        title: "3. 我们不使用第三方跟踪",
+        paragraphs: [
+          "Valore 不使用 Google Analytics、Meta Pixel 或任何其他第三方跟踪服务来监控您的浏览行为。我们仅在自有基础设施上直接收集本政策中所述的数据。",
+        ],
+      },
+      {
+        title: "4. 我们如何使用您的数据",
         listIntro: "我们使用您的信息用于：",
         list: [
           { text: "创建和管理您在平台上的账户；" },
@@ -1568,34 +2118,56 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
         ],
       },
       {
-        title: "4. 数据共享",
+        title: "5. 数据共享",
         listIntro: "我们不会出售您的个人数据。我们可能与以下各方共享信息：",
         list: [
-          { text: "支付处理商（Stripe、Pix），用于金融交易；" },
+          { text: "用于金融交易的支付处理商（Mercado Pago）——Valore 不存储信用卡号；支付数据由 Mercado Pago 直接处理和存储；" },
           { text: "视频通话服务商（Google Meet、Zoom、Microsoft Teams），用于生成会话链接；" },
           { text: "有关部门，依法律或法院命令要求时。" },
         ],
       },
       {
-        title: "5. 安全性",
+        title: "6. 安全性",
         paragraphs: [
           "我们采取技术和组织措施保护您的数据，包括传输加密（TLS 1.3）、密码哈希处理（bcrypt）以及在经认证的服务器上安全存储。尽管我们尽力而为，但没有任何系统是100%无懈可击的。如发生重大安全事件，我们将通知您。",
         ],
       },
       {
-        title: "6. 您的权利",
+        title: "7. 数据保留",
         paragraphs: [
-          `您有权访问、更正、删除或导出您的个人数据。如需行使这些权利，请通过 ${CONTACT_EMAIL} 与我们联系。我们将在15个工作日内回复。`,
+          "只要您的账户处于活跃状态，我们将保留您的个人数据。账户关闭后，税务和交易数据将根据巴西税法要求保留最多5（五）年。其他数据将在该期限结束时删除或匿名化处理。",
         ],
       },
       {
-        title: "7. 本政策的变更",
+        title: "8. 您的权利",
+        listIntro: "根据巴西《通用数据保护法》（LGPD — 第13,709/2018号法律），您对您的个人数据享有以下权利：",
+        list: [
+          { label: "访问权", text: "请求获取我们持有的您的个人数据副本。" },
+          { label: "更正权", text: "请求更正不完整、不准确或过时的数据。" },
+          { label: "删除权", text: "请求删除基于您同意而处理的数据。" },
+          { label: "可携权", text: "请求将您的数据转移至其他服务提供商。" },
+        ],
+      },
+      {
+        title: "9. 数据保护官（DPO）",
+        paragraphs: [
+          `如需行使上述权利或对您的数据处理有任何疑问，请通过 ${CONTACT_EMAIL} 联系 Valore 的数据保护官（DPO）。我们将在15个工作日内回复。`,
+        ],
+      },
+      {
+        title: "10. 处理的法律依据",
+        paragraphs: [
+          "我们基于您在注册及接受本文件时所给予的同意，以及履行平台服务合同的必要性（包括支付处理、资质核实以及有关拍卖和会话的沟通）来处理您的个人数据。",
+        ],
+      },
+      {
+        title: "11. 本政策的变更",
         paragraphs: [
           "我们可能会定期更新本隐私政策。如有重大变更，我们将通过电子邮件或平台通知告知您。变更发布后继续使用 Valore 即表示接受新条款。",
         ],
       },
       {
-        title: "8. 联系方式",
+        title: "12. 联系方式",
         listIntro: "如对本隐私政策有任何疑问，请联系我们：",
         paragraphs: [`电子邮箱：${CONTACT_EMAIL}`],
       },
@@ -1610,6 +2182,14 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
     homeLink: "العودة إلى الرئيسية",
     sections: [
       {
+        title: "بيانات المشغّل",
+        list: [
+          { label: "الاسم التجاري", text: RAZAO_SOCIAL },
+          { label: "الرقم الضريبي (CNPJ)", text: CNPJ },
+          { label: "التواصل", text: CONTACT_EMAIL },
+        ],
+      },
+      {
         title: "1. مقدمة",
         paragraphs: [
           "تُقدِّر Valore («المنصة»، «نحن») خصوصيتك. تصف سياسة الخصوصية هذه كيفية جمعنا واستخدامنا وتخزيننا وحمايتنا للمعلومات الشخصية للمستخدمين («أنت») عند استخدام منصتنا لمزادات الوقت البشري.",
@@ -1617,15 +2197,27 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
       },
       {
         title: "2. البيانات التي نجمعها",
+        listIntro: "نجمع البيانات التالية، ولكل منها غرض محدد:",
         list: [
-          { label: "بيانات التسجيل", text: "الاسم الكامل، البريد الإلكتروني، الهاتف، المدينة، وكلمة المرور." },
-          { label: "البيانات المهنية", text: "التخصص، المؤهلات، السيرة الذاتية، سنوات الخبرة، ومنصة مكالمات الفيديو المفضلة (للمختصين)." },
-          { label: "بيانات المعاملات", text: "سجل العروض، المبالغ المدفوعة، وطلبات السحب." },
-          { label: "بيانات التصفح", text: "عنوان IP، نوع الجهاز، المتصفح، والصفحات التي تمت زيارتها." },
+          { label: "الاسم الكامل", text: "يُستخدم لتحديد الهوية وإنشاء حسابك." },
+          { label: "البريد الإلكتروني", text: "يُستخدم للمصادقة والتواصل واسترداد الوصول إلى الحساب." },
+          { label: "CPF/CNPJ (الرقم الضريبي البرازيلي)", text: "يُستخدم للتحقق من الهوية والامتثال للالتزامات الضريبية والقانونية." },
+          { label: "الهاتف", text: "يُستخدم للتواصل وتأكيد المواعيد." },
+          { label: "المدينة والولاية", text: "تُستخدمان لعرضهما في الملف الشخصي والامتثال للمتطلبات الإقليمية." },
+          { label: "صورة الملف الشخصي", text: "تُستخدم للتعريف البصري في ملفك الشخصي العام." },
+          { label: "السجلات المهنية (CRM، OAB، CREA، إلخ)", text: "تُستخدم للتحقق من مؤهلات المختصين." },
+          { label: "LinkedIn ووسائل التواصل الاجتماعي", text: "تُستخدم لعرض حضورك المهني في ملفك الشخصي العام، عند تقديمها." },
+          { label: "سجلات الوصول (عنوان IP، الجهاز، المتصفح، الصفحات التي تمت زيارتها)", text: "تُستخدم للأمان ومنع الاحتيال والتشخيص التقني." },
         ],
       },
       {
-        title: "3. كيفية استخدامنا لبياناتك",
+        title: "3. لا نستخدم تتبع الأطراف الثالثة",
+        paragraphs: [
+          "لا تستخدم Valore خدمة Google Analytics أو Meta Pixel أو أي خدمة تتبع أخرى تابعة لجهات خارجية لمراقبة سلوك تصفحك. نجمع فقط البيانات الموضحة في هذه السياسة، مباشرة على بنيتنا التحتية الخاصة.",
+        ],
+      },
+      {
+        title: "4. كيفية استخدامنا لبياناتك",
         listIntro: "نستخدم معلوماتك من أجل:",
         list: [
           { text: "إنشاء وإدارة حسابك على المنصة؛" },
@@ -1637,34 +2229,56 @@ export const PRIVACIDADE: Record<LangCode, LegalDoc> = {
         ],
       },
       {
-        title: "4. مشاركة البيانات",
+        title: "5. مشاركة البيانات",
         listIntro: "نحن لا نبيع بياناتك الشخصية. قد نشارك المعلومات مع:",
         list: [
-          { text: "معالجات الدفع (Stripe، Pix) للمعاملات المالية؛" },
+          { text: "معالج الدفع (Mercado Pago) للمعاملات المالية — لا تخزّن Valore أرقام بطاقات الائتمان؛ تتم معالجة بيانات الدفع وتخزينها مباشرة بواسطة Mercado Pago؛" },
           { text: "مزودي مكالمات الفيديو (Google Meet، Zoom، Microsoft Teams) لإنشاء روابط الجلسات؛" },
           { text: "السلطات المختصة، عند الاقتضاء بموجب القانون أو أمر قضائي." },
         ],
       },
       {
-        title: "5. الأمان",
+        title: "6. الأمان",
         paragraphs: [
           "نعتمد تدابير تقنية وتنظيمية لحماية بياناتك، بما في ذلك التشفير أثناء النقل (TLS 1.3)، وتجزئة كلمات المرور (bcrypt)، والتخزين الآمن على خوادم معتمدة. وبالرغم من جهودنا، لا يوجد نظام محصّن بنسبة 100٪. سنخطرك في حال وقوع حوادث أمنية ذات صلة.",
         ],
       },
       {
-        title: "6. حقوقك",
+        title: "7. الاحتفاظ بالبيانات",
         paragraphs: [
-          `لديك الحق في الوصول إلى بياناتك الشخصية أو تصحيحها أو حذفها أو تصديرها. لممارسة هذه الحقوق، تواصل معنا عبر البريد الإلكتروني ${CONTACT_EMAIL}. سنرد خلال 15 يوم عمل.`,
+          "نحتفظ ببياناتك الشخصية طالما ظل حسابك نشطًا. بعد إغلاق الحساب، تُحفظ البيانات الضريبية وبيانات المعاملات لمدة تصل إلى 5 (خمس) سنوات، وفقًا لما تقتضيه التشريعات الضريبية البرازيلية. أما البيانات الأخرى فتُحذف أو تُجهَّل عند نهاية هذه المدة.",
         ],
       },
       {
-        title: "7. التغييرات على هذه السياسة",
+        title: "8. حقوقك",
+        listIntro: "بموجب القانون العام لحماية البيانات في البرازيل (LGPD - القانون رقم 13.709/2018)، لديك الحقوق التالية فيما يتعلق ببياناتك الشخصية:",
+        list: [
+          { label: "الوصول", text: "طلب نسخة من البيانات الشخصية التي نحتفظ بها عنك." },
+          { label: "التصحيح", text: "طلب تصحيح البيانات غير المكتملة أو غير الدقيقة أو القديمة." },
+          { label: "الحذف", text: "طلب حذف البيانات المُعالَجة استنادًا إلى موافقتك." },
+          { label: "قابلية النقل", text: "طلب نقل بياناتك إلى مزود خدمة آخر." },
+        ],
+      },
+      {
+        title: "9. مسؤول حماية البيانات (DPO)",
+        paragraphs: [
+          `لممارسة الحقوق المذكورة أعلاه أو لتوضيح أي استفسارات حول معالجة بياناتك، تواصل مع مسؤول حماية البيانات (DPO) لدى Valore عبر البريد الإلكتروني ${CONTACT_EMAIL}. سنرد خلال 15 يوم عمل.`,
+        ],
+      },
+      {
+        title: "10. الأساس القانوني للمعالجة",
+        paragraphs: [
+          "نعالج بياناتك الشخصية استنادًا إلى موافقتك، المقدَّمة عند التسجيل وقبول هذه الوثائق، وإلى ضرورة تنفيذ عقد تقديم خدمات المنصة — بما في ذلك معالجة المدفوعات والتحقق من المؤهلات والتواصل بشأن المزادات والجلسات.",
+        ],
+      },
+      {
+        title: "11. التغييرات على هذه السياسة",
         paragraphs: [
           "قد نقوم بتحديث سياسة الخصوصية هذه بشكل دوري. عند حدوث تغييرات جوهرية، سنخطرك عبر البريد الإلكتروني أو عبر إشعار على المنصة. يشكّل استمرار استخدام Valore بعد نشر التغييرات قبولاً للشروط الجديدة.",
         ],
       },
       {
-        title: "8. التواصل",
+        title: "12. التواصل",
         listIntro: "لأي استفسارات حول سياسة الخصوصية هذه، تواصل معنا:",
         paragraphs: [`البريد الإلكتروني: ${CONTACT_EMAIL}`],
       },
