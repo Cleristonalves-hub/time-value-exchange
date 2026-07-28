@@ -449,6 +449,30 @@ export function useMyLeiloes(especialistaId: string | undefined): MyLeiloesStats
   return data ?? { leiloes: [], totalLancesRecebidos: 0, totalGanho: 0 };
 }
 
+// Leilão ativo do especialista logado, se houver — usado em /perfil (decidir
+// entre "Publicar leilão" e "Editar leilão") e em /criar-leilao (agora tela
+// de edição, que carrega este leilão para pré-preencher o formulário).
+export function useMyActiveLeilao(especialistaId: string | undefined): Leilao | null {
+  const { data } = useQuery({
+    queryKey: [...K.myLeiloes, "active", especialistaId ?? ""],
+    enabled: !!especialistaId,
+    staleTime: 10_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leiloes")
+        .select("*")
+        .eq("especialista_id", especialistaId)
+        .eq("status", "ativo")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? toLeilao(data as LeilaoRow) : null;
+    },
+  });
+  return data ?? null;
+}
+
 // Cartão tokenizado do usuário logado — acesso a leilões é bloqueado sem um.
 export function useMyCard(usuarioId: string | undefined): Cartao | null {
   const { data } = useQuery({
@@ -863,7 +887,34 @@ export async function createLeilao(input: NovoLeilaoInput): Promise<Leilao | nul
     return null;
   }
   invalidate(K.activeLeiloes);
+  invalidate(K.myLeiloes);
   return toLeilao(data as LeilaoRow);
+}
+
+// Edita título, descrição e data de encerramento de um leilão ativo do
+// próprio especialista. Passa pela Edge Function `editar-leilao` porque não
+// há política de UPDATE para o dono em `leiloes` (só admin) — ver
+// 20260725170000_security_audit_rls_hardening.sql.
+export async function editarLeilao(
+  leilaoId: string,
+  input: { titulo: string; descricao: string; dataFim: number },
+): Promise<{ error: string | null }> {
+  const { data, error } = await supabase.functions.invoke("editar-leilao", {
+    body: {
+      leilao_id: leilaoId,
+      titulo: input.titulo,
+      descricao: input.descricao,
+      data_fim: new Date(input.dataFim).toISOString(),
+    },
+  });
+  if (error) {
+    const message = (data as { error?: string } | null)?.error ?? error.message;
+    return { error: message };
+  }
+  invalidate(K.leilao);
+  invalidate(K.activeLeiloes);
+  invalidate(K.myLeiloes);
+  return { error: null };
 }
 
 // Dá um lance em um leilão real. Passa pela Edge Function `dar-lance` (não faz
@@ -907,6 +958,7 @@ export async function cancelarLeilao(
   invalidate(K.leilao);
   invalidate(K.activeLeiloes);
   invalidate(K.mySpecialist);
+  invalidate(K.myLeiloes);
   return { error: null };
 }
 

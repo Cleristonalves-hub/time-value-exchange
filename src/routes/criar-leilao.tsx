@@ -1,52 +1,62 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { ValoreLogo } from "@/components/ValoreLogo";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
-import { useMySpecialist, createLeilao } from "@/lib/store";
+import { useMySpecialist, useMyActiveLeilao, editarLeilao } from "@/lib/store";
 import { useT, nicheLabel } from "@/lib/i18n";
+import { translateErrorMessage } from "@/lib/errorMessages";
 import { sanitizeText } from "@/lib/sanitize";
 import { useSessionTimeout } from "@/lib/useSessionTimeout";
 import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/criar-leilao")({
-  head: () => ({ meta: [{ title: "Criar leilão — Valore" }] }),
+  head: () => ({ meta: [{ title: "Editar leilão — Valore" }] }),
   component: CriarLeilaoPage,
 });
 
-// Especialistas com cadastro "reprovado" ou "suspenso" não podem publicar leilões.
-const ALLOWED_STATUSES = new Set(["novo", "verificado"]);
+type FieldKey = "titulo" | "dataFim";
+const FIELD_ORDER: FieldKey[] = ["titulo", "dataFim"];
 
-type FieldKey = "titulo" | "lanceMinimo" | "dataInicio" | "dataFim";
-const FIELD_ORDER: FieldKey[] = ["titulo", "lanceMinimo", "dataInicio", "dataFim"];
+// Converte um timestamp (ms) para o formato que <input type="datetime-local">
+// espera ("YYYY-MM-DDTHH:mm"), no horário local do navegador — toISOString()
+// sozinho retornaria em UTC, o que desalinharia o valor exibido do horário
+// que o especialista realmente escolheu.
+function toDatetimeLocalValue(ms: number): string {
+  const offsetMs = new Date(ms).getTimezoneOffset() * 60000;
+  return new Date(ms - offsetMs).toISOString().slice(0, 16);
+}
 
 function CriarLeilaoPage() {
   const { user, loading } = useAuth();
   const { t } = useT();
   const navigate = useNavigate();
   const especialista = useMySpecialist(user?.id, user?.email ?? undefined);
+  const leilaoAtivo = useMyActiveLeilao(especialista?.id);
   const { showWarning, continueSession } = useSessionTimeout(!!user);
 
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
-  const [lanceMinimo, setLanceMinimo] = useState("");
-  const [dataInicio, setDataInicio] = useState("");
   const [dataFim, setDataFim] = useState("");
+  const [prefilled, setPrefilled] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const fieldRefs = useRef<Partial<Record<FieldKey, HTMLDivElement | null>>>({});
 
-  // Pré-preenche o valor mínimo com o que o especialista já cadastrou.
+  // Pré-preenche o formulário assim que o leilão ativo carrega — só uma vez,
+  // para não sobrescrever o que o especialista já estiver digitando.
   useEffect(() => {
-    if (especialista?.minBid && !lanceMinimo) setLanceMinimo(especialista.minBid);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [especialista?.minBid]);
-
-  const podeCriar = !!especialista && ALLOWED_STATUSES.has(especialista.status);
+    if (leilaoAtivo && !prefilled) {
+      setTitulo(leilaoAtivo.titulo);
+      setDescricao(leilaoAtivo.descricao ?? "");
+      setDataFim(toDatetimeLocalValue(leilaoAtivo.dataFim));
+      setPrefilled(true);
+    }
+  }, [leilaoAtivo, prefilled]);
 
   function clearFieldError(key: FieldKey) {
     setFieldErrors((s) => {
@@ -60,11 +70,9 @@ function CriarLeilaoPage() {
   function validate(): Partial<Record<FieldKey, string>> {
     const errs: Partial<Record<FieldKey, string>> = {};
     if (!titulo.trim()) errs.titulo = t("cl.required");
-    if (!(Number(lanceMinimo) > 0)) errs.lanceMinimo = t("cl.minBidRequired");
-    if (!dataInicio) errs.dataInicio = t("cl.required");
     if (!dataFim) {
       errs.dataFim = t("cl.required");
-    } else if (dataInicio && new Date(dataFim).getTime() <= new Date(dataInicio).getTime()) {
+    } else if (leilaoAtivo && new Date(dataFim).getTime() <= leilaoAtivo.dataInicio) {
       errs.dataFim = t("cl.endDateBeforeStart");
     }
     return errs;
@@ -77,7 +85,7 @@ function CriarLeilaoPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!especialista) return;
+    if (!leilaoAtivo) return;
     const errs = validate();
     if (Object.keys(errs).length > 0) {
       setFieldErrors(errs);
@@ -86,20 +94,17 @@ function CriarLeilaoPage() {
     }
     setFieldErrors({});
     setSubmitting(true);
-    const created = await createLeilao({
-      especialistaId: especialista.id,
+    const { error } = await editarLeilao(leilaoAtivo.id, {
       titulo: titulo.trim(),
       descricao: sanitizeText(descricao),
-      lanceMinimo: Number(lanceMinimo),
-      dataInicio: new Date(dataInicio).getTime(),
       dataFim: new Date(dataFim).getTime(),
     });
     setSubmitting(false);
-    if (created) {
+    if (!error) {
       toast.success(t("cl.published"));
       navigate({ to: "/perfil" });
     } else {
-      toast.error(t("cl.publishError"));
+      toast.error(translateErrorMessage(error, t));
     }
   }
 
@@ -127,7 +132,7 @@ function CriarLeilaoPage() {
     );
   }
 
-  if (!podeCriar) {
+  if (!leilaoAtivo) {
     return (
       <GuardScreen
         title={t("cl.guardApprovalTitle")}
@@ -187,52 +192,6 @@ function CriarLeilaoPage() {
             />
           </Field>
 
-          <Field label={t("cl.areaOfExpertise")}>
-            <Input value={areaAtuacao || "—"} disabled className="text-muted-foreground" />
-            <p className="mt-1 text-[11px] text-muted-foreground">
-              {t("cl.areaDefinedNote")}{" "}
-              <Link to="/cadastro/especialista" className="text-gold underline-offset-4 hover:underline">
-                {t("cl.editProfile")}
-              </Link>
-            </p>
-          </Field>
-
-          <Field
-            label={t("cl.minBid")}
-            required
-            error={fieldErrors.lanceMinimo}
-            fieldRef={(el) => { fieldRefs.current.lanceMinimo = el; }}
-          >
-            <Input
-              type="number"
-              min="0"
-              value={lanceMinimo}
-              onChange={(e) => {
-                setLanceMinimo(e.target.value);
-                clearFieldError("lanceMinimo");
-              }}
-              placeholder="500"
-              className={fieldErrors.lanceMinimo ? "border-destructive focus-visible:ring-destructive" : undefined}
-            />
-          </Field>
-
-          <Field
-            label={t("cl.startDate")}
-            required
-            error={fieldErrors.dataInicio}
-            fieldRef={(el) => { fieldRefs.current.dataInicio = el; }}
-          >
-            <Input
-              type="datetime-local"
-              value={dataInicio}
-              onChange={(e) => {
-                setDataInicio(e.target.value);
-                clearFieldError("dataInicio");
-              }}
-              className={fieldErrors.dataInicio ? "border-destructive focus-visible:ring-destructive" : undefined}
-            />
-          </Field>
-
           <Field
             label={t("cl.endDate")}
             required
@@ -250,6 +209,20 @@ function CriarLeilaoPage() {
             />
           </Field>
 
+          <Field label={t("cl.areaOfExpertise")}>
+            <Input value={areaAtuacao || "—"} disabled className="text-muted-foreground" />
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {t("cl.areaDefinedNote")}{" "}
+              <Link to="/cadastro/especialista" className="text-gold underline-offset-4 hover:underline">
+                {t("cl.editProfile")}
+              </Link>
+            </p>
+          </Field>
+
+          <Field label={t("cl.minBid")}>
+            <Input value={String(leilaoAtivo.lanceAtual ?? leilaoAtivo.lanceMinimo)} disabled className="text-muted-foreground" />
+          </Field>
+
           <Field label={t("cl.platform")}>
             <Input value={especialista.platform || "—"} disabled className="text-muted-foreground" />
             <p className="mt-1 text-[11px] text-muted-foreground">
@@ -259,6 +232,21 @@ function CriarLeilaoPage() {
               </Link>
             </p>
           </Field>
+
+          <div className="rounded-md border border-warning/40 bg-warning/5 p-4">
+            <div className="flex items-center gap-2 text-warning">
+              <AlertTriangle className="size-4" />
+              <span className="text-[10px] uppercase tracking-[0.3em]">{t("lz.cancelAuction")}</span>
+            </div>
+            <p className="mt-2 text-xs leading-relaxed text-foreground/80">{t("lz.cancelPolicy")}</p>
+            <Link
+              to="/leilao/$id"
+              params={{ id: leilaoAtivo.id }}
+              className="mt-3 inline-block text-xs font-semibold uppercase tracking-widest text-gold underline-offset-4 hover:underline"
+            >
+              {t("lz.cancelAuction")}
+            </Link>
+          </div>
 
           <Button
             type="submit"

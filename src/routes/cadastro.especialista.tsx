@@ -375,7 +375,7 @@ function NewSpecialistWizard() {
     }
 
     // Última etapa: salva o perfil (a conta já foi criada na etapa 1) e manda
-    // direto para /criar-leilao.
+    // direto para /perfil, de onde o especialista publica o leilão com um clique.
     setSubmitting(true);
     const payload = {
       fullName: data.fullName,
@@ -418,7 +418,7 @@ function NewSpecialistWizard() {
       setSubmitting(false);
       if (saved) {
         toast.success(t("ce.profilePublished"));
-        navigate({ to: "/criar-leilao" });
+        navigate({ to: "/perfil" });
       } else {
         toast.error(t("ce.updateError"));
       }
@@ -1280,7 +1280,7 @@ function SpecialistProfileForm() {
       setSubmitting(false);
       if (saved) {
         toast.success(t("ce.profilePublished"));
-        navigate({ to: "/criar-leilao" });
+        navigate({ to: "/perfil" });
       } else {
         toast.error(t("ce.updateError"));
       }

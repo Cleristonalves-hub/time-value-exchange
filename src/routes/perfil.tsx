@@ -5,11 +5,21 @@ import { WarningBadge } from "@/components/ConductPledge";
 import { ShieldAlert, Camera, LogOut, Trash2, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
-import { uploadAvatar, updateUserAvatar, updateUserProfile, deleteMyAccount, useMySpecialist, useRejectionReasons } from "@/lib/store";
+import {
+  uploadAvatar,
+  updateUserAvatar,
+  updateUserProfile,
+  deleteMyAccount,
+  useMySpecialist,
+  useRejectionReasons,
+  useMyActiveLeilao,
+  createLeilao,
+} from "@/lib/store";
+import { formatBRL, formatEndsAt } from "@/lib/auctions";
 import { maskPhone } from "@/lib/masks";
 import { isValidAvatarSize } from "@/lib/validators";
 import { maskEmail } from "@/lib/utils";
-import { useT } from "@/lib/i18n";
+import { useT, nicheLabel } from "@/lib/i18n";
 import { useSessionTimeout } from "@/lib/useSessionTimeout";
 import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
 import { Input } from "@/components/ui/input";
@@ -57,9 +67,11 @@ function ProfilePage() {
   const [editTelefone, setEditTelefone] = useState("");
   const [editCidade, setEditCidade] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const { showWarning, continueSession } = useSessionTimeout(!!user);
 
   const especialista = useMySpecialist(user?.id, user?.email ?? undefined);
+  const leilaoAtivo = useMyActiveLeilao(especialista?.id);
   const reprovado = especialista?.status === "reprovado";
   const motivos = useRejectionReasons(reprovado ? especialista?.id ?? null : null);
 
@@ -132,6 +144,29 @@ function ProfilePage() {
       toast.error(t("pf.photoError"));
     }
     setBusy(false);
+  }
+
+  async function onPublishLeilao() {
+    if (!especialista) return;
+    setPublishing(true);
+    const titulo = t("pf.autoAuctionTitle", {
+      name: especialista.fullName,
+      specialty: especialista.specialty || nicheLabel(t, especialista.niche),
+    });
+    const created = await createLeilao({
+      especialistaId: especialista.id,
+      titulo,
+      descricao: "",
+      lanceMinimo: Number(especialista.minBid) || 0,
+      dataInicio: Date.now(),
+      dataFim: Date.now() + 24 * 60 * 60 * 1000,
+    });
+    setPublishing(false);
+    if (created) {
+      toast.success(t("pf.auctionPublished"));
+    } else {
+      toast.error(t("cl.publishError"));
+    }
   }
 
   async function onDelete() {
@@ -270,12 +305,28 @@ function ProfilePage() {
                 não esconder o botão silenciosamente se um novo status for
                 introduzido no futuro. */}
             {especialista.status !== "suspenso" && (
-              <button
-                onClick={() => navigate({ to: "/criar-leilao" })}
-                className="mt-3 w-full rounded-md bg-gradient-gold py-2 text-xs font-semibold uppercase tracking-widest text-primary-foreground shadow-gold hover:opacity-90"
-              >
-                {t("pf.createAuction")}
-              </button>
+              <>
+                {leilaoAtivo && (
+                  <div className="mt-3 rounded-md border border-border/60 bg-background/40 p-3">
+                    <p className="truncate text-sm text-foreground">{leilaoAtivo.titulo}</p>
+                    <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
+                      <span>
+                        {t("lz.currentBid")}: <span className="text-gold">{formatBRL(leilaoAtivo.lanceAtual ?? leilaoAtivo.lanceMinimo)}</span>
+                      </span>
+                      <span>
+                        {t("lz.endsIn")} {formatEndsAt(leilaoAtivo.dataFim)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={() => (leilaoAtivo ? navigate({ to: "/criar-leilao" }) : onPublishLeilao())}
+                  disabled={publishing}
+                  className="mt-3 w-full rounded-md bg-gradient-gold py-2 text-xs font-semibold uppercase tracking-widest text-primary-foreground shadow-gold hover:opacity-90 disabled:opacity-50"
+                >
+                  {publishing ? t("pf.publishing") : leilaoAtivo ? t("pf.editAuction") : t("pf.createAuction")}
+                </button>
+              </>
             )}
           </div>
         )}

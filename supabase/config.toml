@@ -35,6 +35,9 @@ verify_jwt = true
 [functions.cancelar-leilao]
 verify_jwt = true
 
+[functions.editar-leilao]
+verify_jwt = true
+
 [functions.salvar-cartao]
 verify_jwt = true
 
