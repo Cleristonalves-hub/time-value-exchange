@@ -6,6 +6,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useT } from "@/lib/i18n";
+import { translateErrorMessage } from "@/lib/errorMessages";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/redefinir-senha")({
@@ -47,7 +48,7 @@ function ResetPasswordPage() {
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
-        toast.error(error.message);
+        toast.error(translateErrorMessage(error.message, t));
         return;
       }
       setDone(true);

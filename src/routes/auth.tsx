@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Mail } from "lucide-react";
 import { maskEmail } from "@/lib/utils";
+import { translateErrorMessage } from "@/lib/errorMessages";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): { tab?: "signin" | "signup" } => ({
@@ -60,7 +61,7 @@ function AuthPage() {
           setPendingEmail(siEmail);
           return;
         }
-        toast.error(error);
+        toast.error(translateErrorMessage(error, t));
         return;
       }
       toast.success(t("auth.welcomeBack"));
@@ -78,7 +79,7 @@ function AuthPage() {
     try {
       const { error, needsEmailConfirmation, emailExists } = await signUp(suEmail, suPass, suNome);
       if (error) {
-        toast.error(emailExists ? t("common.emailAlreadyRegistered") : error);
+        toast.error(emailExists ? t("common.emailAlreadyRegistered") : translateErrorMessage(error, t));
         return;
       }
       if (needsEmailConfirmation) {
@@ -101,7 +102,7 @@ function AuthPage() {
     try {
       const { error } = await resetPasswordForEmail(forgotEmail);
       if (error) {
-        toast.error(error);
+        toast.error(translateErrorMessage(error, t));
         return;
       }
       setForgotSent(true);
@@ -117,7 +118,7 @@ function AuthPage() {
     setResending(true);
     try {
       const { error } = await resendConfirmation(pendingEmail);
-      if (error) toast.error(error);
+      if (error) toast.error(translateErrorMessage(error, t));
       else toast.success(t("auth.resendSuccess"));
     } catch {
       toast.error(t("auth.resendError"));

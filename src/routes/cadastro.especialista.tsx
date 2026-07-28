@@ -16,6 +16,7 @@ import { isValidCpfCnpj, isFullName, isSafeHttpUrl, isValidAvatarSize } from "@/
 import { maskCpfCnpj, maskPhone } from "@/lib/masks";
 import { sanitizeText } from "@/lib/sanitize";
 import { maskEmail } from "@/lib/utils";
+import { translateErrorMessage } from "@/lib/errorMessages";
 import { useSessionTimeout } from "@/lib/useSessionTimeout";
 import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
 import { toast } from "sonner";
@@ -96,13 +97,14 @@ type FieldKey =
   | "pixKey"
   | "conduct"
   | "truthPledge"
-  | "delinquencyAck";
+  | "delinquencyAck"
+  | "ageConfirmed";
 
 const STEP_FIELD_ORDER: FieldKey[][] = [
   ["fullName", "email", "password", "phone", "city", "state", "document", "cpfDeclaration"],
   ["niche", "specialty", "bio"],
   ["credential", "experience", "portfolioUrl", "instagram", "twitter", "tiktok", "youtube", "registrationNumber"],
-  ["platform", "minBid", "availableDays", "endTime", "pixKey", "conduct", "truthPledge", "delinquencyAck"],
+  ["platform", "minBid", "availableDays", "endTime", "pixKey", "conduct", "truthPledge", "delinquencyAck", "ageConfirmed"],
 ];
 
 const nicheOptions = allNiches.filter((n) => n !== "Todos");
@@ -143,6 +145,7 @@ function NewSpecialistWizard() {
   const [truthPledge, setTruthPledge] = useState(false);
   const [cpfDeclaration, setCpfDeclaration] = useState(false);
   const [delinquencyAck, setDelinquencyAck] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -311,6 +314,7 @@ function NewSpecialistWizard() {
       if (!conduct) errs.conduct = t("cc.acceptRequired");
       if (!truthPledge) errs.truthPledge = t("ce.truthPledgeRequired");
       if (!delinquencyAck) errs.delinquencyAck = t("ce.delinquencyRequired");
+      if (!ageConfirmed) errs.ageConfirmed = t("cc.ageConfirmRequired");
     }
     return errs;
   }
@@ -353,7 +357,7 @@ function NewSpecialistWizard() {
           fieldRefs.current.email?.scrollIntoView({ behavior: "smooth", block: "center" });
           toast.error(message);
         } else {
-          toast.error(result.error);
+          toast.error(translateErrorMessage(result.error, t));
         }
         return;
       }
@@ -426,7 +430,7 @@ function NewSpecialistWizard() {
     setResending(true);
     try {
       const { error } = await resendConfirmation(pendingEmail);
-      if (error) toast.error(error);
+      if (error) toast.error(translateErrorMessage(error, t));
       else toast.success(t("auth.resendSuccess"));
     } catch {
       toast.error(t("auth.resendError"));
@@ -987,6 +991,26 @@ function NewSpecialistWizard() {
                   <p className="mt-1 text-[11px] text-destructive">{fieldErrors.delinquencyAck}</p>
                 )}
               </div>
+
+              <div ref={(el) => { fieldRefs.current.ageConfirmed = el; }}>
+                <label
+                  className={`flex cursor-pointer items-start gap-3 rounded-md border p-4 text-[12px] leading-relaxed text-foreground/80 ${
+                    fieldErrors.ageConfirmed ? "border-destructive bg-destructive/5" : "border-gold/30 bg-gold/5"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={ageConfirmed}
+                    onChange={() => {
+                      setAgeConfirmed((v) => !v);
+                      clearFieldError("ageConfirmed");
+                    }}
+                    className="mt-0.5 size-4 accent-[color:var(--gold)]"
+                  />
+                  <span>{t("cc.ageConfirm")}</span>
+                </label>
+                {fieldErrors.ageConfirmed && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.ageConfirmed}</p>}
+              </div>
             </>
           )}
         </div>
@@ -1044,7 +1068,7 @@ type ProfData = {
 const PROFILE_FIELD_ORDER: FieldKey[] = [
   "cpfDeclaration", "niche", "specialty", "bio", "credential", "experience", "registrationNumber",
   "portfolioUrl", "youtube", "platform", "minBid", "availableDays", "endTime", "pixKey",
-  "truthPledge", "conduct", "delinquencyAck",
+  "truthPledge", "conduct", "delinquencyAck", "ageConfirmed",
 ];
 
 function SpecialistProfileForm() {
@@ -1066,6 +1090,7 @@ function SpecialistProfileForm() {
   const [truthPledge, setTruthPledge] = useState(false);
   const [cpfDeclaration, setCpfDeclaration] = useState(false);
   const [delinquencyAck, setDelinquencyAck] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const fieldRefs = useRef<Partial<Record<FieldKey, HTMLDivElement | null>>>({});
   const [data, setData] = useState<ProfData>({
@@ -1195,6 +1220,7 @@ function SpecialistProfileForm() {
     if (!conduct) errs.conduct = t("cc.acceptRequired");
     if (!truthPledge) errs.truthPledge = t("ce.truthPledgeRequired");
     if (!delinquencyAck) errs.delinquencyAck = t("ce.delinquencyRequired");
+    if (!ageConfirmed) errs.ageConfirmed = t("cc.ageConfirmRequired");
     return errs;
   }
 
@@ -1693,6 +1719,26 @@ function SpecialistProfileForm() {
             {fieldErrors.delinquencyAck && (
               <p className="mt-1 text-[11px] text-destructive">{fieldErrors.delinquencyAck}</p>
             )}
+          </div>
+
+          <div ref={(el) => { fieldRefs.current.ageConfirmed = el; }}>
+            <label
+              className={`flex cursor-pointer items-start gap-3 rounded-md border p-4 text-[12px] leading-relaxed text-foreground/80 ${
+                fieldErrors.ageConfirmed ? "border-destructive bg-destructive/5" : "border-gold/30 bg-gold/5"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={ageConfirmed}
+                onChange={() => {
+                  setAgeConfirmed((v) => !v);
+                  clearFieldError("ageConfirmed");
+                }}
+                className="mt-0.5 size-4 accent-[color:var(--gold)]"
+              />
+              <span>{t("cc.ageConfirm")}</span>
+            </label>
+            {fieldErrors.ageConfirmed && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.ageConfirmed}</p>}
           </div>
         </section>
 

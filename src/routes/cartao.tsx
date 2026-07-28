@@ -7,6 +7,7 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/lib/auth";
 import { useMyCard, salvarCartao } from "@/lib/store";
 import { useT } from "@/lib/i18n";
+import { translateErrorMessage } from "@/lib/errorMessages";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/cartao")({
@@ -91,7 +92,7 @@ function CartaoContent() {
 
       const { error } = await salvarCartao(token.id, ultimosDigitos, bandeira);
       if (error) {
-        toast.error(error);
+        toast.error(translateErrorMessage(error, t));
         return;
       }
       toast.success(t("ct.cardRegisteredToast"));

@@ -9,6 +9,7 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/lib/auth";
 import { useLeilao, useLances, useMyCard, useMySpecialist, darLance, cancelarLeilao } from "@/lib/store";
 import { useT, leilaoStatusLabel } from "@/lib/i18n";
+import { translateErrorMessage } from "@/lib/errorMessages";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/leilao/$id")({
@@ -73,7 +74,7 @@ function AuctionDetail() {
     const { error } = await darLance(leilao!.id, bid);
     setSubmitting(false);
     if (error) {
-      toast.error(error);
+      toast.error(translateErrorMessage(error, t));
       return;
     }
     setShowModal(false);
@@ -85,7 +86,7 @@ function AuctionDetail() {
     const { error } = await cancelarLeilao(leilao!.id, cancelMotivo);
     setCancelando(false);
     if (error) {
-      toast.error(error);
+      toast.error(translateErrorMessage(error, t));
       return;
     }
     toast.success(t("lz.auctionCancelled"));

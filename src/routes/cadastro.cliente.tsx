@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { isValidCPF, isFullName } from "@/lib/validators";
 import { maskCPF, maskPhone } from "@/lib/masks";
 import { maskEmail } from "@/lib/utils";
+import { translateErrorMessage } from "@/lib/errorMessages";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/cadastro/cliente")({
@@ -24,8 +25,8 @@ export const Route = createFileRoute("/cadastro/cliente")({
   component: ClientRegistration,
 });
 
-type FieldKey = "name" | "email" | "password" | "cpf" | "phone" | "cidade" | "estado" | "accept" | "cpfDeclaration";
-const FIELD_ORDER: FieldKey[] = ["name", "email", "password", "cpf", "phone", "cidade", "estado", "accept", "cpfDeclaration"];
+type FieldKey = "name" | "email" | "password" | "cpf" | "phone" | "cidade" | "estado" | "accept" | "cpfDeclaration" | "ageConfirmed";
+const FIELD_ORDER: FieldKey[] = ["name", "email", "password", "cpf", "phone", "cidade", "estado", "accept", "cpfDeclaration", "ageConfirmed"];
 
 function ClientRegistration() {
   const navigate = useNavigate();
@@ -47,6 +48,7 @@ function ClientRegistration() {
     estado: "",
     accept: false,
     cpfDeclaration: false,
+    ageConfirmed: false,
   });
   const set = (k: keyof typeof d, v: string | boolean) => {
     setD((s) => ({ ...s, [k]: v }));
@@ -70,6 +72,7 @@ function ClientRegistration() {
     if (!d.estado.trim()) errs.estado = t("cc.required");
     if (!d.accept) errs.accept = t("cc.acceptRequired");
     if (!d.cpfDeclaration) errs.cpfDeclaration = t("cc.cpfDeclarationRequired");
+    if (!d.ageConfirmed) errs.ageConfirmed = t("cc.ageConfirmRequired");
     return errs;
   }
 
@@ -103,7 +106,7 @@ function ClientRegistration() {
           fieldRefs.current.email?.scrollIntoView({ behavior: "smooth", block: "center" });
           toast.error(message);
         } else {
-          toast.error(error);
+          toast.error(translateErrorMessage(error, t));
         }
         return;
       }
@@ -125,7 +128,7 @@ function ClientRegistration() {
     setResending(true);
     try {
       const { error } = await resendConfirmation(pendingEmail);
-      if (error) toast.error(error);
+      if (error) toast.error(translateErrorMessage(error, t));
       else toast.success(t("auth.resendSuccess"));
     } catch {
       toast.error(t("auth.resendError"));
@@ -326,6 +329,33 @@ function ClientRegistration() {
             </label>
             {fieldErrors.cpfDeclaration && (
               <p className="mt-1 text-[11px] text-destructive">{fieldErrors.cpfDeclaration}</p>
+            )}
+          </div>
+
+          <div ref={(el) => { fieldRefs.current.ageConfirmed = el; }}>
+            <label
+              className={`flex cursor-pointer items-start gap-3 rounded-md border p-4 text-[12px] leading-relaxed text-foreground/80 ${
+                fieldErrors.ageConfirmed ? "border-destructive bg-destructive/5" : "border-gold/30 bg-gold/5"
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => set("ageConfirmed", !d.ageConfirmed)}
+                aria-pressed={d.ageConfirmed}
+                className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                  d.ageConfirmed
+                    ? "border-gold bg-gold"
+                    : fieldErrors.ageConfirmed
+                      ? "border-destructive"
+                      : "border-border"
+                }`}
+              >
+                {d.ageConfirmed && <Check className="size-3 text-primary-foreground" />}
+              </button>
+              <span>{t("cc.ageConfirm")}</span>
+            </label>
+            {fieldErrors.ageConfirmed && (
+              <p className="mt-1 text-[11px] text-destructive">{fieldErrors.ageConfirmed}</p>
             )}
           </div>
 
