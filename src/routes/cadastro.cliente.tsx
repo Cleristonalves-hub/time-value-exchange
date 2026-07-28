@@ -11,6 +11,7 @@ import { useT } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { isValidCPF, isFullName } from "@/lib/validators";
 import { maskCPF, maskPhone } from "@/lib/masks";
+import { maskEmail } from "@/lib/utils";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/cadastro/cliente")({
@@ -158,7 +159,7 @@ function ClientRegistration() {
         <h1 className="mt-4 font-display text-3xl">{t("auth.confirmEmailTitle")}</h1>
         <p className="mt-3 max-w-sm text-sm text-muted-foreground">{t("cc.confirmEmailMsg")}</p>
         <p className="mt-1 text-xs text-muted-foreground">{t("auth.checkInboxSpam")}</p>
-        <p className="mt-2 text-xs text-muted-foreground">{pendingEmail}</p>
+        <p className="mt-2 text-xs text-muted-foreground">{maskEmail(pendingEmail)}</p>
         <Button onClick={onResend} disabled={resending} className="mt-6 w-full max-w-xs">
           {resending ? t("auth.resending") : t("auth.resend")}
         </Button>

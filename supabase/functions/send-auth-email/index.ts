@@ -21,6 +21,7 @@
 import { Webhook } from "npm:standardwebhooks@1.0.0";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkRateLimitDb } from "../_shared/rateLimitDb.ts";
+import { handleCorsPreflight, withCors } from "../_shared/cors.ts";
 
 // Formato do secret gerado pelo Dashboard: "v1,whsec_<base64>". A lib
 // standardwebhooks espera só a parte base64, sem o prefixo "v1,whsec_".
@@ -157,6 +158,12 @@ async function enviarViaResend(to: string, subject: string, html: string, text: 
 }
 
 Deno.serve(async (req: Request) => {
+  const preflight = handleCorsPreflight(req);
+  if (preflight) return preflight;
+  return withCors(req, await handleRequest(req));
+});
+
+async function handleRequest(req: Request): Promise<Response> {
   if (req.method !== "POST") {
     return errorResponse("method not allowed", 405);
   }
@@ -194,4 +201,4 @@ Deno.serve(async (req: Request) => {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });
-});
+}

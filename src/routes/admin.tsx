@@ -15,6 +15,7 @@ import { useIsAdmin } from "@/lib/useIsAdmin";
 import { useAuth } from "@/lib/auth";
 import { useT, nicheLabel } from "@/lib/i18n";
 import { isSafeHttpUrl } from "@/lib/validators";
+import { maskEmail } from "@/lib/utils";
 import { useSessionTimeout } from "@/lib/useSessionTimeout";
 import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
 
@@ -67,7 +68,7 @@ function AdminGate() {
           </div>
           <h1 className="mt-2 font-display text-2xl">{t("ad.accessDenied")}</h1>
           <p className="mt-2 text-xs text-muted-foreground">
-            {t("ad.noAdminRole", { email: user.email ?? "" })}
+            {t("ad.noAdminRole", { email: maskEmail(user.email ?? "") })}
           </p>
           <button
             onClick={() => signOut()}
@@ -192,7 +193,7 @@ function SpecialistsTab({ items, reviews }: { items: ReturnType<typeof useSpecia
                 {s.registrationNumber && (
                   <p className="text-[11px] text-muted-foreground">{t("ad.registration")}: {s.registrationNumber}</p>
                 )}
-                <p className="text-[11px] text-muted-foreground">{s.email} · {s.city}</p>
+                <p className="text-[11px] text-muted-foreground">{maskEmail(s.email)} · {s.city}</p>
                 {s.portfolioUrl && (
                   isSafeHttpUrl(s.portfolioUrl) ? (
                     <a href={s.portfolioUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block truncate text-[11px] text-gold underline-offset-4 hover:underline">
@@ -298,7 +299,7 @@ function FeedbackTab({ items }: { items: ReturnType<typeof useFeedbacks> }) {
         <li key={f.id} className="rounded-xl border border-border/60 bg-surface p-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-medium">{f.name} <span className="text-xs text-muted-foreground">· {f.email || t("ad.noEmail")}</span></p>
+              <p className="text-sm font-medium">{f.name} <span className="text-xs text-muted-foreground">· {f.email ? maskEmail(f.email) : t("ad.noEmail")}</span></p>
               <p className="mt-1 text-[10px] uppercase tracking-widest text-gold">
                 {f.kind === "sugestao" ? t("fb.suggestion") : t("fb.complaint")}
               </p>

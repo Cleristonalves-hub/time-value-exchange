@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Mail } from "lucide-react";
+import { maskEmail } from "@/lib/utils";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>): { tab?: "signin" | "signup" } => ({
@@ -194,7 +195,7 @@ function AuthPage() {
             {pendingReason === "signup" ? t("auth.confirmEmailSignup") : t("auth.confirmEmailSignin")}
           </p>
           <p className="mt-1 text-xs text-muted-foreground">{t("auth.checkInboxSpam")}</p>
-          <p className="mt-2 text-xs text-muted-foreground">{pendingEmail}</p>
+          <p className="mt-2 text-xs text-muted-foreground">{maskEmail(pendingEmail)}</p>
           <Button onClick={onResend} disabled={resending} className="mt-6 w-full">
             {resending ? t("auth.resending") : t("auth.resend")}
           </Button>

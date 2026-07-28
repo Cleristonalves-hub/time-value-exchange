@@ -55,7 +55,7 @@ foi trocado do placeholder `TROQUE_PELO_MESMO_VALOR_DE_...` pelo valor real.
 Isso barra abuso básico de um script simples, mas **não é um rate limit
 distribuído**: cada instância do Deno Deploy tem seu próprio contador, e um
 cold start zera esse contador. Para proteção robusta de verdade, configure
-rate limiting na borda (Cloudflare WAF/Rate Limiting Rules) — ver seção 7.
+rate limiting na borda (Cloudflare WAF/Rate Limiting Rules) — ver seção 8.
 
 ## 3. Headers HTTP de segurança
 
@@ -371,8 +371,89 @@ controle é só client-side.
   para o SDK, SRI passa a fazer sentido ali. Confirmado com o usuário antes
   de pular esta parte.
 
-## 7. O que ainda precisa de ação manual
+## 7. Sessão 2026-07-28: email mascarado, validação de lance, CORS e expiração de sessão
 
+### Email mascarado na UI
+
+`maskEmail()` em `src/lib/utils.ts` — "kleriston.alves@gmail.com" vira
+"kle***@gmail.com". Aplicado em todo lugar que hoje mostra o email como
+texto legível (não nos campos de formulário editáveis, que continuam
+mostrando o que a pessoa está digitando):
+
+- `perfil.tsx` — email abaixo do nome no card do perfil.
+- `admin.tsx` — mensagem de "acesso negado" (`ad.noAdminRole`), email na
+  lista de especialistas, email na lista de feedback.
+- `auth.tsx`, `cadastro.cliente.tsx`, `cadastro.especialista.tsx` — telas de
+  "confirme seu email" (`pendingEmail`).
+- `cadastro.especialista.tsx` — campo de email somente-leitura na Seção 1 da
+  tela de perfil de especialista logado.
+
+Importante: o email **sem máscara** continua sendo usado normalmente para
+tudo que não é exibição — login, payload de `addSpecialist`/`updateSpecialist`,
+etc. `maskEmail()` é só para renderização; nunca usar o resultado para
+comparação/lógica.
+
+### Validação de lance no backend (`dar-lance`)
+
+Três checagens novas, todas contra dados lidos do banco (nunca do que o
+client mandou), em `supabase/functions/dar-lance/index.ts`:
+
+1. **Incremento mínimo de R$50**: antes bastava `valor > lance_atual` (um
+   lance de +R$0,01 já passava); agora exige
+   `valor >= (lance_atual ou lance_minimo) + 50`.
+2. **Especialista não pode dar lance no próprio leilão**: busca
+   `especialistas.usuario_id` a partir do `especialista_id` do leilão (não
+   do que o client informou) e rejeita com 403 se bater com o usuário
+   autenticado.
+3. Leilão existir e estar `ativo` dentro da janela de tempo já era validado
+   antes — mantido.
+
+### CORS restrito nas Edge Functions
+
+`supabase/functions/_shared/cors.ts` — permite só
+`https://valore.services`, `https://www.valore.services` e
+`https://sapuvozigtbxowuzwgqq.supabase.co` (nenhuma outra origem recebe
+`Access-Control-Allow-Origin`, então o navegador bloqueia a leitura da
+resposta). Aplicado nas 6 funções: cada `Deno.serve(async (req) => {...})`
+virou um wrapper fino que trata `OPTIONS` (preflight) e envolve a resposta
+real (agora numa função `handleRequest` separada) com `withCors()`.
+
+⚠️ **Trade-off deliberado**: a lista não inclui `localhost` nem domínios de
+preview. Isso é intencional (foi pedido exatamente essas 3 origens), mas
+significa que testar `dar-lance`/`salvar-cartao`/`cancelar-leilao` a partir
+do servidor de desenvolvimento local (que fala com o projeto Supabase real)
+vai falhar por CORS no navegador — o preflight some sem
+`Access-Control-Allow-Origin` correspondente. Isso é **diferente** da lista
+de origens do `checkOrigin()` (`_shared/csrf.ts`, que já permite localhost)
+— as duas camadas agora divergem de propósito. Se o dev local precisar
+chamar essas funções contra o projeto real, adicione o origin do dev em
+`ALLOWED_ORIGINS` em `cors.ts` (não fiz isso porque não foi pedido e
+mudaria o que foi explicitamente especificado).
+
+### Expiração e invalidação de sessão
+
+`supabase/config.toml` ganhou uma seção `[auth]`: `jwt_expiry = 3600` (1h),
+`enable_refresh_token_rotation = true`, `refresh_token_reuse_interval = 0`
+(cada uso do refresh token gera um novo e invalida o anterior — reuso de um
+token já trocado é tratado pelo Supabase Auth como sinal de possível roubo).
+Não defini `site_url`/`additional_redirect_urls` nesse arquivo de propósito
+— hoje são geridos pelo Dashboard e não quero que um futuro
+`supabase config push` os sobrescreva com algo desconhecido.
+
+`src/lib/auth.tsx`: `signOut()` agora chama
+`supabase.auth.signOut({ scope: "global" })` — invalida o refresh token em
+**todos** os dispositivos/sessões, não só o local. Deixei de propósito o
+logout automático por inatividade (`useSessionTimeout.ts`) com o escopo
+padrão (local): ficar inativo no laptop não deveria derrubar uma sessão
+ativa no celular ao mesmo tempo — isso não foi pedido e mudaria um
+comportamento razoável sem necessidade.
+
+## 8. O que ainda precisa de ação manual
+
+- [ ] **Aplicar as configurações de `[auth]` do `config.toml`** no projeto
+      linkado (via `supabase link` + o fluxo de config push da CLI, ou
+      manualmente no Dashboard em Authentication > Sessions) — mudanças em
+      `config.toml` não se aplicam sozinhas como uma migration.
 - [ ] **Rodar `supabase db push --linked`** para aplicar as migrations
       novas: `20260725150000_backfill_usuario_id_especialistas.sql`,
       `20260725160000_fix_especialistas_rls.sql`,

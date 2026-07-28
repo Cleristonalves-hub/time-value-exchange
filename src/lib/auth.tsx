@@ -93,7 +93,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: null, needsEmailConfirmation: !data.session };
     },
     async signOut() {
-      await supabase.auth.signOut();
+      // scope: "global" invalida o refresh token em todos os dispositivos/
+      // abas logados, não só nesta sessão local — coerente com o timeout de
+      // inatividade e a rotação de refresh token: uma vez decidido que a
+      // sessão deve acabar, ela acaba em todo lugar.
+      await supabase.auth.signOut({ scope: "global" });
     },
     async resendConfirmation(email) {
       const { error } = await supabase.auth.resend({

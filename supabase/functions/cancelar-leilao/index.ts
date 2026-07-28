@@ -14,6 +14,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkRateLimit } from "../_shared/rateLimit.ts";
 import { checkOrigin } from "../_shared/csrf.ts";
+import { handleCorsPreflight, withCors } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -91,6 +92,12 @@ async function enviarEmailPenalidade(
 }
 
 Deno.serve(async (req: Request) => {
+  const preflight = handleCorsPreflight(req);
+  if (preflight) return preflight;
+  return withCors(req, await handleRequest(req));
+});
+
+async function handleRequest(req: Request): Promise<Response> {
   if (req.method !== "POST") return jsonResponse({ error: "method not allowed" }, 405);
   const limited = checkRateLimit(req, 10, "cancelar-leilao");
   if (limited) return limited;
@@ -211,4 +218,4 @@ Deno.serve(async (req: Request) => {
   }
 
   return jsonResponse({ ok: true, penalizado: true, suspenso: false });
-});
+}

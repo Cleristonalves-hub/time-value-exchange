@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { uploadAvatar, updateUserAvatar, updateUserProfile, deleteMyAccount, useMySpecialist, useRejectionReasons } from "@/lib/store";
 import { maskPhone } from "@/lib/masks";
 import { isValidAvatarSize } from "@/lib/validators";
+import { maskEmail } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 import { useSessionTimeout } from "@/lib/useSessionTimeout";
 import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
@@ -189,7 +190,7 @@ function ProfilePage() {
             </label>
           </div>
           <p className="mt-4 font-display text-xl">{nome || "—"}</p>
-          <p className="text-xs text-muted-foreground">{user.email}</p>
+          <p className="text-xs text-muted-foreground">{maskEmail(user.email ?? "")}</p>
           <div className="mt-4 flex justify-center">
             <WarningBadge tier={tier} />
           </div>

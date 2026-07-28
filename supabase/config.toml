@@ -1,5 +1,20 @@
 project_id = "sapuvozigtbxowuzwgqq"
 
+[auth]
+# Sessão expira em 1h; o refresh token gira a cada uso (rotation) e o
+# anterior fica inválido imediatamente (reuse_interval = 0) — um refresh
+# token roubado só serve até a próxima renovação legítima, depois disso
+# tanto o token roubado quanto (se o reuse for detectado) a sessão inteira
+# são invalidados pelo Supabase Auth.
+#
+# Não define site_url / additional_redirect_urls aqui de propósito — esses
+# valores hoje são geridos pelo Dashboard (Authentication > URL
+# Configuration) e não foram tocados nesta mudança; deixar de fora evita que
+# um futuro `supabase config push` os sobrescreva com algo desconhecido.
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 0
+
 [functions.trust-engine]
 # O Database Webhook do Supabase autentica a chamada com o service_role key
 # (um JWT válido), então mantemos a verificação de JWT padrão ativada.

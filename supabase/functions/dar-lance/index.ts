@@ -10,12 +10,17 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkRateLimitDb } from "../_shared/rateLimitDb.ts";
 import { checkOrigin } from "../_shared/csrf.ts";
+import { handleCorsPreflight, withCors } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+// Incremento mínimo exigido acima do lance atual (ou do lance mínimo, se
+// ainda não houver lance nenhum) — nunca aceito só "maior que zero".
+const INCREMENTO_MINIMO = 50;
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -25,6 +30,12 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 Deno.serve(async (req: Request) => {
+  const preflight = handleCorsPreflight(req);
+  if (preflight) return preflight;
+  return withCors(req, await handleRequest(req));
+});
+
+async function handleRequest(req: Request): Promise<Response> {
   if (req.method !== "POST") return jsonResponse({ error: "method not allowed" }, 405);
   const limited = await checkRateLimitDb(req, admin, "dar-lance", 10);
   if (limited) return limited;
@@ -72,9 +83,11 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: "Sua conta está bloqueada por inadimplência. Contate o suporte." }, 403);
   }
 
+  // Busca o leilão + o especialista_id vinculado, sempre do banco — nunca do
+  // que o client mandou (aqui o client só manda leilao_id e valor).
   const { data: leilao, error: leilaoError } = await admin
     .from("leiloes")
-    .select("id, status, lance_minimo, lance_atual, data_inicio, data_fim")
+    .select("id, status, lance_minimo, lance_atual, data_inicio, data_fim, especialista_id")
     .eq("id", leilaoId)
     .maybeSingle();
   if (leilaoError || !leilao) {
@@ -87,9 +100,27 @@ Deno.serve(async (req: Request) => {
   if (now < new Date(leilao.data_inicio).getTime() || now > new Date(leilao.data_fim).getTime()) {
     return jsonResponse({ error: "este leilão não está na janela de lances" }, 409);
   }
+
+  // O especialista dono do leilão não pode dar lance no próprio leilão.
+  const { data: especialista } = await admin
+    .from("especialistas")
+    .select("usuario_id")
+    .eq("id", leilao.especialista_id)
+    .maybeSingle();
+  if (especialista?.usuario_id === usuarioId) {
+    return jsonResponse({ error: "você não pode dar lance no seu próprio leilão" }, 403);
+  }
+
+  // Base de comparação sempre lida do banco (lance_atual ou, se ainda não
+  // houve lance nenhum, lance_minimo) — o valor enviado pelo client só é
+  // usado como o lance proposto, nunca como a base de comparação.
   const minimoParaLance = leilao.lance_atual ?? leilao.lance_minimo;
-  if (valor <= minimoParaLance) {
-    return jsonResponse({ error: `o lance precisa ser maior que ${minimoParaLance}` }, 409);
+  const minimoAceitavel = minimoParaLance + INCREMENTO_MINIMO;
+  if (valor < minimoAceitavel) {
+    return jsonResponse(
+      { error: `o lance precisa ser de pelo menos ${minimoAceitavel} (incremento mínimo de ${INCREMENTO_MINIMO})` },
+      409,
+    );
   }
 
   const { error: insertError } = await admin.from("lances").insert({
@@ -115,4 +146,4 @@ Deno.serve(async (req: Request) => {
   }
 
   return jsonResponse({ ok: true });
-});
+}

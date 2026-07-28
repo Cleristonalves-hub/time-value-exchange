@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { isValidCpfCnpj, isFullName, isSafeHttpUrl, isValidAvatarSize } from "@/lib/validators";
 import { maskCpfCnpj, maskPhone } from "@/lib/masks";
 import { sanitizeText } from "@/lib/sanitize";
+import { maskEmail } from "@/lib/utils";
 import { useSessionTimeout } from "@/lib/useSessionTimeout";
 import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
 import { toast } from "sonner";
@@ -443,7 +444,7 @@ function NewSpecialistWizard() {
         </div>
         <h1 className="mt-4 font-display text-3xl">{t("ce.confirmEmailTitle")}</h1>
         <p className="mt-3 max-w-sm text-sm text-muted-foreground">
-          {t("ce.confirmEmailBody")} <strong className="text-foreground">{pendingEmail}</strong>.
+          {t("ce.confirmEmailBody")} <strong className="text-foreground">{maskEmail(pendingEmail)}</strong>.
         </p>
         <p className="mt-2 text-xs text-muted-foreground">{t("ce.confirmEmailNote")}</p>
         <Button onClick={onResend} disabled={resending} className="mt-6 w-full max-w-xs">
@@ -1303,7 +1304,7 @@ function SpecialistProfileForm() {
               <Input value={displayName} disabled />
             </Field>
             <Field label={t("ce.email")}>
-              <Input value={user?.email ?? ""} disabled />
+              <Input value={maskEmail(user?.email ?? "")} disabled />
             </Field>
             <Field label={t("ce.phone")}>
               <Input value={displayPhone} disabled />
