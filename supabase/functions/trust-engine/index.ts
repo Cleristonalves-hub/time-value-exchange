@@ -6,26 +6,36 @@
 // header Authorization com o service_role key ao criar esse tipo de webhook.
 //
 // Critérios de aprovação (independentes, sem uso de IA — checagem determinística):
-//   1. linkedin_url existe e está acessível (campo único: pode conter LinkedIn, site
-//      pessoal, portfólio ou qualquer outro link — só verificamos que responde).
-//   2. registro_profissional é confirmado em um dos órgãos oficiais (OAB, CRM/CFM, CREA).
-// Regra: status = "verificado" somente se os DOIS critérios passarem (AND).
-// Se qualquer um falhar, status = "reprovado" e é criada uma notificação em
-// admin_notifications para revisão manual.
+//   1. Link (linkedin_url) — domínio linkedin.com é aprovado automaticamente, sem
+//      fetch: o LinkedIn bloqueia requests automatizados (retorna HTTP 999 para
+//      qualquer coisa que não pareça um navegador real), então tentar acessá-lo
+//      reprovava especialistas legítimos por um bloqueio do LinkedIn, não por
+//      problema real no link. Qualquer outro domínio (site pessoal, portfólio)
+//      continua exigindo uma resposta HTTP 200.
+//   2. Registro profissional — só é exigido em nichos regulamentados (Saúde/CRM,
+//      Direito/OAB, Finanças/CFA-CVM). Em nichos não regulamentados o critério é
+//      ignorado por completo se o campo estiver vazio (não conta nem a favor nem
+//      contra); se o especialista preencheu mesmo assim, o formato é validado do
+//      mesmo jeito. A validação é só de FORMATO (prefixo do tipo + número, e UF
+//      quando aplicável) — não há confirmação ao vivo no órgão oficial: OAB
+//      (cna.oab.org.br), CRM/CFM (portal.cfm.org.br) e CREA
+//      (consultaprofissional.confea.org.br) não expõem API pública de busca via
+//      GET/querystring, e a via oficial confiável para CRM é um webservice PAGO
+//      mediante contrato com o CFM (Resolução CFM nº 2.129/15). Checar só o
+//      formato é deliberado: é determinístico e não depende da disponibilidade
+//      de um site de terceiro. Revisão humana (admin_notifications) continua
+//      sendo a rede de segurança para o que o formato sozinho não pega.
 //
-// Junto com o status, esta função também recalcula especialistas.trust_score
-// (0-100) a cada verificação — ver calcularTrustScore() mais abaixo.
+// Regra: status = "verificado" quando todos os critérios AVALIADOS passarem —
+// para nichos não regulamentados sem registro informado, isso equivale a "só
+// precisa do link válido". Se qualquer critério avaliado falhar, status =
+// "reprovado" e é criada uma notificação em admin_notifications para revisão
+// manual.
 //
-// ATENÇÃO — limitação conhecida do critério 2 (registro profissional):
-// OAB (cna.oab.org.br), CRM/CFM (portal.cfm.org.br) e CREA (consultaprofissional.confea.org.br)
-// não expõem uma API pública documentada para busca via GET/querystring — são formulários
-// interativos (prováveis SPA/JS ou POST com sessão). A via oficial confiável para CRM é um
-// webservice PAGO mediante contrato com o CFM (Resolução CFM nº 2.129/15), que este código
-// não usa. A consulta abaixo é best-effort: tenta um fetch direto e procura sinais no HTML
-// retornado; se não conseguir confirmar com um sinal positivo claro, o critério conta como
-// NÃO CONFIRMADO (reprova esse critério — nunca aprova por omissão/ambiguidade). Recomenda-se
-// revisão humana enquanto uma integração mais robusta (webservice oficial do CFM, ou scraping
-// com browser headless) não for implementada.
+// Além do status, esta função recalcula especialistas.trust_score (0-100) a
+// cada verificação, incluindo um bônus de até +10 por presença em redes sociais
+// (Instagram/X/TikTok/YouTube) além do LinkedIn — ver calcularTrustScore() mais
+// abaixo. O bônus nunca reprova ninguém, só aumenta o score.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkRateLimitDb } from "../_shared/rateLimitDb.ts";
@@ -45,8 +55,13 @@ const USER_AGENT = "Mozilla/5.0 (compatible; ValoreTrustEngine/1.0)";
 interface EspecialistaRecord {
   id: string;
   email: string | null;
+  nicho: string | null;
   linkedin_url: string | null;
   registro_profissional: string | null;
+  instagram: string | null;
+  twitter: string | null;
+  tiktok: string | null;
+  youtube: string | null;
   status?: string | null;
 }
 
@@ -85,8 +100,16 @@ async function fetchComTimeout(url: string): Promise<Response | null> {
   }
 }
 
-// Critério 1: o link (linkedin_url) só precisa existir e estar acessível —
-// pode ser LinkedIn, Instagram, site pessoal ou portfólio, tratamos todos igual.
+// Critério 1: domínio linkedin.com (ou subdomínio, ex. www.linkedin.com) é
+// aprovado sem fetch — o LinkedIn responde HTTP 999 a qualquer request que não
+// pareça um navegador real, então tentar acessá-lo só reprovaria por causa do
+// próprio bloqueio do LinkedIn, não por um problema real no link. Qualquer
+// outro domínio (site pessoal, portfólio) continua exigindo resposta HTTP 200.
+function isLinkedInUrl(parsed: URL): boolean {
+  const host = parsed.hostname.toLowerCase();
+  return host === "linkedin.com" || host.endsWith(".linkedin.com");
+}
+
 async function verificarLink(url: string | null): Promise<CriterioResultado> {
   const criterio = "link";
   if (!url) {
@@ -99,6 +122,10 @@ async function verificarLink(url: string | null): Promise<CriterioResultado> {
     return { criterio, passou: false, detalhe: "linkedin_url inválida" };
   }
 
+  if (isLinkedInUrl(parsed)) {
+    return { criterio, passou: true, detalhe: "Domínio linkedin.com — aprovado automaticamente" };
+  }
+
   const res = await fetchComTimeout(parsed.toString());
   if (!res || !res.ok) {
     return { criterio, passou: false, detalhe: `link inacessível (HTTP ${res?.status ?? "sem resposta"})` };
@@ -106,131 +133,121 @@ async function verificarLink(url: string | null): Promise<CriterioResultado> {
   return { criterio, passou: true, detalhe: `Link acessível (HTTP ${res.status})` };
 }
 
-type TipoRegistro = "OAB" | "CRM" | "CREA" | "desconhecido";
+type TipoRegistro = "OAB" | "CRM" | "CREA" | "CFA" | "CVM" | "desconhecido";
+
+// Nichos regulamentados: exigem registro profissional. Qualquer nicho fora
+// deste mapa (Tecnologia, Educação, Artes, Música, Negócios, Esporte, ou um
+// nicho desconhecido/futuro) é tratado como não regulamentado — o registro
+// vira opcional para eles.
+const NICHOS_REGULAMENTADOS: Record<string, TipoRegistro[]> = {
+  "Saúde": ["CRM"],
+  "Direito": ["OAB"],
+  "Finanças": ["CFA", "CVM"],
+};
+
+function nichoRequerRegistro(nicho: string | null): boolean {
+  return !!nicho && nicho in NICHOS_REGULAMENTADOS;
+}
 
 function detectarTipoRegistro(registro: string): TipoRegistro {
   const upper = registro.toUpperCase();
   if (upper.includes("OAB")) return "OAB";
   if (upper.includes("CRM")) return "CRM";
   if (upper.includes("CREA")) return "CREA";
+  if (upper.includes("CFA")) return "CFA";
+  if (upper.includes("CVM")) return "CVM";
   return "desconhecido";
 }
 
 function extrairNumeroEUf(registro: string): { numero: string | null; uf: string | null } {
-  // Ex.: "OAB/SP 123456", "CRM-RJ 12345", "CREA-SP 123456"
+  // Ex.: "OAB/SP 123456", "CRM-RJ 12345", "CREA-SP 123456", "CFA 12345"
   const numero = /(\d{2,10})/.exec(registro)?.[1] ?? null;
   const uf = /\b([A-Z]{2})\b/.exec(registro.toUpperCase())?.[1] ?? null;
   return { numero, uf };
 }
 
-const SINAL_POSITIVO = /\b(ativ[oa]|regular)\b/i;
-const SINAL_NEGATIVO = /não encontrad|nenhum resultado|no results|not found/i;
+// OAB/CRM/CREA são conselhos estaduais — exigem UF no registro. CFA/CVM são
+// federais e não têm variação por estado.
+const TIPOS_COM_UF = new Set<TipoRegistro>(["OAB", "CRM", "CREA"]);
 
-// Tentativas best-effort — ver aviso no cabeçalho do arquivo sobre a falta de API pública.
-async function consultarOAB(numero: string): Promise<CriterioResultado> {
+// Valida só o FORMATO do registro (prefixo do tipo reconhecido + número, e UF
+// quando o tipo é estadual) — não confirma ao vivo no órgão oficial. Ver
+// cabeçalho do arquivo para o porquê dessa escolha.
+function formatoDeRegistroValido(registro: string): CriterioResultado {
   const criterio = "registro_profissional";
-  const url = `https://cna.oab.org.br/?numero=${encodeURIComponent(numero)}`;
-  const res = await fetchComTimeout(url);
-  if (!res || !res.ok) {
-    return { criterio, passou: false, detalhe: `CNA/OAB indisponível (HTTP ${res?.status ?? "sem resposta"})` };
-  }
-  const html = await res.text();
-  const confirmado = SINAL_POSITIVO.test(html) && !SINAL_NEGATIVO.test(html);
-  return {
-    criterio,
-    passou: confirmado,
-    detalhe: confirmado
-      ? "Registro OAB aparentemente confirmado no CNA"
-      : "Não foi possível confirmar o registro na OAB (site não expõe API pública de busca — verificação manual recomendada)",
-  };
-}
-
-async function consultarCRM(numero: string, uf: string | null): Promise<CriterioResultado> {
-  const criterio = "registro_profissional";
-  const url = `https://portal.cfm.org.br/busca-medicos/?crm=${encodeURIComponent(numero)}${
-    uf ? `&uf=${uf}` : ""
-  }`;
-  const res = await fetchComTimeout(url);
-  if (!res || !res.ok) {
-    return { criterio, passou: false, detalhe: `CFM indisponível (HTTP ${res?.status ?? "sem resposta"})` };
-  }
-  const html = await res.text();
-  const confirmado = SINAL_POSITIVO.test(html) && !SINAL_NEGATIVO.test(html);
-  return {
-    criterio,
-    passou: confirmado,
-    detalhe: confirmado
-      ? "Registro CRM aparentemente confirmado no CFM"
-      : "Não foi possível confirmar o registro no CFM (busca oficial confiável exige webservice pago via contrato — verificação manual recomendada)",
-  };
-}
-
-async function consultarCREA(numero: string): Promise<CriterioResultado> {
-  const criterio = "registro_profissional";
-  const url = `https://consultaprofissional.confea.org.br/?registro=${encodeURIComponent(numero)}`;
-  const res = await fetchComTimeout(url);
-  if (!res || !res.ok) {
-    return { criterio, passou: false, detalhe: `Confea/CREA indisponível (HTTP ${res?.status ?? "sem resposta"})` };
-  }
-  const html = await res.text();
-  const confirmado = SINAL_POSITIVO.test(html) && !SINAL_NEGATIVO.test(html);
-  return {
-    criterio,
-    passou: confirmado,
-    detalhe: confirmado
-      ? "Registro CREA aparentemente confirmado no Confea"
-      : "Não foi possível confirmar o registro no CREA (site não expõe API pública de busca — verificação manual recomendada)",
-  };
-}
-
-// Critério 2: consulta o órgão oficial correspondente ao tipo de registro declarado.
-async function verificarRegistroProfissional(registro: string | null): Promise<CriterioResultado> {
-  const criterio = "registro_profissional";
-  if (!registro) {
-    return { criterio, passou: false, detalhe: "registro_profissional ausente" };
-  }
   const tipo = detectarTipoRegistro(registro);
+  if (tipo === "desconhecido") {
+    return {
+      criterio,
+      passou: false,
+      detalhe: `tipo de registro não reconhecido em "${registro}" (esperado OAB, CRM, CREA, CFA ou CVM)`,
+    };
+  }
   const { numero, uf } = extrairNumeroEUf(registro);
   if (!numero) {
     return { criterio, passou: false, detalhe: "não foi possível extrair o número do registro" };
   }
-
-  switch (tipo) {
-    case "OAB":
-      return await consultarOAB(numero);
-    case "CRM":
-      return await consultarCRM(numero, uf);
-    case "CREA":
-      return await consultarCREA(numero);
-    default:
-      return {
-        criterio,
-        passou: false,
-        detalhe: `tipo de registro não reconhecido em "${registro}" (esperado OAB, CRM ou CREA)`,
-      };
+  if (TIPOS_COM_UF.has(tipo) && !uf) {
+    return { criterio, passou: false, detalhe: `não foi possível extrair a UF do registro ${tipo} (formato esperado: ex. "${tipo}/SP 123456")` };
   }
+  return { criterio, passou: true, detalhe: `Registro ${tipo} em formato válido` };
+}
+
+// Critério 2: só é avaliado se o nicho exigir registro OU se o especialista
+// preencheu o campo mesmo em nicho não regulamentado (nesse caso o formato
+// ainda precisa ser válido). Em nicho não regulamentado com o campo vazio,
+// retorna null — o critério é ignorado, não conta nem a favor nem contra.
+function verificarRegistroProfissional(nicho: string | null, registro: string | null): CriterioResultado | null {
+  const criterio = "registro_profissional";
+  const regulamentado = nichoRequerRegistro(nicho);
+  const preenchido = !!registro && registro.trim().length > 0;
+
+  if (!regulamentado && !preenchido) {
+    return null;
+  }
+  if (!preenchido) {
+    return { criterio, passou: false, detalhe: `registro profissional é obrigatório para o nicho "${nicho}"` };
+  }
+  return formatoDeRegistroValido(registro!.trim());
+}
+
+// Bônus de presença online: +10 no trust_score se o especialista tem pelo
+// menos 2 redes sociais preenchidas além do LinkedIn (Instagram, X/Twitter,
+// TikTok, YouTube). É só um bônus — nunca reprova ninguém, só soma.
+const REDES_SOCIAIS_MINIMO_PARA_BONUS = 2;
+const BONUS_REDES_SOCIAIS = 10;
+
+function contarRedesSociais(record: EspecialistaRecord): number {
+  return [record.instagram, record.twitter, record.tiktok, record.youtube].filter(
+    (v) => !!v && v.trim().length > 0,
+  ).length;
 }
 
 // trust_score (0-100, default 50 no cadastro): parte do valor neutro e
 // soma/subtrai por critério conforme ele passa ou falha nesta verificação.
 // registro_profissional pesa mais que o link por ser o critério mais difícil
-// de falsificar (depende de confirmação num órgão oficial, não só de uma URL
-// responder). Dois critérios aprovados = 100 (mesmo teto do status
-// "verificado"); os dois reprovados = 0. Persistido pelo próprio Trust Engine
-// via service_role — o trigger protect_especialistas_trust_fields (migration
-// 20260729130000) impede que o especialista ou qualquer outra sessão
-// autenticada sobrescreva esse valor diretamente.
+// de falsificar (depende do formato de um registro oficial, não só de uma URL
+// responder). Quando o nicho não exige registro e o especialista não o
+// preencheu, esse critério nem entra na conta (nem soma nem subtrai) — só o
+// link é considerado. Dois critérios aprovados = 100 (mesmo teto do status
+// "verificado"); os dois reprovados = 0; o bônus de redes sociais pode levar
+// o score acima do que os critérios sozinhos dariam, sempre limitado a 100.
+// Persistido pelo próprio Trust Engine via service_role — o trigger
+// protect_especialistas_trust_fields (migration 20260729130000) impede que o
+// especialista ou qualquer outra sessão autenticada sobrescreva esse valor
+// diretamente.
 const PESO_CRITERIO: Record<string, number> = {
   link: 20,
   registro_profissional: 30,
 };
 
-function calcularTrustScore(resultados: CriterioResultado[]): number {
+function calcularTrustScore(resultados: CriterioResultado[], bonusRedesSociais: number): number {
   let score = 50;
   for (const r of resultados) {
     const peso = PESO_CRITERIO[r.criterio] ?? 10;
     score += r.passou ? peso : -peso;
   }
+  score += bonusRedesSociais;
   return Math.max(0, Math.min(100, score));
 }
 
@@ -248,9 +265,9 @@ async function notificarAdmin(especialistaId: string, resultados: CriterioResult
 }
 
 const EXPLICACAO_CRITERIO: Record<string, string> = {
-  link: "Não conseguimos acessar o link (LinkedIn/site/portfólio) informado no seu cadastro. Confira se a URL está correta e se a página está publicamente acessível (sem exigir login).",
+  link: "Não conseguimos acessar o link (site/portfólio) informado no seu cadastro. Confira se a URL está correta e se a página está publicamente acessível (sem exigir login).",
   registro_profissional:
-    "Não conseguimos confirmar seu registro profissional (OAB, CRM ou CREA) no órgão oficial correspondente. Confira se o número e a UF estão corretos, no formato \"OAB/UF número\", \"CRM-UF número\" ou \"CREA-UF número\".",
+    "Seu nicho exige registro profissional (OAB para Direito, CRM para Saúde, ou CFA/CVM para Finanças) e não conseguimos validar o formato do que foi informado. Confira se o número e a UF estão corretos, no formato \"OAB/UF número\", \"CRM-UF número\" ou similar.",
 };
 
 function montarCorpoEmail(resultados: CriterioResultado[]): { html: string; text: string } {
@@ -350,15 +367,17 @@ async function handleRequest(req: Request): Promise<Response> {
     return jsonResponse({ error: "missing record.id" }, 400);
   }
 
-  const [linkResultado, registroResultado] = await Promise.all([
-    verificarLink(record.linkedin_url),
-    verificarRegistroProfissional(record.registro_profissional),
-  ]);
+  const linkResultado = await verificarLink(record.linkedin_url);
+  const registroResultado = verificarRegistroProfissional(record.nicho, record.registro_profissional);
 
-  const resultados = [linkResultado, registroResultado];
+  // registroResultado é null quando o nicho não exige registro e o campo
+  // ficou vazio — nesse caso o critério é ignorado por completo (nem entra na
+  // conta de aprovação, nem no cálculo do trust_score).
+  const resultados = registroResultado ? [linkResultado, registroResultado] : [linkResultado];
   const aprovado = resultados.every((r) => r.passou);
   const novoStatus = aprovado ? "verificado" : "reprovado";
-  const trustScore = calcularTrustScore(resultados);
+  const bonusRedesSociais = contarRedesSociais(record) >= REDES_SOCIAIS_MINIMO_PARA_BONUS ? BONUS_REDES_SOCIAIS : 0;
+  const trustScore = calcularTrustScore(resultados, bonusRedesSociais);
 
   const { error } = await supabase
     .from("especialistas")

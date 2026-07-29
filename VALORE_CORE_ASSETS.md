@@ -23,24 +23,39 @@ intervenção humana na maioria dos casos.
 **Como funciona hoje** (`supabase/functions/trust-engine/index.ts`):
 - Disparado automaticamente por um Database Webhook do Supabase a cada `INSERT`
   em `especialistas`.
-- Aplica dois critérios independentes e determinísticos (nenhum uso de IA):
-  1. **Link** — a URL informada (LinkedIn, site, portfólio) precisa responder
-     com sucesso.
-  2. **Registro profissional** — o número de OAB/CRM/CREA declarado precisa
-     ser confirmado (best-effort) no site do órgão oficial correspondente.
-- `status` só vira `"verificado"` se os **dois** critérios passarem (AND). Se
-  qualquer um falhar, vira `"reprovado"`, gera uma notificação em
-  `admin_notifications` para revisão manual e dispara um e-mail explicando o
-  motivo ao especialista.
-- Desde a migration `20260729130000`, a cada verificação o Trust Engine também
-  calcula e grava `especialistas.trust_score` (inteiro, 0–100): parte de uma
-  base neutra de 50 e soma/subtrai por critério (registro profissional pesa
-  30, link pesa 20 — o registro é o sinal mais difícil de forjar). Dois
-  critérios aprovados = 100; os dois reprovados = 0.
+- Aplica dois critérios determinísticos (nenhum uso de IA), cada um adaptado a
+  uma limitação real descoberta em produção:
+  1. **Link** — domínio `linkedin.com` é aprovado automaticamente, sem tentar
+     acessá-lo: o LinkedIn bloqueia requests automatizados (retorna HTTP 999
+     para qualquer coisa que não pareça um navegador real), então checar por
+     fetch só reprovava especialistas legítimos pelo bloqueio do LinkedIn, não
+     por um problema real no link. Qualquer outro domínio (site pessoal,
+     portfólio) continua precisando responder HTTP 200.
+  2. **Registro profissional** — só é exigido em nichos regulamentados (Saúde
+     → CRM, Direito → OAB, Finanças → CFA/CVM). Em nichos não regulamentados
+     (Tecnologia, Educação, Artes, Música, Negócios, Esporte, e qualquer outro
+     futuro) o campo é opcional: se vazio, o critério é ignorado por completo
+     — não conta a favor nem contra. Quando avaliado, a checagem é só de
+     **formato** (prefixo do tipo + número, e UF quando aplicável), não uma
+     confirmação ao vivo no órgão oficial — OAB/CFM/CREA não expõem API
+     pública de busca, e a via oficial do CFM é um webservice pago por
+     contrato.
+- `status` vira `"verificado"` quando todos os critérios **avaliados** (não
+  necessariamente os dois) passarem — para um especialista de nicho não
+  regulamentado sem registro preenchido, isso equivale a só precisar do link
+  válido. Se algum critério avaliado falhar, vira `"reprovado"`, gera uma
+  notificação em `admin_notifications` para revisão manual e dispara um
+  e-mail explicando o motivo.
+- A cada verificação o Trust Engine também calcula e grava
+  `especialistas.trust_score` (inteiro, 0–100): parte de uma base neutra de 50
+  e soma/subtrai por critério avaliado (registro pesa 30, link pesa 20), mais
+  um bônus de **+10** se o especialista tem pelo menos 2 redes sociais
+  preenchidas (Instagram, X, TikTok, YouTube) além do LinkedIn — um sinal
+  positivo de presença online que nunca reprova ninguém, só soma.
 - Um trigger de banco (`protect_especialistas_trust_fields`) impede que
   qualquer sessão que não seja o próprio Trust Engine (`service_role`) ou um
   admin altere `trust_score` — mesmo que o especialista tente uma chamada REST
-  direta fora do app, o valor grafado é revertido silenciosamente para o
+  direta fora do app, o valor gravado é revertido silenciosamente para o
   anterior.
 
 **Como evolui com dados.** Hoje o Trust Engine roda uma vez, no cadastro. O
@@ -50,21 +65,25 @@ valor real dele cresce à medida que a plataforma acumula histórico:
   taxa de cancelamento de leilões, densidade de denúncias recebidas,
   consistência entre o que o especialista declarou e o que os clientes
   reportam, tempo de resposta a lances.
-- Cada verificação (aprovada ou reprovada) é um ponto de dado sobre a
-  confiabilidade do critério em si — se, por exemplo, o critério de link
-  começar a gerar muitos falsos negativos por sites lentos, isso é visível no
-  histórico de `admin_notifications` e pode recalibrar os pesos.
+- O mapa de nichos regulamentados (`NICHOS_REGULAMENTADOS`) é a peça mais
+  clara de "aprende com o negócio, não com o código": à medida que novos
+  nichos entram na plataforma, decidir quais exigem registro profissional é
+  uma decisão de produto/compliance, não uma nova versão do algoritmo — o
+  código já está pronto para receber essas decisões.
 - Reverificação periódica (não só no cadastro) é o próximo passo natural: um
   registro profissional pode ser cassado meses depois do cadastro original.
 
-**Por que é difícil de copiar.** O código de scraping do CNA/CFM/Confea é a
-parte fácil. O que não se copia é: (1) o histórico acumulado de quantas
-verificações passaram/falharam e por quê, que calibra os pesos; (2) a curva de
-aprendizado sobre os falsos positivos/negativos de cada órgão (já documentada
-como limitação conhecida no próprio código); (3) o efeito de rede — quanto mais
-especialistas verificados existem, mais confiável o selo "Verificado" fica aos
-olhos de quem contrata, o que nenhum concorrente novo consegue simular no dia
-um.
+**Por que é difícil de copiar.** Não é o código do fetch ou da regex de
+formato — isso qualquer time replica em um dia. O que não se copia é: (1) o
+conhecimento acumulado de por que cada regra existe do jeito que existe (o
+bloqueio HTTP 999 do LinkedIn, a ausência de API pública nos conselhos
+profissionais, quais nichos realmente precisam de registro) — cada uma dessas
+decisões só apareceu depois de tentar a abordagem ingênua e ver ela falhar
+contra especialistas reais; (2) o histórico acumulado de quantas verificações
+passaram/falharam e por quê, que calibra os pesos; (3) o efeito de rede —
+quanto mais especialistas verificados existem, mais confiável o selo
+"Verificado" fica aos olhos de quem contrata, o que nenhum concorrente novo
+consegue simular no dia um.
 
 ---
 
