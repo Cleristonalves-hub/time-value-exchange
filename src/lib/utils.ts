@@ -14,3 +14,12 @@ export function maskEmail(email: string): string {
   const domain = email.slice(atIndex);
   return `${local.slice(0, 3)}***${domain}`;
 }
+
+// Converte um timestamp (ms) para o formato que <input type="datetime-local">
+// espera ("YYYY-MM-DDTHH:mm"), no horário local do navegador — toISOString()
+// sozinho retornaria em UTC, o que desalinharia o valor exibido do horário
+// que o usuário realmente escolheu.
+export function toDatetimeLocalValue(ms: number): string {
+  const offsetMs = new Date(ms).getTimezoneOffset() * 60000;
+  return new Date(ms - offsetMs).toISOString().slice(0, 16);
+}

@@ -73,6 +73,19 @@ export type Lance = {
   createdAt: number;
 };
 
+export type AgendamentoStatus = "confirmado" | "cancelado";
+
+export type Agendamento = {
+  id: string;
+  leilaoId: string;
+  clienteId: string;
+  especialistaId: string;
+  dataHora: number;
+  plataforma: string | null;
+  status: AgendamentoStatus;
+  createdAt: number;
+};
+
 export type Cartao = {
   id: string;
   usuarioId: string;
@@ -174,6 +187,17 @@ type LanceRow = {
   created_at: string;
 };
 
+type AgendamentoRow = {
+  id: string;
+  leilao_id: string;
+  cliente_id: string;
+  especialista_id: string;
+  data_hora: string;
+  plataforma: string | null;
+  status: AgendamentoStatus;
+  created_at: string;
+};
+
 type CartaoRow = {
   id: string;
   usuario_id: string;
@@ -215,6 +239,17 @@ const toLance = (r: LanceRow): Lance => ({
   leilaoId: r.leilao_id,
   usuarioId: r.usuario_id,
   valor: r.valor,
+  createdAt: new Date(r.created_at).getTime(),
+});
+
+const toAgendamento = (r: AgendamentoRow): Agendamento => ({
+  id: r.id,
+  leilaoId: r.leilao_id,
+  clienteId: r.cliente_id,
+  especialistaId: r.especialista_id,
+  dataHora: new Date(r.data_hora).getTime(),
+  plataforma: r.plataforma,
+  status: r.status,
   createdAt: new Date(r.created_at).getTime(),
 });
 
@@ -313,6 +348,7 @@ const K = {
   myCard: ["my-card"] as const,
   myLeiloes: ["my-leiloes"] as const,
   auditLogs: ["audit-logs"] as const,
+  agendamento: ["agendamento"] as const,
 };
 
 // ------- Hooks -------
@@ -408,6 +444,30 @@ export function useLances(leilaoId: string | undefined): Lance[] {
     },
   });
   return data ?? [];
+}
+
+// Agendamento confirmado de UM leilão, se o vencedor já tiver marcado um
+// horário — usado em /vitoria/$id para saber se mostra o calendário de
+// escolha ou a tela de confirmação. RLS já restringe a leitura ao cliente/
+// especialista da linha, então esta consulta simples por leilao_id nunca
+// vaza o agendamento de outra pessoa.
+export function useMyAgendamento(leilaoId: string | undefined): Agendamento | null {
+  const { data } = useQuery({
+    queryKey: [...K.agendamento, leilaoId ?? ""],
+    enabled: !!leilaoId,
+    staleTime: 10_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("agendamentos")
+        .select("*")
+        .eq("leilao_id", leilaoId)
+        .eq("status", "confirmado")
+        .maybeSingle();
+      if (error) throw error;
+      return data ? toAgendamento(data as AgendamentoRow) : null;
+    },
+  });
+  return data ?? null;
 }
 
 export type MyLeiloesStats = {
@@ -967,6 +1027,27 @@ export async function darLance(
   invalidate(K.leilao);
   invalidate(K.lances);
   invalidate(K.activeLeiloes);
+  return { error: null };
+}
+
+// Vencedor de um leilão encerrado marca o horário da sessão. Passa pela Edge
+// Function `criar-agendamento` porque precisa: confirmar que quem chama é
+// mesmo o vencedor, revalidar o horário contra a disponibilidade do
+// especialista, garantir atomicamente que ninguém mais reservou o mesmo
+// horário, e disparar os e-mails de notificação — nada disso dá pra fazer só
+// com um insert direto via RLS.
+export async function criarAgendamento(
+  leilaoId: string,
+  dataHora: number,
+): Promise<{ error: string | null }> {
+  const { data, error } = await supabase.functions.invoke("criar-agendamento", {
+    body: { leilao_id: leilaoId, data_hora: new Date(dataHora).toISOString() },
+  });
+  if (error) {
+    const message = (data as { error?: string } | null)?.error ?? error.message;
+    return { error: message };
+  }
+  invalidate(K.agendamento);
   return { error: null };
 }
 

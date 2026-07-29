@@ -10,6 +10,7 @@ import { useMySpecialist, useMyActiveLeilao, editarLeilao } from "@/lib/store";
 import { useT, nicheLabel } from "@/lib/i18n";
 import { translateErrorMessage } from "@/lib/errorMessages";
 import { sanitizeText } from "@/lib/sanitize";
+import { toDatetimeLocalValue } from "@/lib/utils";
 import { useSessionTimeout } from "@/lib/useSessionTimeout";
 import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
 import { toast } from "sonner";
@@ -21,15 +22,6 @@ export const Route = createFileRoute("/criar-leilao")({
 
 type FieldKey = "titulo" | "dataFim";
 const FIELD_ORDER: FieldKey[] = ["titulo", "dataFim"];
-
-// Converte um timestamp (ms) para o formato que <input type="datetime-local">
-// espera ("YYYY-MM-DDTHH:mm"), no horário local do navegador — toISOString()
-// sozinho retornaria em UTC, o que desalinharia o valor exibido do horário
-// que o especialista realmente escolheu.
-function toDatetimeLocalValue(ms: number): string {
-  const offsetMs = new Date(ms).getTimezoneOffset() * 60000;
-  return new Date(ms - offsetMs).toISOString().slice(0, 16);
-}
 
 function CriarLeilaoPage() {
   const { user, loading } = useAuth();

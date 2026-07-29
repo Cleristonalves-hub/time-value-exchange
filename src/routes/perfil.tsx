@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { BottomNav } from "@/components/BottomNav";
 import { WarningBadge } from "@/components/ConductPledge";
-import { ShieldAlert, Camera, LogOut, Trash2, AlertTriangle } from "lucide-react";
+import { ShieldAlert, Camera, LogOut, Trash2, AlertTriangle, Rocket, CalendarClock } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -18,7 +18,7 @@ import {
 import { formatBRL, formatEndsAt } from "@/lib/auctions";
 import { maskPhone } from "@/lib/masks";
 import { isValidAvatarSize } from "@/lib/validators";
-import { maskEmail } from "@/lib/utils";
+import { maskEmail, toDatetimeLocalValue } from "@/lib/utils";
 import { useT, nicheLabel } from "@/lib/i18n";
 import { useSessionTimeout } from "@/lib/useSessionTimeout";
 import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
@@ -47,6 +47,14 @@ const CRITERIO_KEYS: Record<string, string> = {
   registro_profissional: "pf.criterioRegistro",
 };
 
+const UMA_HORA_MS = 60 * 60 * 1000;
+const VINTE_QUATRO_HORAS_MS = 24 * 60 * 60 * 1000;
+const SETE_DIAS_MS = 7 * 24 * 60 * 60 * 1000;
+
+function formatDateHourBR(ms: number): string {
+  return new Date(ms).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
 function formatDateBR(dateOnly: string): string {
   const [y, m, d] = dateOnly.split("-");
   return `${d}/${m}/${y}`;
@@ -68,6 +76,9 @@ function ProfilePage() {
   const [editCidade, setEditCidade] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [publishMode, setPublishMode] = useState<"agora" | "agendar">("agora");
+  const [scheduledStart, setScheduledStart] = useState("");
   const { showWarning, continueSession } = useSessionTimeout(!!user);
 
   const especialista = useMySpecialist(user?.id, user?.email ?? undefined);
@@ -146,8 +157,26 @@ function ProfilePage() {
     setBusy(false);
   }
 
-  async function onPublishLeilao() {
+  function onOpenPublishModal() {
+    setPublishMode("agora");
+    setScheduledStart("");
+    setShowPublishModal(true);
+  }
+
+  async function onConfirmPublish() {
     if (!especialista) return;
+    let dataInicio = Date.now();
+    if (publishMode === "agendar") {
+      if (!scheduledStart) return;
+      dataInicio = new Date(scheduledStart).getTime();
+      const min = Date.now() + UMA_HORA_MS;
+      const max = Date.now() + SETE_DIAS_MS;
+      if (dataInicio < min || dataInicio > max) {
+        toast.error(t("pf.scheduleWindowError"));
+        return;
+      }
+    }
+
     setPublishing(true);
     const titulo = t("pf.autoAuctionTitle", {
       name: especialista.fullName,
@@ -158,12 +187,13 @@ function ProfilePage() {
       titulo,
       descricao: "",
       lanceMinimo: Number(especialista.minBid) || 0,
-      dataInicio: Date.now(),
-      dataFim: Date.now() + 24 * 60 * 60 * 1000,
+      dataInicio,
+      dataFim: dataInicio + VINTE_QUATRO_HORAS_MS,
     });
     setPublishing(false);
     if (created) {
       toast.success(t("pf.auctionPublished"));
+      setShowPublishModal(false);
     } else {
       toast.error(t("cl.publishError"));
     }
@@ -320,7 +350,7 @@ function ProfilePage() {
                   </div>
                 )}
                 <button
-                  onClick={() => (leilaoAtivo ? navigate({ to: "/criar-leilao" }) : onPublishLeilao())}
+                  onClick={() => (leilaoAtivo ? navigate({ to: "/criar-leilao" }) : onOpenPublishModal())}
                   disabled={publishing}
                   className="mt-3 w-full rounded-md bg-gradient-gold py-2 text-xs font-semibold uppercase tracking-widest text-primary-foreground shadow-gold hover:opacity-90 disabled:opacity-50"
                 >
@@ -426,6 +456,84 @@ function ProfilePage() {
       </div>
       <BottomNav />
       <SessionTimeoutWarning show={showWarning} onContinue={continueSession} />
+
+      {showPublishModal && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/80 backdrop-blur-md sm:items-center">
+          <div className="w-full max-w-md rounded-t-2xl border border-gold/40 bg-surface p-8 sm:rounded-2xl animate-in slide-in-from-bottom-8 duration-500">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-gold bg-gold/10">
+              <Rocket className="h-6 w-6 text-gold" />
+            </div>
+            <h3 className="text-center font-display text-2xl">{t("pf.publishModalTitle")}</h3>
+
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setPublishMode("agora")}
+                className={`rounded-md border p-3 text-left text-xs transition-colors ${
+                  publishMode === "agora" ? "border-gold bg-gold/10 text-gold" : "border-border/60 text-muted-foreground hover:border-gold/40"
+                }`}
+              >
+                <Rocket className="size-4" />
+                <p className="mt-2 font-semibold uppercase tracking-widest">{t("pf.publishNow")}</p>
+                <p className="mt-1 text-[11px] leading-relaxed">{t("pf.publishNowDesc")}</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPublishMode("agendar")}
+                className={`rounded-md border p-3 text-left text-xs transition-colors ${
+                  publishMode === "agendar" ? "border-gold bg-gold/10 text-gold" : "border-border/60 text-muted-foreground hover:border-gold/40"
+                }`}
+              >
+                <CalendarClock className="size-4" />
+                <p className="mt-2 font-semibold uppercase tracking-widest">{t("pf.schedulePublish")}</p>
+                <p className="mt-1 text-[11px] leading-relaxed">{t("pf.schedulePublishDesc")}</p>
+              </button>
+            </div>
+
+            {publishMode === "agendar" && (
+              <div className="mt-4">
+                <label className="mb-2 block text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                  {t("pf.scheduleStartLabel")}
+                </label>
+                <Input
+                  type="datetime-local"
+                  value={scheduledStart}
+                  min={toDatetimeLocalValue(Date.now() + UMA_HORA_MS)}
+                  max={toDatetimeLocalValue(Date.now() + SETE_DIAS_MS)}
+                  onChange={(e) => setScheduledStart(e.target.value)}
+                />
+              </div>
+            )}
+
+            <div className="mt-5 flex items-center justify-between rounded-md border border-border/60 bg-background/40 px-4 py-3 text-xs">
+              <span className="text-muted-foreground">{t("lz.endsIn")}</span>
+              <span className="font-mono tabular-nums text-gold">
+                {publishMode === "agora"
+                  ? formatDateHourBR(Date.now() + VINTE_QUATRO_HORAS_MS)
+                  : scheduledStart
+                    ? formatDateHourBR(new Date(scheduledStart).getTime() + VINTE_QUATRO_HORAS_MS)
+                    : "—"}
+              </span>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-2">
+              <button
+                disabled={publishing || (publishMode === "agendar" && !scheduledStart)}
+                onClick={onConfirmPublish}
+                className="rounded-md bg-gradient-gold py-3 text-xs font-semibold uppercase tracking-widest text-primary-foreground shadow-gold disabled:opacity-40"
+              >
+                {publishing ? t("pf.publishing") : t("pf.createAuction")}
+              </button>
+              <button
+                onClick={() => setShowPublishModal(false)}
+                className="rounded-md py-2 text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground"
+              >
+                {t("common.cancel")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
