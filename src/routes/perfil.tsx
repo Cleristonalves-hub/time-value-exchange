@@ -10,6 +10,7 @@ import {
   updateUserAvatar,
   updateUserProfile,
   deleteMyAccount,
+  deleteAvatarFile,
   useMySpecialist,
   useRejectionReasons,
   useMyActiveLeilao,
@@ -68,12 +69,14 @@ function ProfilePage() {
   const [nome, setNome] = useState<string>("");
   const [telefone, setTelefone] = useState<string>("");
   const [cidade, setCidade] = useState<string>("");
+  const [estado, setEstado] = useState<string>("");
   const [avatar, setAvatar] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [editingClient, setEditingClient] = useState(false);
   const [editNome, setEditNome] = useState("");
   const [editTelefone, setEditTelefone] = useState("");
   const [editCidade, setEditCidade] = useState("");
+  const [editEstado, setEditEstado] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
@@ -95,7 +98,7 @@ function ProfilePage() {
     if (!user) return;
     supabase
       .from("usuarios")
-      .select("nome, avatar_url, telefone, cidade")
+      .select("nome, avatar_url, telefone, cidade, estado")
       .eq("id", user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -103,6 +106,7 @@ function ProfilePage() {
         setAvatar(data?.avatar_url ?? null);
         setTelefone(data?.telefone ? maskPhone(data.telefone) : "");
         setCidade(data?.cidade ?? "");
+        setEstado(data?.estado ?? "");
       });
   }, [user]);
 
@@ -114,6 +118,7 @@ function ProfilePage() {
     setEditNome(nome);
     setEditTelefone(telefone);
     setEditCidade(cidade);
+    setEditEstado(estado);
     setEditingClient(true);
   }
 
@@ -124,17 +129,29 @@ function ProfilePage() {
       nome: editNome,
       telefone: editTelefone,
       cidade: editCidade,
+      estado: editEstado,
     });
     setSavingProfile(false);
     if (ok) {
       setNome(editNome);
       setTelefone(editTelefone);
       setCidade(editCidade);
+      setEstado(editEstado);
       setEditingClient(false);
       toast.success(t("pf.profileUpdated"));
     } else {
       toast.error(t("pf.profileUpdateError"));
     }
+  }
+
+  async function onRemovePhoto() {
+    if (!user) return;
+    setBusy(true);
+    await deleteAvatarFile(avatar);
+    await updateUserAvatar(user.id, null);
+    setAvatar(null);
+    setBusy(false);
+    toast.success(t("pf.photoRemoved"));
   }
 
   async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -254,6 +271,30 @@ function ProfilePage() {
               <input type="file" accept="image/*" className="hidden" onChange={onPickFile} disabled={busy} />
             </label>
           </div>
+          {avatar && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  disabled={busy}
+                  className="mt-2 text-[11px] uppercase tracking-widest text-muted-foreground hover:text-destructive disabled:opacity-50"
+                >
+                  {t("pf.removePhoto")}
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("pf.removePhotoConfirmTitle")}</AlertDialogTitle>
+                  <AlertDialogDescription>{t("pf.removePhotoConfirmMsg")}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={onRemovePhoto} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    {t("pf.removePhoto")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           <p className="mt-4 font-display text-xl">{nome || "—"}</p>
           <p className="text-xs text-muted-foreground">{maskEmail(user.email ?? "")}</p>
           <div className="mt-4 flex justify-center">
@@ -283,9 +324,19 @@ function ProfilePage() {
                   maxLength={15}
                 />
               </EditField>
-              <EditField label={t("cc.city")}>
-                <Input value={editCidade} onChange={(e) => setEditCidade(e.target.value)} placeholder={t("cc.cityPlaceholder")} maxLength={100} />
-              </EditField>
+              <div className="grid grid-cols-2 gap-3">
+                <EditField label={t("cc.city")}>
+                  <Input value={editCidade} onChange={(e) => setEditCidade(e.target.value)} placeholder={t("cc.cityPlaceholder")} maxLength={100} />
+                </EditField>
+                <EditField label={t("cc.state")}>
+                  <Input
+                    value={editEstado}
+                    onChange={(e) => setEditEstado(e.target.value.toUpperCase())}
+                    placeholder={t("cc.statePlaceholder")}
+                    maxLength={2}
+                  />
+                </EditField>
+              </div>
             </div>
             <div className="mt-5 flex gap-2">
               <button

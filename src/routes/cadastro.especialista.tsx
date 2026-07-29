@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { niches as allNiches } from "@/lib/auctions";
 import { ConductPledge } from "@/components/ConductPledge";
-import { addSpecialist, updateSpecialist, registrationLabel, uploadAvatar, useMySpecialist, specialistEmailExists } from "@/lib/store";
+import { addSpecialist, updateSpecialist, registrationLabel, uploadAvatar, deleteAvatarFile, useMySpecialist, specialistEmailExists } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
 import { useT, nicheLabel, WEEKDAY_LABEL_KEY } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,17 @@ import { maskEmail } from "@/lib/utils";
 import { translateErrorMessage } from "@/lib/errorMessages";
 import { useSessionTimeout } from "@/lib/useSessionTimeout";
 import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/cadastro/especialista")({
@@ -1174,6 +1185,16 @@ function SpecialistProfileForm() {
     if (url) setPhotoUrl(url);
   }
 
+  async function onRemovePhoto() {
+    await deleteAvatarFile(photoUrl);
+    if (editingId) {
+      const { error } = await supabase.from("especialistas").update({ avatar_url: null }).eq("id", editingId);
+      if (error) console.error("remover foto do especialista:", error);
+    }
+    setPhotoUrl("");
+    toast.success(t("pf.photoRemoved"));
+  }
+
   function clearFieldError(key: FieldKey) {
     setFieldErrors((s) => {
       if (!s[key]) return s;
@@ -1320,6 +1341,27 @@ function SpecialistProfileForm() {
           <p className="text-[11px] uppercase tracking-widest text-muted-foreground">
             {uploading ? t("ce.uploading") : t("ce.photoOptional")}
           </p>
+          {photoUrl && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button className="text-[11px] uppercase tracking-widest text-muted-foreground hover:text-destructive">
+                  {t("pf.removePhoto")}
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("pf.removePhotoConfirmTitle")}</AlertDialogTitle>
+                  <AlertDialogDescription>{t("pf.removePhotoConfirmMsg")}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={onRemovePhoto} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    {t("pf.removePhoto")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
 
         {/* Seção 1 — Dados pessoais (somente leitura) */}

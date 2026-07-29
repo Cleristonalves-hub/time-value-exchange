@@ -1134,20 +1134,41 @@ export async function addFeedback(input: Omit<Feedback, "id" | "createdAt">) {
   invalidate(K.feedbacks);
 }
 
-export async function updateUserAvatar(userId: string, url: string) {
+export async function updateUserAvatar(userId: string, url: string | null) {
   const { error } = await supabase.from("usuarios").update({ avatar_url: url }).eq("id", userId);
   if (error) console.error("updateUserAvatar:", error);
+}
+
+// Extrai o caminho dentro do bucket "avatars" a partir da URL pública salva
+// em avatar_url — supabase.storage.remove() espera o path, não a URL inteira.
+function avatarPathFromUrl(url: string): string | null {
+  const marker = "/avatars/";
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  return url.slice(idx + marker.length);
+}
+
+// Remove o arquivo do Storage (best-effort — se a URL não bater no padrão
+// esperado, ou o arquivo já não existir, apenas loga e segue: o objetivo
+// principal do fluxo de "remover foto" é sempre limpar avatar_url no banco,
+// mesmo que a limpeza do Storage falhe).
+export async function deleteAvatarFile(url: string | null | undefined): Promise<void> {
+  if (!url) return;
+  const path = avatarPathFromUrl(url);
+  if (!path) return;
+  const { error } = await supabase.storage.from("avatars").remove([path]);
+  if (error) console.error("deleteAvatarFile:", error);
 }
 
 // Edição de perfil para clientes (usuários sem cadastro de especialista) —
 // especialistas editam via o formulário completo em /cadastro/especialista.
 export async function updateUserProfile(
   userId: string,
-  input: { nome: string; telefone: string; cidade: string },
+  input: { nome: string; telefone: string; cidade: string; estado: string },
 ): Promise<boolean> {
   const { error } = await supabase
     .from("usuarios")
-    .update({ nome: input.nome, telefone: input.telefone, cidade: input.cidade })
+    .update({ nome: input.nome, telefone: input.telefone, cidade: input.cidade, estado: input.estado })
     .eq("id", userId);
   if (error) {
     console.error("updateUserProfile:", error);
