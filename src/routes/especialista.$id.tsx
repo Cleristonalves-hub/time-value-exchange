@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronLeft, BadgeCheck, Sparkles } from "lucide-react";
+import { ChevronLeft, BadgeCheck, Sparkles, Star, Gem } from "lucide-react";
 import { RequireAuth } from "@/components/RequireAuth";
 import { SocialLinks } from "@/components/SocialLinks";
-import { useSpecialist } from "@/lib/store";
+import { useSpecialist, useSpecialistReputation } from "@/lib/store";
 import { useT, nicheLabel } from "@/lib/i18n";
 
 export const Route = createFileRoute("/especialista/$id")({
@@ -18,6 +18,7 @@ function SpecialistProfile() {
   const { id } = Route.useParams();
   const { t } = useT();
   const specialist = useSpecialist(id);
+  const reputation = useSpecialistReputation(specialist?.id);
 
   if (!specialist) {
     return (
@@ -68,6 +69,17 @@ function SpecialistProfile() {
           ) : (
             <span className="inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold/5 px-2 py-0.5 text-[10px] uppercase tracking-widest text-gold">
               <Sparkles className="size-3" /> {t("ex.new")}
+            </span>
+          )}
+          {reputation.count > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold/5 px-2 py-0.5 text-[10px] uppercase tracking-widest text-gold">
+              <Star className="size-3 fill-current" />
+              {t("sp.reputation", { average: reputation.average.toFixed(1), count: reputation.count })}
+            </span>
+          )}
+          {specialist.premium && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-premium/40 bg-premium/5 px-2 py-0.5 text-[10px] uppercase tracking-widest text-premium">
+              <Gem className="size-3" /> {t("sp.premium")}
             </span>
           )}
         </div>

@@ -36,6 +36,8 @@ export type Specialist = {
   badgeCancelamentoAte: string | null;
   suspensoAte: string | null;
   motivoPenalidade: string | null;
+  trustScore: number;
+  premium: boolean;
   createdAt: number;
 };
 
@@ -139,6 +141,8 @@ type SpecialistRow = {
   badge_cancelamento_ate: string | null;
   suspenso_ate: string | null;
   motivo_penalidade: string | null;
+  trust_score: number | null;
+  premium: boolean | null;
   created_at: string;
 };
 
@@ -254,6 +258,8 @@ const toSpecialist = (r: SpecialistRow): Specialist => ({
   badgeCancelamentoAte: r.badge_cancelamento_ate,
   suspensoAte: r.suspenso_ate,
   motivoPenalidade: r.motivo_penalidade,
+  trustScore: r.trust_score ?? 50,
+  premium: r.premium ?? false,
   createdAt: new Date(r.created_at).getTime(),
 });
 
@@ -629,6 +635,31 @@ export function useReviews(): Review[] {
   return data ?? [];
 }
 
+export type SpecialistReputation = { average: number; count: number };
+
+// Selo "Reputação" do perfil público: média de estrelas + total de
+// avaliações de UM especialista específico (diferente de useReviews, que
+// traz todas as avaliações da plataforma, usadas no painel admin).
+export function useSpecialistReputation(specialistId: string | undefined): SpecialistReputation {
+  const { data } = useQuery({
+    queryKey: ["specialist-reputation", specialistId ?? ""],
+    enabled: !!specialistId,
+    staleTime: 30_000,
+    queryFn: async (): Promise<SpecialistReputation> => {
+      const { data, error } = await supabase
+        .from("avaliacoes")
+        .select("estrelas")
+        .eq("especialista_id", specialistId);
+      if (error) throw error;
+      const rows = (data ?? []) as { estrelas: number }[];
+      const count = rows.length;
+      const average = count > 0 ? rows.reduce((sum, r) => sum + r.estrelas, 0) / count : 0;
+      return { average, count };
+    },
+  });
+  return data ?? { average: 0, count: 0 };
+}
+
 export function useFeedbacks(): Feedback[] {
   const { data } = useQuery({
     queryKey: K.feedbacks,
@@ -692,7 +723,7 @@ export async function uploadAvatar(file: File, prefix = "user"): Promise<string 
 }
 
 export async function addSpecialist(
-  input: Omit<Specialist, "id" | "status" | "createdAt" | "badgeCancelamentoAte" | "suspensoAte" | "motivoPenalidade">,
+  input: Omit<Specialist, "id" | "status" | "createdAt" | "badgeCancelamentoAte" | "suspensoAte" | "motivoPenalidade" | "trustScore" | "premium">,
   usuarioId?: string,
 ): Promise<Specialist | null> {
   const { data, error } = await supabase
@@ -747,7 +778,7 @@ export async function addSpecialist(
 
 export async function updateSpecialist(
   id: string,
-  input: Omit<Specialist, "id" | "status" | "createdAt" | "badgeCancelamentoAte" | "suspensoAte" | "motivoPenalidade">,
+  input: Omit<Specialist, "id" | "status" | "createdAt" | "badgeCancelamentoAte" | "suspensoAte" | "motivoPenalidade" | "trustScore" | "premium">,
 ): Promise<Specialist | null> {
   const { data, error } = await supabase
     .from("especialistas")

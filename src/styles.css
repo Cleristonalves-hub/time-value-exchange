@@ -37,6 +37,7 @@
   --color-surface-elevated: var(--surface-elevated);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-premium: var(--premium);
   --font-display: "Cormorant Garamond", serif;
   --font-sans: "Inter", system-ui, sans-serif;
 }
@@ -67,6 +68,7 @@
   --destructive-foreground: oklch(0.98 0 0);
   --success: oklch(0.70 0.15 150);
   --warning: oklch(0.78 0.16 55);
+  --premium: oklch(0.65 0.20 300);
   --border: oklch(0.25 0.005 270 / 0.6);
   --input: oklch(0.25 0.005 270);
   --ring: var(--gold);

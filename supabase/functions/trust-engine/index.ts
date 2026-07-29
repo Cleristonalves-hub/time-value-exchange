@@ -13,6 +13,9 @@
 // Se qualquer um falhar, status = "reprovado" e é criada uma notificação em
 // admin_notifications para revisão manual.
 //
+// Junto com o status, esta função também recalcula especialistas.trust_score
+// (0-100) a cada verificação — ver calcularTrustScore() mais abaixo.
+//
 // ATENÇÃO — limitação conhecida do critério 2 (registro profissional):
 // OAB (cna.oab.org.br), CRM/CFM (portal.cfm.org.br) e CREA (consultaprofissional.confea.org.br)
 // não expõem uma API pública documentada para busca via GET/querystring — são formulários
@@ -208,6 +211,29 @@ async function verificarRegistroProfissional(registro: string | null): Promise<C
   }
 }
 
+// trust_score (0-100, default 50 no cadastro): parte do valor neutro e
+// soma/subtrai por critério conforme ele passa ou falha nesta verificação.
+// registro_profissional pesa mais que o link por ser o critério mais difícil
+// de falsificar (depende de confirmação num órgão oficial, não só de uma URL
+// responder). Dois critérios aprovados = 100 (mesmo teto do status
+// "verificado"); os dois reprovados = 0. Persistido pelo próprio Trust Engine
+// via service_role — o trigger protect_especialistas_trust_fields (migration
+// 20260729130000) impede que o especialista ou qualquer outra sessão
+// autenticada sobrescreva esse valor diretamente.
+const PESO_CRITERIO: Record<string, number> = {
+  link: 20,
+  registro_profissional: 30,
+};
+
+function calcularTrustScore(resultados: CriterioResultado[]): number {
+  let score = 50;
+  for (const r of resultados) {
+    const peso = PESO_CRITERIO[r.criterio] ?? 10;
+    score += r.passou ? peso : -peso;
+  }
+  return Math.max(0, Math.min(100, score));
+}
+
 async function notificarAdmin(especialistaId: string, resultados: CriterioResultado[]) {
   const motivo = resultados
     .filter((r) => !r.passou)
@@ -332,10 +358,11 @@ async function handleRequest(req: Request): Promise<Response> {
   const resultados = [linkResultado, registroResultado];
   const aprovado = resultados.every((r) => r.passou);
   const novoStatus = aprovado ? "verificado" : "reprovado";
+  const trustScore = calcularTrustScore(resultados);
 
   const { error } = await supabase
     .from("especialistas")
-    .update({ status: novoStatus })
+    .update({ status: novoStatus, trust_score: trustScore })
     .eq("id", record.id);
 
   if (error) {
@@ -349,5 +376,5 @@ async function handleRequest(req: Request): Promise<Response> {
     ]);
   }
 
-  return jsonResponse({ status: novoStatus, resultados });
+  return jsonResponse({ status: novoStatus, trustScore, resultados });
 }
