@@ -10,7 +10,7 @@ import { niches as allNiches } from "@/lib/auctions";
 import { ConductPledge } from "@/components/ConductPledge";
 import { addSpecialist, updateSpecialist, registrationLabel, uploadAvatar, deleteAvatarFile, useMySpecialist, specialistEmailExists } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
-import { useT, nicheLabel, WEEKDAY_LABEL_KEY } from "@/lib/i18n";
+import { useT, nicheLabel } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { isValidCpfCnpj, isFullName, isSafeHttpUrl, isValidAvatarSize } from "@/lib/validators";
 import { maskCpfCnpj, maskPhone } from "@/lib/masks";
@@ -102,9 +102,6 @@ type FieldKey =
   | "tiktok"
   | "youtube"
   | "platform"
-  | "minBid"
-  | "availableDays"
-  | "endTime"
   | "pixKey"
   | "conduct"
   | "truthPledge"
@@ -115,7 +112,7 @@ const STEP_FIELD_ORDER: FieldKey[][] = [
   ["fullName", "email", "password", "phone", "city", "state", "document", "cpfDeclaration"],
   ["niche", "specialty", "bio"],
   ["credential", "experience", "portfolioUrl", "instagram", "twitter", "tiktok", "youtube", "registrationNumber"],
-  ["platform", "minBid", "availableDays", "endTime", "pixKey", "conduct", "truthPledge", "delinquencyAck", "ageConfirmed"],
+  ["platform", "pixKey", "conduct", "truthPledge", "delinquencyAck", "ageConfirmed"],
 ];
 
 const nicheOptions = allNiches.filter((n) => n !== "Todos");
@@ -125,20 +122,6 @@ const platformSubKeys: Record<(typeof platformIds)[number], string> = {
   "Google Meet": "ce.platformMeetSub",
   "Microsoft Teams": "ce.platformTeamsSub",
 };
-
-const WEEKDAY_CODES = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"];
-
-const TIME_OPTIONS: string[] = (() => {
-  const out: string[] = [];
-  for (let mins = 6 * 60; mins <= 23 * 60; mins += 30) {
-    const h = Math.floor(mins / 60)
-      .toString()
-      .padStart(2, "0");
-    const m = (mins % 60).toString().padStart(2, "0");
-    out.push(`${h}:${m}`);
-  }
-  return out;
-})();
 
 // ============================================================================
 // Wizard de cadastro para visitantes ainda sem conta — cria a conta na etapa 0
@@ -277,16 +260,6 @@ function NewSpecialistWizard() {
     clearFieldError(k as unknown as FieldKey);
   };
 
-  const toggleDay = (code: string) => {
-    setData((d) => ({
-      ...d,
-      availableDays: d.availableDays.includes(code)
-        ? d.availableDays.filter((c) => c !== code)
-        : [...d.availableDays, code],
-    }));
-    clearFieldError("availableDays");
-  };
-
   const regLabelKey = registrationLabel(data.niche);
   const regLabel = regLabelKey ? t(regLabelKey) : null;
 
@@ -318,9 +291,6 @@ function NewSpecialistWizard() {
     }
     if (s === 3) {
       if (!data.platform) errs.platform = t("ce.platformRequired");
-      if (!(Number(data.minBid) > 0)) errs.minBid = t("ce.minBidRequired");
-      if (data.availableDays.length === 0) errs.availableDays = t("ce.daysRequired");
-      if (!(data.startTime < data.endTime)) errs.endTime = t("ce.endTimeError");
       if (!data.pixKey.trim()) errs.pixKey = t("ce.required");
       if (!conduct) errs.conduct = t("cc.acceptRequired");
       if (!truthPledge) errs.truthPledge = t("ce.truthPledgeRequired");
@@ -858,69 +828,6 @@ function NewSpecialistWizard() {
                 <Input value={data.languages} onChange={(e) => set("languages", e.target.value)} placeholder={t("ce.languagesPlaceholder")} />
               </Field>
               <Field
-                label={t("ce.minBid")}
-                required
-                error={fieldErrors.minBid}
-                fieldRef={(el) => { fieldRefs.current.minBid = el; }}
-              >
-                <Input
-                  type="number"
-                  min="0"
-                  value={data.minBid}
-                  onChange={(e) => set("minBid", e.target.value)}
-                  placeholder="500"
-                  className={fieldErrors.minBid ? "border-destructive focus-visible:ring-destructive" : undefined}
-                />
-              </Field>
-              <div ref={(el) => { fieldRefs.current.availableDays = el; }}>
-                <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("ce.availableDays")}</label>
-                <div className="flex flex-wrap gap-2">
-                  {WEEKDAY_CODES.map((code) => {
-                    const active = data.availableDays.includes(code);
-                    return (
-                      <button
-                        key={code}
-                        type="button"
-                        onClick={() => toggleDay(code)}
-                        className={`rounded-md border px-3 py-2 text-xs transition-all ${active ? "border-gold bg-gold/10 text-gold shadow-gold" : fieldErrors.availableDays ? "border-destructive text-foreground/80" : "border-border text-foreground/80 hover:border-gold/40"}`}
-                      >
-                        {t(WEEKDAY_LABEL_KEY[code])}
-                      </button>
-                    );
-                  })}
-                </div>
-                {fieldErrors.availableDays && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.availableDays}</p>}
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label={t("ce.startTime")} required>
-                  <select
-                    value={data.startTime}
-                    onChange={(e) => set("startTime", e.target.value)}
-                    className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
-                  >
-                    {TIME_OPTIONS.map((time) => (
-                      <option key={time} value={time}>{time}</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field
-                  label={t("ce.endTime")}
-                  required
-                  error={fieldErrors.endTime}
-                  fieldRef={(el) => { fieldRefs.current.endTime = el; }}
-                >
-                  <select
-                    value={data.endTime}
-                    onChange={(e) => set("endTime", e.target.value)}
-                    className={`h-10 w-full rounded-md border bg-background px-3 text-sm ${fieldErrors.endTime ? "border-destructive" : "border-border"}`}
-                  >
-                    {TIME_OPTIONS.map((time) => (
-                      <option key={time} value={time}>{time}</option>
-                    ))}
-                  </select>
-                </Field>
-              </div>
-              <Field
                 label={t("ce.pixKey")}
                 required
                 error={fieldErrors.pixKey}
@@ -1078,7 +985,7 @@ type ProfData = {
 // sempre para o campo mais acima na tela, não o primeiro do objeto de erros.
 const PROFILE_FIELD_ORDER: FieldKey[] = [
   "cpfDeclaration", "niche", "specialty", "bio", "credential", "experience", "registrationNumber",
-  "portfolioUrl", "youtube", "platform", "minBid", "availableDays", "endTime", "pixKey",
+  "portfolioUrl", "youtube", "platform", "pixKey",
   "truthPledge", "conduct", "delinquencyAck", "ageConfirmed",
 ];
 
@@ -1209,16 +1116,6 @@ function SpecialistProfileForm() {
     clearFieldError(k as unknown as FieldKey);
   };
 
-  const toggleDay = (code: string) => {
-    setData((d) => ({
-      ...d,
-      availableDays: d.availableDays.includes(code)
-        ? d.availableDays.filter((c) => c !== code)
-        : [...d.availableDays, code],
-    }));
-    clearFieldError("availableDays");
-  };
-
   const regLabelKey = registrationLabel(data.niche);
   const regLabel = regLabelKey ? t(regLabelKey) : null;
 
@@ -1233,9 +1130,6 @@ function SpecialistProfileForm() {
     if (data.youtube.trim() && !isSafeHttpUrl(data.youtube)) errs.youtube = t("ce.youtubeInvalid");
     if (regLabel && !data.registrationNumber.trim()) errs.registrationNumber = t("ce.required");
     if (!data.platform) errs.platform = t("ce.platformRequired");
-    if (!(Number(data.minBid) > 0)) errs.minBid = t("ce.minBidRequired");
-    if (data.availableDays.length === 0) errs.availableDays = t("ce.daysRequired");
-    if (!(data.startTime < data.endTime)) errs.endTime = t("ce.endTimeError");
     if (!data.pixKey.trim()) errs.pixKey = t("ce.required");
     if (!cpfDeclaration) errs.cpfDeclaration = t("ce.cpfDeclarationRequired");
     if (!conduct) errs.conduct = t("cc.acceptRequired");
@@ -1613,69 +1507,6 @@ function SpecialistProfileForm() {
             <Field label={t("ce.languages")}>
               <Input value={data.languages} onChange={(e) => set("languages", e.target.value)} placeholder={t("ce.languagesPlaceholder")} />
             </Field>
-            <Field
-              label={t("ce.minBid")}
-              required
-              error={fieldErrors.minBid}
-              fieldRef={(el) => { fieldRefs.current.minBid = el; }}
-            >
-              <Input
-                type="number"
-                min="0"
-                value={data.minBid}
-                onChange={(e) => set("minBid", e.target.value)}
-                placeholder="500"
-                className={fieldErrors.minBid ? "border-destructive focus-visible:ring-destructive" : undefined}
-              />
-            </Field>
-            <div ref={(el) => { fieldRefs.current.availableDays = el; }}>
-              <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("ce.availableDays")}</label>
-              <div className="flex flex-wrap gap-2">
-                {WEEKDAY_CODES.map((code) => {
-                  const active = data.availableDays.includes(code);
-                  return (
-                    <button
-                      key={code}
-                      type="button"
-                      onClick={() => toggleDay(code)}
-                      className={`rounded-md border px-3 py-2 text-xs transition-all ${active ? "border-gold bg-gold/10 text-gold shadow-gold" : fieldErrors.availableDays ? "border-destructive text-foreground/80" : "border-border text-foreground/80 hover:border-gold/40"}`}
-                    >
-                      {t(WEEKDAY_LABEL_KEY[code])}
-                    </button>
-                  );
-                })}
-              </div>
-              {fieldErrors.availableDays && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.availableDays}</p>}
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label={t("ce.startTime")} required>
-                <select
-                  value={data.startTime}
-                  onChange={(e) => set("startTime", e.target.value)}
-                  className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
-                >
-                  {TIME_OPTIONS.map((time) => (
-                    <option key={time} value={time}>{time}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field
-                label={t("ce.endTime")}
-                required
-                error={fieldErrors.endTime}
-                fieldRef={(el) => { fieldRefs.current.endTime = el; }}
-              >
-                <select
-                  value={data.endTime}
-                  onChange={(e) => set("endTime", e.target.value)}
-                  className={`h-10 w-full rounded-md border bg-background px-3 text-sm ${fieldErrors.endTime ? "border-destructive" : "border-border"}`}
-                >
-                  {TIME_OPTIONS.map((time) => (
-                    <option key={time} value={time}>{time}</option>
-                  ))}
-                </select>
-              </Field>
-            </div>
             <Field
               label={t("ce.pixKey")}
               required

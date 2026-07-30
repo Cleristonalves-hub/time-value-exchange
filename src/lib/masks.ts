@@ -36,3 +36,21 @@ export function maskPhone(raw: string): string {
   if (d.length > 0) return `(${d}`;
   return d;
 }
+
+// Data no formato DD/MM/AAAA (8 dígitos, "/" inserido automaticamente) — usada
+// em campos de data em texto simples (sem <input type="date"> nativo), no
+// máximo 10 caracteres formatados.
+export function maskDateBR(raw: string): string {
+  const d = raw.replace(/\D/g, "").slice(0, 8);
+  if (d.length > 4) return `${d.slice(0, 2)}/${d.slice(2, 4)}/${d.slice(4)}`;
+  if (d.length > 2) return `${d.slice(0, 2)}/${d.slice(2)}`;
+  return d;
+}
+
+// Hora no formato HH:MM (4 dígitos, ":" inserido automaticamente) — no máximo
+// 5 caracteres formatados.
+export function maskTimeHM(raw: string): string {
+  const d = raw.replace(/\D/g, "").slice(0, 4);
+  if (d.length > 2) return `${d.slice(0, 2)}:${d.slice(2)}`;
+  return d;
+}

@@ -889,6 +889,34 @@ export async function updateSpecialist(
   return updated;
 }
 
+// Atualiza só a disponibilidade semanal (dias/horário) do especialista — usada
+// em /criar-leilao, que agora é o único lugar onde esses campos são editáveis
+// (fora do formulário completo de cadastro/edição de perfil). RLS
+// "self_update" já permite o dono do cadastro alterar qualquer coluna da
+// própria linha, então um update direto do client é suficiente aqui (sem
+// necessidade de Edge Function — não há efeito colateral sensível envolvido,
+// diferente de trust_score/premium).
+export async function updateSpecialistAvailability(
+  especialistaId: string,
+  input: { availableDays: string[]; startTime: string; endTime: string },
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("especialistas")
+    .update({
+      dias_disponibilidade: input.availableDays.length ? input.availableDays : null,
+      horario_inicio: input.startTime || null,
+      horario_fim: input.endTime || null,
+    })
+    .eq("id", especialistaId);
+  if (error) {
+    console.error("updateSpecialistAvailability:", error);
+    return false;
+  }
+  invalidate(K.mySpecialist);
+  invalidate(K.specialists);
+  return true;
+}
+
 // Registra uma ação do painel admin em audit_logs. Nunca lança — uma falha
 // ao logar não deve impedir a ação em si (já concluída quando isto roda).
 async function logAdminAction(
@@ -958,7 +986,7 @@ type NovoLeilaoInput = Omit<
   "id" | "status" | "createdAt" | "lanceAtual" | "vencedorUsuarioId" | "destaqueAte" | "criadoPorSistema"
 >;
 
-export async function createLeilao(input: NovoLeilaoInput): Promise<Leilao | null> {
+export async function createLeilao(input: NovoLeilaoInput): Promise<{ leilao: Leilao | null; error: string | null }> {
   const { data, error } = await supabase
     .from("leiloes")
     .insert({
@@ -975,11 +1003,11 @@ export async function createLeilao(input: NovoLeilaoInput): Promise<Leilao | nul
 
   if (error) {
     console.error("createLeilao:", error);
-    return null;
+    return { leilao: null, error: error.message };
   }
   invalidate(K.activeLeiloes);
   invalidate(K.myLeiloes);
-  return toLeilao(data as LeilaoRow);
+  return { leilao: toLeilao(data as LeilaoRow), error: null };
 }
 
 // Edita título, descrição e data de encerramento de um leilão ativo do
@@ -988,7 +1016,7 @@ export async function createLeilao(input: NovoLeilaoInput): Promise<Leilao | nul
 // 20260725170000_security_audit_rls_hardening.sql.
 export async function editarLeilao(
   leilaoId: string,
-  input: { titulo: string; descricao: string; dataFim: number },
+  input: { titulo: string; descricao: string; dataFim: number; lanceMinimo?: number },
 ): Promise<{ error: string | null }> {
   const { data, error } = await supabase.functions.invoke("editar-leilao", {
     body: {
@@ -996,6 +1024,7 @@ export async function editarLeilao(
       titulo: input.titulo,
       descricao: input.descricao,
       data_fim: new Date(input.dataFim).toISOString(),
+      ...(input.lanceMinimo !== undefined ? { lance_minimo: input.lanceMinimo } : {}),
     },
   });
   if (error) {

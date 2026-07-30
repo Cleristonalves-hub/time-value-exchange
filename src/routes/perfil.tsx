@@ -15,11 +15,13 @@ import {
   useRejectionReasons,
   useMyActiveLeilao,
   createLeilao,
+  type Specialist,
 } from "@/lib/store";
 import { formatBRL, formatEndsAt } from "@/lib/auctions";
 import { maskPhone } from "@/lib/masks";
 import { isValidAvatarSize } from "@/lib/validators";
 import { maskEmail, toDatetimeLocalValue } from "@/lib/utils";
+import { translateErrorMessage } from "@/lib/errorMessages";
 import { useT, nicheLabel } from "@/lib/i18n";
 import { useSessionTimeout } from "@/lib/useSessionTimeout";
 import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
@@ -51,6 +53,18 @@ const CRITERIO_KEYS: Record<string, string> = {
 const UMA_HORA_MS = 60 * 60 * 1000;
 const VINTE_QUATRO_HORAS_MS = 24 * 60 * 60 * 1000;
 const SETE_DIAS_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Valor de fallback ao publicar com um clique quando o especialista nunca
+// definiu um valor mínimo (o campo saiu do cadastro/edição de perfil — agora
+// só é ajustável em /criar-leilao, depois que o leilão já existe).
+const DEFAULT_MIN_BID = 100;
+
+// Mínimo para o "Publicar leilão" de um clique fazer sentido: dados que já
+// eram exigidos no formulário de cadastro, revalidados aqui como rede de
+// segurança (ex.: uma linha antiga de antes de algum campo virar obrigatório).
+function isSpecialistProfileComplete(esp: Specialist): boolean {
+  return !!(esp.niche && esp.specialty && esp.bio && esp.credential && esp.platform && esp.pixKey);
+}
 
 function formatDateHourBR(ms: number): string {
   return new Date(ms).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
@@ -175,6 +189,10 @@ function ProfilePage() {
   }
 
   function onOpenPublishModal() {
+    if (especialista && !isSpecialistProfileComplete(especialista)) {
+      toast.error(t("pf.profileIncompleteError"));
+      return;
+    }
     setPublishMode("agora");
     setScheduledStart("");
     setShowPublishModal(true);
@@ -199,20 +217,20 @@ function ProfilePage() {
       name: especialista.fullName,
       specialty: especialista.specialty || nicheLabel(t, especialista.niche),
     });
-    const created = await createLeilao({
+    const { error } = await createLeilao({
       especialistaId: especialista.id,
       titulo,
       descricao: "",
-      lanceMinimo: Number(especialista.minBid) || 0,
+      lanceMinimo: Number(especialista.minBid) || DEFAULT_MIN_BID,
       dataInicio,
       dataFim: dataInicio + VINTE_QUATRO_HORAS_MS,
     });
     setPublishing(false);
-    if (created) {
+    if (!error) {
       toast.success(t("pf.auctionPublished"));
       setShowPublishModal(false);
     } else {
-      toast.error(t("cl.publishError"));
+      toast.error(translateErrorMessage(error, t));
     }
   }
 

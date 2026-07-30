@@ -6,11 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
-import { useMySpecialist, useMyActiveLeilao, editarLeilao } from "@/lib/store";
-import { useT, nicheLabel } from "@/lib/i18n";
+import { useMySpecialist, useMyActiveLeilao, editarLeilao, updateSpecialistAvailability } from "@/lib/store";
+import { useT, nicheLabel, WEEKDAY_LABEL_KEY } from "@/lib/i18n";
 import { translateErrorMessage } from "@/lib/errorMessages";
 import { sanitizeText } from "@/lib/sanitize";
-import { toDatetimeLocalValue } from "@/lib/utils";
+import { maskDateBR, maskTimeHM } from "@/lib/masks";
 import { useSessionTimeout } from "@/lib/useSessionTimeout";
 import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
 import { toast } from "sonner";
@@ -20,8 +20,48 @@ export const Route = createFileRoute("/criar-leilao")({
   component: CriarLeilaoPage,
 });
 
-type FieldKey = "titulo" | "dataFim";
-const FIELD_ORDER: FieldKey[] = ["titulo", "dataFim"];
+type FieldKey = "titulo" | "dataFimData" | "dataFimHora" | "lanceMinimo" | "availableDays" | "endTime";
+const FIELD_ORDER: FieldKey[] = ["titulo", "dataFimData", "dataFimHora", "lanceMinimo", "availableDays", "endTime"];
+
+const WEEKDAY_CODES = Object.keys(WEEKDAY_LABEL_KEY);
+
+const TIME_OPTIONS: string[] = (() => {
+  const out: string[] = [];
+  for (let mins = 6 * 60; mins <= 23 * 60; mins += 30) {
+    const h = Math.floor(mins / 60).toString().padStart(2, "0");
+    const m = (mins % 60).toString().padStart(2, "0");
+    out.push(`${h}:${m}`);
+  }
+  return out;
+})();
+
+function toDateBR(ms: number): string {
+  const d = new Date(ms);
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+}
+
+function toTimeHM(ms: number): string {
+  const d = new Date(ms);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+// Interpreta "DD/MM/AAAA" + "HH:MM" no horário local do navegador — retorna
+// null se o formato bater mas os componentes não formarem uma data/hora real
+// (ex.: 31/02, 25:00), em vez de deixar o JS "corrigir" silenciosamente.
+function parseDataHoraBR(dataStr: string, horaStr: string): number | null {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(dataStr);
+  const h = /^(\d{2}):(\d{2})$/.exec(horaStr);
+  if (!m || !h) return null;
+  const dd = Number(m[1]);
+  const mm = Number(m[2]);
+  const yyyy = Number(m[3]);
+  const hh = Number(h[1]);
+  const min = Number(h[2]);
+  const d = new Date(yyyy, mm - 1, dd, hh, min, 0, 0);
+  if (d.getDate() !== dd || d.getMonth() !== mm - 1 || d.getFullYear() !== yyyy) return null;
+  if (d.getHours() !== hh || d.getMinutes() !== min) return null;
+  return d.getTime();
+}
 
 function CriarLeilaoPage() {
   const { user, loading } = useAuth();
@@ -33,22 +73,37 @@ function CriarLeilaoPage() {
 
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
-  const [dataFim, setDataFim] = useState("");
+  const [dataFimData, setDataFimData] = useState("");
+  const [dataFimHora, setDataFimHora] = useState("");
+  const [lanceMinimo, setLanceMinimo] = useState("");
+  const [availableDays, setAvailableDays] = useState<string[]>([]);
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("18:00");
   const [prefilled, setPrefilled] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const fieldRefs = useRef<Partial<Record<FieldKey, HTMLDivElement | null>>>({});
 
-  // Pré-preenche o formulário assim que o leilão ativo carrega — só uma vez,
-  // para não sobrescrever o que o especialista já estiver digitando.
+  // Só é possível ajustar o valor mínimo enquanto o leilão ainda não recebeu
+  // nenhum lance — mudar depois seria injusto com quem já apostou com base no
+  // valor anterior (mesma regra aplicada no servidor, em editar-leilao).
+  const podeEditarMinimo = !!leilaoAtivo && leilaoAtivo.lanceAtual === null;
+
+  // Pré-preenche o formulário assim que o leilão ativo e o especialista
+  // carregarem — só uma vez, para não sobrescrever o que já estiver digitando.
   useEffect(() => {
-    if (leilaoAtivo && !prefilled) {
+    if (leilaoAtivo && especialista && !prefilled) {
       setTitulo(leilaoAtivo.titulo);
       setDescricao(leilaoAtivo.descricao ?? "");
-      setDataFim(toDatetimeLocalValue(leilaoAtivo.dataFim));
+      setDataFimData(toDateBR(leilaoAtivo.dataFim));
+      setDataFimHora(toTimeHM(leilaoAtivo.dataFim));
+      setLanceMinimo(String(leilaoAtivo.lanceMinimo));
+      setAvailableDays(especialista.availableDays);
+      setStartTime(especialista.startTime || "09:00");
+      setEndTime(especialista.endTime || "18:00");
       setPrefilled(true);
     }
-  }, [leilaoAtivo, prefilled]);
+  }, [leilaoAtivo, especialista, prefilled]);
 
   function clearFieldError(key: FieldKey) {
     setFieldErrors((s) => {
@@ -59,14 +114,42 @@ function CriarLeilaoPage() {
     });
   }
 
+  function toggleDay(code: string) {
+    setAvailableDays((d) => (d.includes(code) ? d.filter((c) => c !== code) : [...d, code]));
+    clearFieldError("availableDays");
+  }
+
   function validate(): Partial<Record<FieldKey, string>> {
     const errs: Partial<Record<FieldKey, string>> = {};
     if (!titulo.trim()) errs.titulo = t("cl.required");
-    if (!dataFim) {
-      errs.dataFim = t("cl.required");
-    } else if (leilaoAtivo && new Date(dataFim).getTime() <= leilaoAtivo.dataInicio) {
-      errs.dataFim = t("cl.endDateBeforeStart");
+
+    if (!dataFimData.trim()) {
+      errs.dataFimData = t("cl.required");
+    } else if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dataFimData)) {
+      errs.dataFimData = t("cl.dateFormatInvalid");
     }
+    if (!dataFimHora.trim()) {
+      errs.dataFimHora = t("cl.required");
+    } else if (!/^\d{2}:\d{2}$/.test(dataFimHora)) {
+      errs.dataFimHora = t("cl.timeFormatInvalid");
+    }
+    if (!errs.dataFimData && !errs.dataFimHora) {
+      const ts = parseDataHoraBR(dataFimData, dataFimHora);
+      if (ts === null) {
+        errs.dataFimData = t("cl.dateFormatInvalid");
+      } else if (ts <= Date.now()) {
+        errs.dataFimData = t("cl.dateInPast");
+      } else if (leilaoAtivo && ts <= leilaoAtivo.dataInicio) {
+        errs.dataFimData = t("cl.endDateBeforeStart");
+      }
+    }
+
+    if (podeEditarMinimo && !(Number(lanceMinimo) > 0)) {
+      errs.lanceMinimo = t("cl.minBidRequired");
+    }
+    if (availableDays.length === 0) errs.availableDays = t("ce.daysRequired");
+    if (!(startTime < endTime)) errs.endTime = t("ce.endTimeError");
+
     return errs;
   }
 
@@ -77,7 +160,7 @@ function CriarLeilaoPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!leilaoAtivo) return;
+    if (!leilaoAtivo || !especialista) return;
     const errs = validate();
     if (Object.keys(errs).length > 0) {
       setFieldErrors(errs);
@@ -86,18 +169,28 @@ function CriarLeilaoPage() {
     }
     setFieldErrors({});
     setSubmitting(true);
-    const { error } = await editarLeilao(leilaoAtivo.id, {
+
+    const dataFimMs = parseDataHoraBR(dataFimData, dataFimHora)!;
+    const { error: erroLeilao } = await editarLeilao(leilaoAtivo.id, {
       titulo: titulo.trim(),
       descricao: sanitizeText(descricao),
-      dataFim: new Date(dataFim).getTime(),
+      dataFim: dataFimMs,
+      ...(podeEditarMinimo ? { lanceMinimo: Number(lanceMinimo) } : {}),
     });
-    setSubmitting(false);
-    if (!error) {
-      toast.success(t("cl.published"));
-      navigate({ to: "/perfil" });
-    } else {
-      toast.error(translateErrorMessage(error, t));
+    if (erroLeilao) {
+      setSubmitting(false);
+      toast.error(translateErrorMessage(erroLeilao, t));
+      return;
     }
+
+    const okDisponibilidade = await updateSpecialistAvailability(especialista.id, { availableDays, startTime, endTime });
+    setSubmitting(false);
+    if (!okDisponibilidade) {
+      toast.error(t("cl.availabilityError"));
+      return;
+    }
+    toast.success(t("cl.published"));
+    navigate({ to: "/perfil" });
   }
 
   if (loading) return null;
@@ -184,22 +277,44 @@ function CriarLeilaoPage() {
             />
           </Field>
 
-          <Field
-            label={t("cl.endDate")}
-            required
-            error={fieldErrors.dataFim}
-            fieldRef={(el) => { fieldRefs.current.dataFim = el; }}
-          >
-            <Input
-              type="datetime-local"
-              value={dataFim}
-              onChange={(e) => {
-                setDataFim(e.target.value);
-                clearFieldError("dataFim");
-              }}
-              className={fieldErrors.dataFim ? "border-destructive focus-visible:ring-destructive" : undefined}
-            />
-          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field
+              label={t("cl.endDateDay")}
+              required
+              error={fieldErrors.dataFimData}
+              fieldRef={(el) => { fieldRefs.current.dataFimData = el; }}
+            >
+              <Input
+                value={dataFimData}
+                onChange={(e) => {
+                  setDataFimData(maskDateBR(e.target.value));
+                  clearFieldError("dataFimData");
+                }}
+                placeholder="DD/MM/AAAA"
+                inputMode="numeric"
+                maxLength={10}
+                className={fieldErrors.dataFimData ? "border-destructive focus-visible:ring-destructive" : undefined}
+              />
+            </Field>
+            <Field
+              label={t("cl.endDateHour")}
+              required
+              error={fieldErrors.dataFimHora}
+              fieldRef={(el) => { fieldRefs.current.dataFimHora = el; }}
+            >
+              <Input
+                value={dataFimHora}
+                onChange={(e) => {
+                  setDataFimHora(maskTimeHM(e.target.value));
+                  clearFieldError("dataFimHora");
+                }}
+                placeholder="HH:MM"
+                inputMode="numeric"
+                maxLength={5}
+                className={fieldErrors.dataFimHora ? "border-destructive focus-visible:ring-destructive" : undefined}
+              />
+            </Field>
+          </div>
 
           <Field label={t("cl.areaOfExpertise")}>
             <Input value={areaAtuacao || "—"} disabled className="text-muted-foreground" />
@@ -211,9 +326,81 @@ function CriarLeilaoPage() {
             </p>
           </Field>
 
-          <Field label={t("cl.minBid")}>
-            <Input value={String(leilaoAtivo.lanceAtual ?? leilaoAtivo.lanceMinimo)} disabled className="text-muted-foreground" />
+          <Field
+            label={t("cl.minBid")}
+            required={podeEditarMinimo}
+            error={fieldErrors.lanceMinimo}
+            fieldRef={(el) => { fieldRefs.current.lanceMinimo = el; }}
+          >
+            {podeEditarMinimo ? (
+              <Input
+                type="number"
+                min="0"
+                value={lanceMinimo}
+                onChange={(e) => {
+                  setLanceMinimo(e.target.value);
+                  clearFieldError("lanceMinimo");
+                }}
+                placeholder="500"
+                className={fieldErrors.lanceMinimo ? "border-destructive focus-visible:ring-destructive" : undefined}
+              />
+            ) : (
+              <>
+                <Input value={String(leilaoAtivo.lanceAtual ?? leilaoAtivo.lanceMinimo)} disabled className="text-muted-foreground" />
+                <p className="mt-1 text-[11px] text-muted-foreground">{t("cl.minBidLockedNote")}</p>
+              </>
+            )}
           </Field>
+
+          <div ref={(el) => { fieldRefs.current.availableDays = el; }}>
+            <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("ce.availableDays")}</label>
+            <div className="flex flex-wrap gap-2">
+              {WEEKDAY_CODES.map((code) => {
+                const active = availableDays.includes(code);
+                return (
+                  <button
+                    key={code}
+                    type="button"
+                    onClick={() => toggleDay(code)}
+                    className={`rounded-md border px-3 py-2 text-xs transition-all ${active ? "border-gold bg-gold/10 text-gold shadow-gold" : fieldErrors.availableDays ? "border-destructive text-foreground/80" : "border-border text-foreground/80 hover:border-gold/40"}`}
+                  >
+                    {t(WEEKDAY_LABEL_KEY[code])}
+                  </button>
+                );
+              })}
+            </div>
+            {fieldErrors.availableDays && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.availableDays}</p>}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={t("ce.startTime")} required>
+              <select
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="h-10 w-full rounded-md border border-border bg-background px-3 text-sm"
+              >
+                {TIME_OPTIONS.map((time) => (
+                  <option key={time} value={time}>{time}</option>
+                ))}
+              </select>
+            </Field>
+            <Field
+              label={t("ce.endTime")}
+              required
+              error={fieldErrors.endTime}
+              fieldRef={(el) => { fieldRefs.current.endTime = el; }}
+            >
+              <select
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className={`h-10 w-full rounded-md border bg-background px-3 text-sm ${fieldErrors.endTime ? "border-destructive" : "border-border"}`}
+              >
+                {TIME_OPTIONS.map((time) => (
+                  <option key={time} value={time}>{time}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
 
           <Field label={t("cl.platform")}>
             <Input value={especialista.platform || "—"} disabled className="text-muted-foreground" />

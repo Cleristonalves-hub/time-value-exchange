@@ -1,10 +1,10 @@
 // Edge Function: editar-leilao
 //
-// Especialista edita título, descrição e data/hora de encerramento de um
-// leilão próprio que ainda está ativo. Passa pelo service_role (não há
-// política de UPDATE para o dono em `leiloes`, só para admin — ver
-// 20260725170000_security_audit_rls_hardening.sql) e revalida tudo no
-// servidor, nunca confiando nos dados vindos do client.
+// Especialista edita título, descrição, data/hora de encerramento e (se ainda
+// não houver nenhum lance) o valor mínimo de um leilão próprio que ainda está
+// ativo. Passa pelo service_role (não há política de UPDATE para o dono em
+// `leiloes`, só para admin — ver 20260725170000_security_audit_rls_hardening.sql)
+// e revalida tudo no servidor, nunca confiando nos dados vindos do client.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkRateLimitDb } from "../_shared/rateLimitDb.ts";
@@ -49,7 +49,7 @@ async function handleRequest(req: Request): Promise<Response> {
     return jsonResponse({ error: "não autenticado" }, 401);
   }
 
-  let body: { leilao_id?: string; titulo?: string; descricao?: string; data_fim?: string };
+  let body: { leilao_id?: string; titulo?: string; descricao?: string; data_fim?: string; lance_minimo?: number };
   try {
     body = await req.json();
   } catch {
@@ -59,6 +59,7 @@ async function handleRequest(req: Request): Promise<Response> {
   const titulo = (body.titulo ?? "").trim();
   const descricao = (body.descricao ?? "").trim();
   const dataFim = body.data_fim;
+  const lanceMinimo = body.lance_minimo;
 
   if (!leilaoId || !titulo || !dataFim) {
     return jsonResponse({ error: "leilao_id, titulo e data_fim são obrigatórios" }, 400);
@@ -73,10 +74,13 @@ async function handleRequest(req: Request): Promise<Response> {
   if (Number.isNaN(novaDataFim.getTime())) {
     return jsonResponse({ error: "data_fim inválida" }, 400);
   }
+  if (lanceMinimo !== undefined && (!Number.isFinite(lanceMinimo) || lanceMinimo <= 0)) {
+    return jsonResponse({ error: "O valor mínimo do lance deve ser maior que zero" }, 400);
+  }
 
   const { data: leilao, error: leilaoError } = await admin
     .from("leiloes")
-    .select("id, status, data_inicio, especialista_id")
+    .select("id, status, data_inicio, lance_atual, especialista_id")
     .eq("id", leilaoId)
     .maybeSingle();
   if (leilaoError || !leilao) return jsonResponse({ error: "leilão não encontrado" }, 404);
@@ -95,10 +99,15 @@ async function handleRequest(req: Request): Promise<Response> {
     return jsonResponse({ error: "este leilão não está mais ativo" }, 409);
   }
   if (novaDataFim.getTime() <= new Date(leilao.data_inicio).getTime()) {
-    return jsonResponse({ error: "a data de encerramento precisa ser depois do início do leilão" }, 400);
+    return jsonResponse({ error: "A data de encerramento deve ser após a data de início" }, 400);
   }
   if (novaDataFim.getTime() <= Date.now()) {
     return jsonResponse({ error: "a data de encerramento precisa ser no futuro" }, 400);
+  }
+  // O valor mínimo só pode mudar enquanto ninguém deu lance ainda — mudar
+  // depois disso seria injusto com quem já apostou com base no valor anterior.
+  if (lanceMinimo !== undefined && leilao.lance_atual !== null) {
+    return jsonResponse({ error: "não é possível alterar o valor mínimo depois que o leilão já recebeu lances" }, 409);
   }
 
   const { error: updateError } = await admin
@@ -107,6 +116,7 @@ async function handleRequest(req: Request): Promise<Response> {
       titulo,
       descricao: descricao || null,
       data_fim: novaDataFim.toISOString(),
+      ...(lanceMinimo !== undefined ? { lance_minimo: lanceMinimo } : {}),
     })
     .eq("id", leilaoId);
   if (updateError) {
