@@ -17,8 +17,26 @@ export const Route = createFileRoute("/configurar-leilao")({
   component: ConfigurarLeilaoPage,
 });
 
-type FieldKey = "platform" | "minBid" | "availableDays" | "endTime" | "pixKey" | "conduct" | "truthPledge" | "delinquencyAck" | "ageConfirmed";
-const FIELD_ORDER: FieldKey[] = ["platform", "minBid", "availableDays", "endTime", "pixKey", "conduct", "truthPledge", "delinquencyAck", "ageConfirmed"];
+type PayoutMethod = "pix" | "bank";
+type AccountType = "corrente" | "poupanca" | "";
+
+type FieldKey =
+  | "platform"
+  | "minBid"
+  | "endTime"
+  | "pixKey"
+  | "banco"
+  | "agencia"
+  | "numeroConta"
+  | "tipoConta"
+  | "conduct"
+  | "truthPledge"
+  | "delinquencyAck"
+  | "ageConfirmed";
+const FIELD_ORDER: FieldKey[] = [
+  "platform", "minBid", "endTime", "pixKey", "banco", "agencia", "numeroConta", "tipoConta",
+  "conduct", "truthPledge", "delinquencyAck", "ageConfirmed",
+];
 
 const platformIds = ["Zoom", "Google Meet", "Microsoft Teams"] as const;
 const platformSubKeys: Record<(typeof platformIds)[number], string> = {
@@ -27,7 +45,14 @@ const platformSubKeys: Record<(typeof platformIds)[number], string> = {
   "Microsoft Teams": "ce.platformTeamsSub",
 };
 
-const WEEKDAY_CODES = Object.keys(WEEKDAY_LABEL_KEY);
+// Todos os dias da semana — a partir desta reforma, /configurar-leilao não
+// pergunta mais "dias disponíveis" (o leilão em si já tem data/hora de
+// início e encerramento definidas). O agendamento pós-leilão em /vitoria/$id
+// continua precisando de algum conjunto de dias para montar o calendário de
+// horários, então um especialista novo recebe "todos os dias" por padrão; se
+// ele já tinha uma restrição customizada (definida via /criar-leilao, que
+// ainda tem esse controle), ela é preservada — ver onSubmit.
+const ALL_WEEKDAYS = Object.keys(WEEKDAY_LABEL_KEY);
 
 const TIME_OPTIONS: string[] = (() => {
   const out: string[] = [];
@@ -50,10 +75,14 @@ function ConfigurarLeilaoPage() {
   const [duration, setDuration] = useState("60");
   const [languages, setLanguages] = useState("Português");
   const [minBid, setMinBid] = useState("");
-  const [availableDays, setAvailableDays] = useState<string[]>([]);
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("18:00");
+  const [payoutMethod, setPayoutMethod] = useState<PayoutMethod>("pix");
   const [pixKey, setPixKey] = useState("");
+  const [banco, setBanco] = useState("");
+  const [agencia, setAgencia] = useState("");
+  const [numeroConta, setNumeroConta] = useState("");
+  const [tipoConta, setTipoConta] = useState<AccountType>("");
   const [conduct, setConduct] = useState(false);
   const [truthPledge, setTruthPledge] = useState(false);
   const [delinquencyAck, setDelinquencyAck] = useState(false);
@@ -71,10 +100,18 @@ function ConfigurarLeilaoPage() {
       setDuration(existing.duration || "60");
       setLanguages(existing.languages || "Português");
       setMinBid(existing.minBid || "");
-      setAvailableDays(existing.availableDays);
       setStartTime(existing.startTime || "09:00");
       setEndTime(existing.endTime || "18:00");
       setPixKey(existing.pixKey || "");
+      setBanco(existing.banco || "");
+      setAgencia(existing.agencia || "");
+      setNumeroConta(existing.numeroConta || "");
+      setTipoConta((existing.tipoConta as AccountType) || "");
+      // Já tinha dados bancários salvos: assume que o método ativo é conta
+      // bancária, mesmo que a chave PIX também esteja preenchida de antes.
+      if (existing.banco || existing.agencia || existing.numeroConta) {
+        setPayoutMethod("bank");
+      }
       setPrefilled(true);
     }
   }, [existing, prefilled]);
@@ -88,18 +125,19 @@ function ConfigurarLeilaoPage() {
     });
   }
 
-  function toggleDay(code: string) {
-    setAvailableDays((d) => (d.includes(code) ? d.filter((c) => c !== code) : [...d, code]));
-    clearFieldError("availableDays");
-  }
-
   function validate(): Partial<Record<FieldKey, string>> {
     const errs: Partial<Record<FieldKey, string>> = {};
     if (!platform) errs.platform = t("ce.platformRequired");
     if (!(Number(minBid) > 0)) errs.minBid = t("cl.minBidRequired");
-    if (availableDays.length === 0) errs.availableDays = t("ce.daysRequired");
     if (!(startTime < endTime)) errs.endTime = t("ce.endTimeError");
-    if (!pixKey.trim()) errs.pixKey = t("ce.required");
+    if (payoutMethod === "pix") {
+      if (!pixKey.trim()) errs.pixKey = t("ce.required");
+    } else {
+      if (!banco.trim()) errs.banco = t("ce.required");
+      if (!agencia.trim()) errs.agencia = t("ce.required");
+      if (!numeroConta.trim()) errs.numeroConta = t("ce.required");
+      if (!tipoConta) errs.tipoConta = t("ce.required");
+    }
     if (!conduct) errs.conduct = t("cc.acceptRequired");
     if (!truthPledge) errs.truthPledge = t("ce.truthPledgeRequired");
     if (!delinquencyAck) errs.delinquencyAck = t("ce.delinquencyRequired");
@@ -145,10 +183,19 @@ function ConfigurarLeilaoPage() {
       duration,
       languages,
       minBid,
-      availableDays,
+      // Sem seletor de dias nesta página (o leilão em si já tem data/hora de
+      // início e encerramento) — preserva o que já estava salvo (pode ter
+      // vindo customizado de /criar-leilao); se nunca foi definido, assume
+      // todos os dias para o calendário de agendamento pós-leilão ter o que
+      // mostrar.
+      availableDays: existing.availableDays.length > 0 ? existing.availableDays : ALL_WEEKDAYS,
       startTime,
       endTime,
-      pixKey,
+      pixKey: payoutMethod === "pix" ? pixKey : "",
+      banco: payoutMethod === "bank" ? banco : "",
+      agencia: payoutMethod === "bank" ? agencia : "",
+      numeroConta: payoutMethod === "bank" ? numeroConta : "",
+      tipoConta: payoutMethod === "bank" ? tipoConta : "",
     });
     setSubmitting(false);
     if (ok) {
@@ -255,26 +302,6 @@ function ConfigurarLeilaoPage() {
             />
           </Field>
 
-          <div ref={(el) => { fieldRefs.current.availableDays = el; }}>
-            <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("ce.availableDays")}</label>
-            <div className="flex flex-wrap gap-2">
-              {WEEKDAY_CODES.map((code) => {
-                const active = availableDays.includes(code);
-                return (
-                  <button
-                    key={code}
-                    type="button"
-                    onClick={() => toggleDay(code)}
-                    className={`rounded-md border px-3 py-2 text-xs transition-all ${active ? "border-gold bg-gold/10 text-gold shadow-gold" : fieldErrors.availableDays ? "border-destructive text-foreground/80" : "border-border text-foreground/80 hover:border-gold/40"}`}
-                  >
-                    {t(WEEKDAY_LABEL_KEY[code])}
-                  </button>
-                );
-              })}
-            </div>
-            {fieldErrors.availableDays && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.availableDays}</p>}
-          </div>
-
           <div className="grid grid-cols-2 gap-3">
             <Field label={t("ce.startTime")} required>
               <select
@@ -305,22 +332,125 @@ function ConfigurarLeilaoPage() {
             </Field>
           </div>
 
-          <Field
-            label={t("ce.pixKey")}
-            required
-            error={fieldErrors.pixKey}
-            fieldRef={(el) => { fieldRefs.current.pixKey = el; }}
-          >
-            <Input
-              value={pixKey}
-              onChange={(e) => {
-                setPixKey(e.target.value);
-                clearFieldError("pixKey");
-              }}
-              placeholder={t("ce.pixKeyPlaceholder")}
-              className={fieldErrors.pixKey ? "border-destructive focus-visible:ring-destructive" : undefined}
-            />
-          </Field>
+          <div>
+            <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("cfg.payoutMethod")}</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setPayoutMethod("pix")}
+                className={`rounded-md border px-4 py-3 text-sm transition-all ${payoutMethod === "pix" ? "border-gold bg-gold/10 text-gold shadow-gold" : "border-border text-foreground/80 hover:border-gold/40"}`}
+              >
+                {t("cfg.payoutPix")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPayoutMethod("bank")}
+                className={`rounded-md border px-4 py-3 text-sm transition-all ${payoutMethod === "bank" ? "border-gold bg-gold/10 text-gold shadow-gold" : "border-border text-foreground/80 hover:border-gold/40"}`}
+              >
+                {t("cfg.payoutBank")}
+              </button>
+            </div>
+          </div>
+
+          {payoutMethod === "pix" ? (
+            <Field
+              label={t("ce.pixKey")}
+              required
+              error={fieldErrors.pixKey}
+              fieldRef={(el) => { fieldRefs.current.pixKey = el; }}
+            >
+              <Input
+                value={pixKey}
+                onChange={(e) => {
+                  setPixKey(e.target.value);
+                  clearFieldError("pixKey");
+                }}
+                placeholder={t("ce.pixKeyPlaceholder")}
+                className={fieldErrors.pixKey ? "border-destructive focus-visible:ring-destructive" : undefined}
+              />
+            </Field>
+          ) : (
+            <>
+              <Field
+                label={t("cfg.bankName")}
+                required
+                error={fieldErrors.banco}
+                fieldRef={(el) => { fieldRefs.current.banco = el; }}
+              >
+                <Input
+                  value={banco}
+                  onChange={(e) => {
+                    setBanco(e.target.value);
+                    clearFieldError("banco");
+                  }}
+                  placeholder={t("cfg.bankNamePlaceholder")}
+                  className={fieldErrors.banco ? "border-destructive focus-visible:ring-destructive" : undefined}
+                />
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field
+                  label={t("cfg.bankAgency")}
+                  required
+                  error={fieldErrors.agencia}
+                  fieldRef={(el) => { fieldRefs.current.agencia = el; }}
+                >
+                  <Input
+                    value={agencia}
+                    onChange={(e) => {
+                      setAgencia(e.target.value);
+                      clearFieldError("agencia");
+                    }}
+                    placeholder={t("cfg.bankAgencyPlaceholder")}
+                    className={fieldErrors.agencia ? "border-destructive focus-visible:ring-destructive" : undefined}
+                  />
+                </Field>
+                <Field
+                  label={t("cfg.bankAccountNumber")}
+                  required
+                  error={fieldErrors.numeroConta}
+                  fieldRef={(el) => { fieldRefs.current.numeroConta = el; }}
+                >
+                  <Input
+                    value={numeroConta}
+                    onChange={(e) => {
+                      setNumeroConta(e.target.value);
+                      clearFieldError("numeroConta");
+                    }}
+                    placeholder={t("cfg.bankAccountNumberPlaceholder")}
+                    className={fieldErrors.numeroConta ? "border-destructive focus-visible:ring-destructive" : undefined}
+                  />
+                </Field>
+              </div>
+              <div ref={(el) => { fieldRefs.current.tipoConta = el; }}>
+                <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                  {t("cfg.bankAccountType")}<span className="text-destructive"> *</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTipoConta("corrente");
+                      clearFieldError("tipoConta");
+                    }}
+                    className={`rounded-md border px-4 py-3 text-sm transition-all ${tipoConta === "corrente" ? "border-gold bg-gold/10 text-gold shadow-gold" : fieldErrors.tipoConta ? "border-destructive text-foreground/80" : "border-border text-foreground/80 hover:border-gold/40"}`}
+                  >
+                    {t("cfg.accountTypeChecking")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTipoConta("poupanca");
+                      clearFieldError("tipoConta");
+                    }}
+                    className={`rounded-md border px-4 py-3 text-sm transition-all ${tipoConta === "poupanca" ? "border-gold bg-gold/10 text-gold shadow-gold" : fieldErrors.tipoConta ? "border-destructive text-foreground/80" : "border-border text-foreground/80 hover:border-gold/40"}`}
+                  >
+                    {t("cfg.accountTypeSavings")}
+                  </button>
+                </div>
+                {fieldErrors.tipoConta && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.tipoConta}</p>}
+              </div>
+            </>
+          )}
 
           <div ref={(el) => { fieldRefs.current.truthPledge = el; }}>
             <label

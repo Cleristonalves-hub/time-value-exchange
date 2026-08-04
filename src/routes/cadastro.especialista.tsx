@@ -385,6 +385,10 @@ function NewSpecialistWizard() {
       endTime: data.endTime,
       document: data.document,
       pixKey: data.pixKey,
+      banco: existing?.banco ?? "",
+      agencia: existing?.agencia ?? "",
+      numeroConta: existing?.numeroConta ?? "",
+      tipoConta: existing?.tipoConta ?? "",
     };
     if (editingId) {
       const updated = await updateSpecialist(editingId, payload);
@@ -1168,6 +1172,10 @@ function SpecialistProfileForm() {
       endTime: data.endTime,
       document: existing?.document || personal.cpf || "",
       pixKey: data.pixKey,
+      banco: existing?.banco ?? "",
+      agencia: existing?.agencia ?? "",
+      numeroConta: existing?.numeroConta ?? "",
+      tipoConta: existing?.tipoConta ?? "",
     };
     const ok = editingId
       ? await updateSpecialist(editingId, payload)

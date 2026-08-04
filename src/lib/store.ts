@@ -32,6 +32,10 @@ export type Specialist = {
   endTime: string;
   document: string;
   pixKey: string;
+  banco: string;
+  agencia: string;
+  numeroConta: string;
+  tipoConta: string;
   status: SpecialistStatus;
   badgeCancelamentoAte: string | null;
   suspensoAte: string | null;
@@ -150,6 +154,10 @@ type SpecialistRow = {
   horario_fim: string | null;
   cpf_cnpj: string | null;
   chave_pix: string | null;
+  banco: string | null;
+  agencia: string | null;
+  numero_conta: string | null;
+  tipo_conta: string | null;
   status: SpecialistStatus;
   badge_cancelamento_ate: string | null;
   suspenso_ate: string | null;
@@ -289,6 +297,10 @@ const toSpecialist = (r: SpecialistRow): Specialist => ({
   endTime: r.horario_fim ?? "",
   document: r.cpf_cnpj ?? "",
   pixKey: r.chave_pix ?? "",
+  banco: r.banco ?? "",
+  agencia: r.agencia ?? "",
+  numeroConta: r.numero_conta ?? "",
+  tipoConta: r.tipo_conta ?? "",
   status: r.status,
   badgeCancelamentoAte: r.badge_cancelamento_ate,
   suspensoAte: r.suspenso_ate,
@@ -819,6 +831,10 @@ export async function addSpecialist(
       horario_fim: input.endTime || null,
       cpf_cnpj: input.document || null,
       chave_pix: input.pixKey || null,
+      banco: input.banco || null,
+      agencia: input.agencia || null,
+      numero_conta: input.numeroConta || null,
+      tipo_conta: input.tipoConta || null,
       status: "novo",
     })
     .select("*")
@@ -869,6 +885,10 @@ export async function updateSpecialist(
       horario_fim: input.endTime || null,
       cpf_cnpj: input.document || null,
       chave_pix: input.pixKey || null,
+      banco: input.banco || null,
+      agencia: input.agencia || null,
+      numero_conta: input.numeroConta || null,
+      tipo_conta: input.tipoConta || null,
       // Volta para "novo" para deixar claro que precisa ser reavaliado — o
       // Trust Engine só reavalia automaticamente se o Database Webhook também
       // estiver configurado para o evento Update (hoje só dispara no Insert).
