@@ -406,7 +406,7 @@ function CriarLeilaoPage() {
             <Input value={especialista.platform || "—"} disabled className="text-muted-foreground" />
             <p className="mt-1 text-[11px] text-muted-foreground">
               {t("cl.areaDefinedNote")}{" "}
-              <Link to="/cadastro/especialista" className="text-gold underline-offset-4 hover:underline">
+              <Link to="/configurar-leilao" className="text-gold underline-offset-4 hover:underline">
                 {t("cl.editProfile")}
               </Link>
             </p>

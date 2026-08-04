@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "skills": {
+    "ai-image-generation": {
+      "source": "skills-collective/skills",
+      "sourceType": "github",
+      "skillPath": "ai-image-generation/SKILL.md",
+      "computedHash": "06f41b40b32a080bc38536156b80a7d4a3175e1b1eeece55fc125e54bee467f3"
+    },
+    "ai-video-generation": {
+      "source": "101-skills/skills",
+      "sourceType": "github",
+      "skillPath": "tools/video/ai-video-generation/SKILL.md",
+      "computedHash": "a5a0dec43d5dd799f26f390d168bad50aee98e1a7c150ce1553d05f993292c52"
+    },
+    "brainstorming": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "skillPath": "skills/brainstorming/SKILL.md",
+      "computedHash": "79fec75eb8cb46ec4d5e119a08d5366dfe2f1b56d876b2ea5633fa80f8aa1f7c"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "computedHash": "b146008599c31057cef1c145774cea5d5afb30e8f43fa802e47a4b461419aaaf"
+    },
+    "get-shit-done": {
+      "source": "shoootyou/get-shit-done-multi",
+      "sourceType": "github",
+      "skillPath": "templates/skills/get-shit-done/claude/SKILL.md",
+      "computedHash": "4fc6688598e0fc8dfa104da6d7ca61b3a7fc2e078fa6140d7f0f1d2ae5f52d42"
+    },
+    "gpt-image-2": {
+      "source": "pilioai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/gpt-image-2/SKILL.md",
+      "computedHash": "1748298d7cffd47c5e943f76a7e2f36bd96188198db6a25708033bf522d5794a"
+    },
+    "graphify": {
+      "source": "safishamsi/graphify",
+      "sourceType": "github",
+      "skillPath": "graphify/SKILL.md",
+      "computedHash": "2b179034ab5e29fc3ebbaeb508407f9d800442d37232308febce1f333a176c57"
+    },
+    "nano-banana-pro": {
+      "source": "pilioai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/nano-banana-pro/SKILL.md",
+      "computedHash": "4481d18685cc5fe56417f7ac1bedb367e220502f73ab6fb64eb999719223dc99"
+    },
+    "remove-background": {
+      "source": "pilioai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/remove-background/SKILL.md",
+      "computedHash": "a43df56ede1703f6c833fbe456e86a790c74788795d8a0399c033881488b6dae"
+    },
+    "remove-image-watermark": {
+      "source": "pilioai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/remove-image-watermark/SKILL.md",
+      "computedHash": "672bccaccbbcb4773298701c6c3224bdef6bbe09261487ab69854869d0242d95"
+    },
+    "remove-pdf-watermark": {
+      "source": "pilioai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/remove-pdf-watermark/SKILL.md",
+      "computedHash": "dd1e3eca1069a77c42dda0cbb6424d653261dba249a7266afbe3cd30138b5832"
+    },
+    "stripe-best-practices": {
+      "source": "stripe/ai",
+      "sourceType": "github",
+      "skillPath": "skills/stripe-best-practices/SKILL.md",
+      "computedHash": "508ff25bd89619ac99a25b61ab69f20554a0d5e8c5ebc752c76c90632b0b9fe7"
+    },
+    "supabase": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase/SKILL.md",
+      "computedHash": "c4cbf2d313f6afb1ff810623b732961752bb64638f648c7a355449eb6aac9530"
+    },
+    "upscale-image": {
+      "source": "pilioai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/upscale-image/SKILL.md",
+      "computedHash": "58d7f86803e58c9903dcd5b3fc9068a1e0e3efba66ca9314febec4bede44b98a"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-guidelines/SKILL.md",
+      "computedHash": "f3bc47f890f42a44db1007ab390709ec368e4b8c089baee6b0007182236ac474"
+    },
+    "webapp-testing": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/webapp-testing/SKILL.md",
+      "computedHash": "3f14af7f5690695209c22fbf8c8d133769a86d64892602c09bb13f135e14e857"
+    }
+  }
+}

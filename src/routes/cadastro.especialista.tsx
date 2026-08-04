@@ -985,8 +985,7 @@ type ProfData = {
 // sempre para o campo mais acima na tela, não o primeiro do objeto de erros.
 const PROFILE_FIELD_ORDER: FieldKey[] = [
   "cpfDeclaration", "niche", "specialty", "bio", "credential", "experience", "registrationNumber",
-  "portfolioUrl", "youtube", "platform", "pixKey",
-  "truthPledge", "conduct", "delinquencyAck", "ageConfirmed",
+  "portfolioUrl", "youtube",
 ];
 
 function SpecialistProfileForm() {
@@ -1002,13 +1001,8 @@ function SpecialistProfileForm() {
   const [photoUrl, setPhotoUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [conduct, setConduct] = useState(false);
-  const [truthPledge, setTruthPledge] = useState(false);
   const [cpfDeclaration, setCpfDeclaration] = useState(false);
-  const [delinquencyAck, setDelinquencyAck] = useState(false);
-  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const fieldRefs = useRef<Partial<Record<FieldKey, HTMLDivElement | null>>>({});
   const [data, setData] = useState<ProfData>({
@@ -1129,13 +1123,7 @@ function SpecialistProfileForm() {
     if (!isSafeHttpUrl(data.portfolioUrl)) errs.portfolioUrl = t("ce.portfolioInvalid");
     if (data.youtube.trim() && !isSafeHttpUrl(data.youtube)) errs.youtube = t("ce.youtubeInvalid");
     if (regLabel && !data.registrationNumber.trim()) errs.registrationNumber = t("ce.required");
-    if (!data.platform) errs.platform = t("ce.platformRequired");
-    if (!data.pixKey.trim()) errs.pixKey = t("ce.required");
     if (!cpfDeclaration) errs.cpfDeclaration = t("ce.cpfDeclarationRequired");
-    if (!conduct) errs.conduct = t("cc.acceptRequired");
-    if (!truthPledge) errs.truthPledge = t("ce.truthPledgeRequired");
-    if (!delinquencyAck) errs.delinquencyAck = t("ce.delinquencyRequired");
-    if (!ageConfirmed) errs.ageConfirmed = t("cc.ageConfirmRequired");
     return errs;
   }
 
@@ -1181,28 +1169,17 @@ function SpecialistProfileForm() {
       document: existing?.document || personal.cpf || "",
       pixKey: data.pixKey,
     };
-    if (editingId) {
-      const updated = await updateSpecialist(editingId, payload);
-      setSubmitting(false);
-      if (updated) {
-        toast.success(t("pf.profileUpdated"));
-        setDone(true);
-      } else {
-        toast.error(t("ce.updateError"));
-      }
+    const ok = editingId
+      ? await updateSpecialist(editingId, payload)
+      : await addSpecialist(payload, user?.id);
+    setSubmitting(false);
+    if (ok) {
+      toast.success(t("ce.profilePublished"));
+      navigate({ to: "/configurar-leilao" });
     } else {
-      const saved = await addSpecialist(payload, user?.id);
-      setSubmitting(false);
-      if (saved) {
-        toast.success(t("ce.profilePublished"));
-        navigate({ to: "/perfil" });
-      } else {
-        toast.error(t("ce.updateError"));
-      }
+      toast.error(t("ce.updateError"));
     }
   }
-
-  if (done) return <SuccessScreen isEdit={!!editingId} />;
 
   return (
     <main className="min-h-screen px-6 pb-24 pt-10">
@@ -1477,150 +1454,12 @@ function SpecialistProfileForm() {
           </div>
         </section>
 
-        {/* Seção 4 — Configurações do leilão */}
-        <section className="mt-10">
-          <h2 className="text-[10px] uppercase tracking-[0.3em] text-gold">{t("ce.section4Title")}</h2>
-          <div className="mt-4 space-y-4">
-            <div ref={(el) => { fieldRefs.current.platform = el; }}>
-              <label className="mb-3 block text-xs uppercase tracking-[0.2em] text-muted-foreground">{t("ce.platform")}</label>
-              <div className="space-y-2">
-                {platformIds.map((p) => {
-                  const active = data.platform === p;
-                  return (
-                    <button key={p} type="button" onClick={() => set("platform", p)}
-                      className={`flex w-full items-center gap-3 rounded-md border px-4 py-4 text-left transition-all ${active ? "border-gold bg-gold/10 shadow-gold" : fieldErrors.platform ? "border-destructive" : "border-border hover:border-gold/40"}`}>
-                      <Video className={`size-5 ${active ? "text-gold" : "text-muted-foreground"}`} />
-                      <div className="flex-1">
-                        <div className={`text-sm font-medium ${active ? "text-gold" : "text-foreground"}`}>{p}</div>
-                        <div className="text-[11px] text-muted-foreground">{t(platformSubKeys[p])}</div>
-                      </div>
-                      {active && <Check className="size-4 text-gold" />}
-                    </button>
-                  );
-                })}
-              </div>
-              {fieldErrors.platform && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.platform}</p>}
-            </div>
-            <Field label={t("ce.duration")}>
-              <Input type="number" value={data.duration} onChange={(e) => set("duration", e.target.value)} />
-            </Field>
-            <Field label={t("ce.languages")}>
-              <Input value={data.languages} onChange={(e) => set("languages", e.target.value)} placeholder={t("ce.languagesPlaceholder")} />
-            </Field>
-            <Field
-              label={t("ce.pixKey")}
-              required
-              error={fieldErrors.pixKey}
-              fieldRef={(el) => { fieldRefs.current.pixKey = el; }}
-            >
-              <Input
-                value={data.pixKey}
-                onChange={(e) => set("pixKey", e.target.value)}
-                placeholder={t("ce.pixKeyPlaceholder")}
-                className={fieldErrors.pixKey ? "border-destructive focus-visible:ring-destructive" : undefined}
-              />
-            </Field>
-          </div>
-        </section>
-
-        {/* Termos finais */}
-        <section className="mt-10 space-y-4">
-          <div ref={(el) => { fieldRefs.current.truthPledge = el; }}>
-            <label
-              className={`flex cursor-pointer items-start gap-3 rounded-md border p-4 text-[12px] leading-relaxed text-foreground/80 ${
-                fieldErrors.truthPledge ? "border-destructive bg-destructive/5" : "border-gold/30 bg-gold/5"
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={truthPledge}
-                onChange={() => {
-                  setTruthPledge((v) => !v);
-                  clearFieldError("truthPledge");
-                }}
-                className="mt-0.5 size-4 accent-[color:var(--gold)]"
-              />
-              <span>{t("ce.truthPledge")}</span>
-            </label>
-            {fieldErrors.truthPledge && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.truthPledge}</p>}
-          </div>
-
-          <div ref={(el) => { fieldRefs.current.conduct = el; }}>
-            <ConductPledge
-              accepted={conduct}
-              onToggle={() => {
-                setConduct(!conduct);
-                clearFieldError("conduct");
-              }}
-              error={!!fieldErrors.conduct}
-            />
-            {fieldErrors.conduct && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.conduct}</p>}
-          </div>
-
-          <div
-            ref={(el) => { fieldRefs.current.delinquencyAck = el; }}
-            className={`rounded-xl border p-5 ${fieldErrors.delinquencyAck ? "border-destructive bg-destructive/5" : "border-warning/40 bg-warning/5"}`}
-          >
-            <div className="flex items-center gap-2 text-warning">
-              <AlertTriangle className="size-4" />
-              <span className="text-[10px] uppercase tracking-[0.3em]">{t("ce.importantTitle")}</span>
-            </div>
-            <p className="mt-3 text-xs leading-relaxed text-foreground/80">{t("ce.importantIntro")}</p>
-            <ul className="mt-3 list-disc space-y-2 pl-5 text-xs leading-relaxed text-foreground/80">
-              <li>{t("ce.importantBullet1")}</li>
-              <li>{t("ce.importantBullet2")}</li>
-              <li>{t("ce.importantBullet3")}</li>
-              <li>{t("ce.importantBullet4")}</li>
-            </ul>
-
-            <label className="mt-5 flex cursor-pointer items-start gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setDelinquencyAck((v) => !v);
-                  clearFieldError("delinquencyAck");
-                }}
-                aria-pressed={delinquencyAck}
-                className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded border transition-colors ${
-                  delinquencyAck ? "border-warning bg-warning" : fieldErrors.delinquencyAck ? "border-destructive" : "border-border"
-                }`}
-              >
-                {delinquencyAck && <Check className="size-3 text-primary-foreground" />}
-              </button>
-              <span className="text-xs leading-relaxed text-foreground/80">{t("ce.delinquencyAck")}</span>
-            </label>
-            {fieldErrors.delinquencyAck && (
-              <p className="mt-1 text-[11px] text-destructive">{fieldErrors.delinquencyAck}</p>
-            )}
-          </div>
-
-          <div ref={(el) => { fieldRefs.current.ageConfirmed = el; }}>
-            <label
-              className={`flex cursor-pointer items-start gap-3 rounded-md border p-4 text-[12px] leading-relaxed text-foreground/80 ${
-                fieldErrors.ageConfirmed ? "border-destructive bg-destructive/5" : "border-gold/30 bg-gold/5"
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={ageConfirmed}
-                onChange={() => {
-                  setAgeConfirmed((v) => !v);
-                  clearFieldError("ageConfirmed");
-                }}
-                className="mt-0.5 size-4 accent-[color:var(--gold)]"
-              />
-              <span>{t("cc.ageConfirm")}</span>
-            </label>
-            {fieldErrors.ageConfirmed && <p className="mt-1 text-[11px] text-destructive">{fieldErrors.ageConfirmed}</p>}
-          </div>
-        </section>
-
         <button
           onClick={onPublish}
           disabled={submitting}
           className="group mt-10 flex w-full items-center justify-center gap-2 rounded-md bg-gradient-gold px-6 py-4 text-sm font-medium uppercase tracking-[0.2em] text-primary-foreground shadow-gold transition-transform active:scale-[0.98] disabled:opacity-30 disabled:shadow-none"
         >
-          {submitting ? t("ce.sending") : editingId ? t("ce.saveChanges") : t("ce.publishProfile")}
+          {submitting ? t("ce.sending") : t("ce.publishProfile")}
           <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
         </button>
 
